@@ -10,68 +10,63 @@ package com.hr.backend.controller;
  */
 
 
+
 import com.hr.backend.model.EmployeeDocument;
 import com.hr.backend.service.StorageService;
+import com.hr.backend.repository.EmployeeDocumentRepository;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-import com.hr.backend.repository.EmployeeDocumentRepository;
-import org.springframework.beans.factory.annotation.Autowired;
 
+import java.time.LocalDateTime;
 
 @RestController
 @RequestMapping("/api/employee-documents")
 public class EmployeeDocumentController {
-@Autowired
-private EmployeeDocumentRepository repository;
 
     @Autowired
     private StorageService storageService;
 
-    @PostMapping("/upload")
-    public String upload(@RequestParam("file") MultipartFile file) {
-        try {
-            String url = storageService.uploadFile(
-                    file.getBytes(),
-                    file.getOriginalFilename(),
-                    file.getContentType()
-            );
-            return url;
-        } catch (Exception e) {
-            return "Error: " + e.getMessage();
-        }
-    }
+    @Autowired
+    private EmployeeDocumentRepository repository;
 
+    // 🔹 Test endpoint
     @GetMapping("/test")
     public String test() {
         return "Employee document API is working";
     }
-    
+
+    // 🔹 Upload endpoint
     @PostMapping("/upload")
-public EmployeeDocument upload(
-        @RequestParam("employeeCode") String employeeCode,
-        @RequestParam("employeeNames") String employeeNames,
-        @RequestParam("category") String category,
-        @RequestParam("documentName") String documentName,
-        @RequestParam("file") MultipartFile file
-) throws Exception {
+    public EmployeeDocument upload(
+            @RequestParam("employeeCode") String employeeCode,
+            @RequestParam("employeeNames") String employeeNames,
+            @RequestParam("category") String category,
+            @RequestParam("documentName") String documentName,
+            @RequestParam("file") MultipartFile file
+    ) {
+        try {
+            String fileUrl = storageService.uploadFile(
+                    file.getBytes(),
+                    employeeCode + "/" + category + "/" + file.getOriginalFilename(),
+                    file.getContentType()
+            );
 
-    String fileUrl = storageService.uploadFile(
-            file.getBytes(),
-            employeeCode + "/" + category + "/" + file.getOriginalFilename(),
-            file.getContentType()
-    );
+            EmployeeDocument doc = new EmployeeDocument();
+            doc.setEmployeeCode(employeeCode);
+            doc.setEmployeeNames(employeeNames);
+            doc.setCategory(category);
+            doc.setDocumentName(documentName);
+            doc.setOriginalFileName(file.getOriginalFilename());
+            doc.setFileUrl(fileUrl);
+            doc.setContentType(file.getContentType());
+            doc.setUploadedAt(LocalDateTime.now());
 
-    EmployeeDocument doc = new EmployeeDocument();
-    doc.setEmployeeCode(employeeCode);
-    doc.setEmployeeNames(employeeNames);
-    doc.setCategory(category);
-    doc.setDocumentName(documentName);
-    doc.setOriginalFileName(file.getOriginalFilename());
-    doc.setFileUrl(fileUrl);
-    doc.setContentType(file.getContentType());
-    doc.setUploadedAt(java.time.LocalDateTime.now());
+            return repository.save(doc);
 
-    return repository.save(doc);
-}
+        } catch (Exception e) {
+            throw new RuntimeException("Upload failed: " + e.getMessage());
+        }
+    }
 }
