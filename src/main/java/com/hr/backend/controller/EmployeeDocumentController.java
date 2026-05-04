@@ -9,15 +9,35 @@ package com.hr.backend.controller;
  * @author apple
  */
 
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RestController;
+
+import com.hr.backend.service.StorageService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 @RestController
+@RequestMapping("/api/employee-documents")
 public class EmployeeDocumentController {
 
+    @Autowired
+    private StorageService storageService;
 
-@GetMapping("/api/employee-documents/test")
-public String test() {
-    return "Employee document API is working";
-}
+    @PostMapping("/upload")
+    public String upload(@RequestParam("file") MultipartFile file) {
+        try {
+            String url = storageService.uploadFile(
+                    file.getBytes(),
+                    file.getOriginalFilename(),
+                    file.getContentType()
+            );
+            return url;
+        } catch (Exception e) {
+            return "Error: " + e.getMessage();
+        }
+    }
+
+    @GetMapping("/test")
+    public String test() {
+        return "Employee document API is working";
+    }
 }

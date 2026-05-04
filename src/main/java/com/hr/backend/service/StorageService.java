@@ -11,11 +11,15 @@ package com.hr.backend.service;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import com.google.cloud.storage.Storage;
+import com.google.cloud.storage.StorageOptions;
+import com.google.cloud.storage.BlobId;
+import com.google.cloud.storage.BlobInfo;
 
 
 @Service
 public class StorageService {
-/*
+
     @Value("${GCS_BUCKET_NAME}")
     private String bucketName;
 
@@ -32,5 +36,5 @@ public class StorageService {
 
         return "https://storage.googleapis.com/" + bucketName + "/" + fileName;
     }
-*/
+
 }
