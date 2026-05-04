@@ -15,13 +15,9 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 public class EmployeeDocumentController {
 
-    @GetMapping("/test")
-    public String test() {
-        return "Test endpoint is working";
-    }
 
-    @GetMapping("/api/employee-documents/test")
-    public String employeeDocumentTest() {
-        return "Employee document API is working";
-    }
+@GetMapping("/api/employee-documents/test")
+public String test() {
+    return "Employee document API is working";
+}
 }
