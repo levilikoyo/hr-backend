@@ -35,12 +35,13 @@ public class EmployeeDocument {
 
     private String contentType;
     private LocalDateTime uploadedAt;
+     private String organization;
 
-    public int getId() {
+    public Integer getId() {
         return id;
     }
 
-    public void setId(int id) {
+    public void setId(Integer id) {
         this.id = id;
     }
 
@@ -115,6 +116,16 @@ public class EmployeeDocument {
     public void setUploadedAt(LocalDateTime uploadedAt) {
         this.uploadedAt = uploadedAt;
     }
+
+    public String getOrganization() {
+        return organization;
+    }
+
+    public void setOrganization(String organization) {
+        this.organization = organization;
+    }
+
+    
 
    
 }

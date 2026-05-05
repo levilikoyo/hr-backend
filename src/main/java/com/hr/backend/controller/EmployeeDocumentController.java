@@ -11,6 +11,7 @@ package com.hr.backend.controller;
 
 
 
+import com.hr.backend.model.ArchiveTreeDTO;
 import com.hr.backend.model.EmployeeDocument;
 import com.hr.backend.service.StorageService;
 import com.hr.backend.repository.EmployeeDocumentRepository;
@@ -20,6 +21,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/employee-documents")
@@ -69,4 +71,21 @@ public class EmployeeDocumentController {
             throw new RuntimeException("Upload failed: " + e.getMessage());
         }
     }
+    
+    @GetMapping("/filter")
+public List<EmployeeDocument> getDocuments(
+        @RequestParam("employeeCode") String employeeCode,
+        @RequestParam("category") String category,
+        @RequestParam("organization") String organization
+) {
+    return repository.findByEmployeeCodeAndCategoryAndOrganisation(
+            employeeCode,
+            category,
+            organization
+    );
+}
+@GetMapping("/tree")
+public List<ArchiveTreeDTO> getArchiveTree() {
+    return repository.getArchiveTreeData();
+}
 }
