@@ -27,7 +27,7 @@ import org.springframework.data.jpa.repository.Query;
         String category,
         String organization
 );
-    @Query("SELECT new com.hr.backend.dto.ArchiveTreeDTO(d.organisation, d.employeeCode, d.employeeNames, d.category) " +
-       "FROM EmployeeDocument d GROUP BY d.organisation, d.employeeCode, d.employeeNames, d.category")
+    @Query("SELECT new com.hr.backend.dto.ArchiveTreeDTO(d.organization, d.employee_code, d.employee_names, d.category) " +
+       "FROM EmployeeDocument d GROUP BY d.organization, d.employee_code, d.employee_names, d.category")
 List<ArchiveTreeDTO> getArchiveTreeData();
 }
