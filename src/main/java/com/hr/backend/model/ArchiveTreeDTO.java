@@ -10,13 +10,13 @@ package com.hr.backend.model;
  */
 
 public class ArchiveTreeDTO {
-    public String organisation;
+    public String organization;
     public String employeeCode;
     public String employeeNames;
     public String category;
 
-    public ArchiveTreeDTO(String organisation, String employeeCode, String employeeNames, String category) {
-        this.organisation = organisation;
+    public ArchiveTreeDTO(String organization, String employeeCode, String employeeNames, String category) {
+        this.organization = organization;
         this.employeeCode = employeeCode;
         this.employeeNames = employeeNames;
         this.category = category;

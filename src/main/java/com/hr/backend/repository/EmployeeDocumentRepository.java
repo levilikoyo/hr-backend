@@ -22,12 +22,13 @@ import org.springframework.data.jpa.repository.Query;
 
     List<EmployeeDocument> findByEmployeeCodeAndCategory(String employeeCode, String category);
     
-    List<EmployeeDocument> findByEmployeeCodeAndCategoryAndOrganisation(
+   @Query("SELECT new com.hr.backend.model.ArchiveTreeDTO(d.organization, d.employeeCode, d.employeeNames, d.category) " +
+       "FROM EmployeeDocument d GROUP BY d.organization, d.employeeCode, d.employeeNames, d.category")
+List<ArchiveTreeDTO> getArchiveTreeData();
+
+List<EmployeeDocument> findByEmployeeCodeAndCategoryAndOrganization(
         String employeeCode,
         String category,
         String organization
 );
-    @Query("SELECT new com.hr.backend.dto.ArchiveTreeDTO(d.organization, d.employee_code, d.employee_names, d.category) " +
-       "FROM EmployeeDocument d GROUP BY d.organization, d.employee_code, d.employee_names, d.category")
-List<ArchiveTreeDTO> getArchiveTreeData();
 }

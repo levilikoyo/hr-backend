@@ -78,7 +78,7 @@ public List<EmployeeDocument> getDocuments(
         @RequestParam("category") String category,
         @RequestParam("organization") String organization
 ) {
-    return repository.findByEmployeeCodeAndCategoryAndOrganisation(
+    return repository.findByEmployeeCodeAndCategoryAndOrganization(
             employeeCode,
             category,
             organization
