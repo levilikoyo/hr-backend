@@ -43,35 +43,34 @@ public class EmployeeDocumentController {
 
     // 🔹 Upload endpoint
     @PostMapping("/upload")
-    public EmployeeDocument upload(
-            @RequestParam("employeeCode") String employeeCode,
-            @RequestParam("employeeNames") String employeeNames,
-            @RequestParam("category") String category,
-            @RequestParam("documentName") String documentName,
-            @RequestParam("file") MultipartFile file
-    ) {
-        try {
-            String fileUrl = storageService.uploadFile(
-                    file.getBytes(),
-                    employeeCode + "/" + category + "/" + file.getOriginalFilename(),
-                    file.getContentType()
-            );
+public EmployeeDocument upload(
+        @RequestParam("employeeCode") String employeeCode,
+        @RequestParam("employeeNames") String employeeNames,
+        @RequestParam("organization") String organization,
+        @RequestParam("category") String category,
+        @RequestParam("documentName") String documentName,
+        @RequestParam("file") MultipartFile file
+) throws Exception {
 
-            EmployeeDocument doc = new EmployeeDocument();
-            doc.setEmployeeCode(employeeCode);
-            doc.setEmployeeNames(employeeNames);
-            doc.setCategory(category);
-            doc.setDocumentName(documentName);
-            doc.setOriginalFileName(file.getOriginalFilename());
-            doc.setFileUrl(fileUrl);
-            doc.setContentType(file.getContentType());
-            doc.setUploadedAt(LocalDateTime.now());
+    String fileUrl = storageService.uploadFile(
+            file.getBytes(),
+            employeeCode + "/" + category + "/" + file.getOriginalFilename(),
+            file.getContentType()
+    );
 
-            return repository.save(doc);
+    EmployeeDocument doc = new EmployeeDocument();
+    doc.setEmployeeCode(employeeCode);
+    doc.setEmployeeNames(employeeNames);
+    doc.setOrganization(organization); // ✅ important
+    doc.setCategory(category);
+    doc.setDocumentName(documentName);
+    doc.setOriginalFileName(file.getOriginalFilename());
+    doc.setFileUrl(fileUrl);
+    doc.setContentType(file.getContentType());
+    doc.setUploadedAt(java.time.LocalDateTime.now());
 
-        } catch (Exception e) {
-            throw new RuntimeException("Upload failed: " + e.getMessage());
-        }
+    return repository.save(doc);
+
     }
     
     @GetMapping("/filter")
@@ -107,5 +106,16 @@ public ResponseEntity<byte[]> download(@PathVariable Long id) {
     } catch (Exception e) {
         throw new RuntimeException("Download failed: " + e.getMessage());
     }
+}
+@DeleteMapping("/{id}")
+public String deleteDocument(@PathVariable Long id) {
+    EmployeeDocument doc = repository.findById(id)
+            .orElseThrow(() -> new RuntimeException("Document not found"));
+
+    storageService.deleteFile(doc.getFileUrl());
+
+    repository.deleteById(id);
+
+    return "Document deleted successfully";
 }
 }

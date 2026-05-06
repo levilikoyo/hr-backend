@@ -46,5 +46,12 @@ public class StorageService {
 
     return blob.getContent();
 }
+    public void deleteFile(String fileUrl) {
+    String prefix = "https://storage.googleapis.com/" + bucketName + "/";
+    String objectName = fileUrl.replace(prefix, "");
+
+    Storage storage = StorageOptions.getDefaultInstance().getService();
+    storage.delete(bucketName, objectName);
+}
 
 }
