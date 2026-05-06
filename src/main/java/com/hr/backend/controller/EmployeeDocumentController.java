@@ -22,6 +22,8 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 
 @RestController
 @RequestMapping("/api/employee-documents")
@@ -87,5 +89,23 @@ public List<EmployeeDocument> getDocuments(
 @GetMapping("/tree")
 public List<ArchiveTreeDTO> getArchiveTree() {
     return repository.getArchiveTreeData();
+}
+
+@GetMapping("/download/{id}")
+public ResponseEntity<byte[]> download(@PathVariable Long id) {
+    try {
+        EmployeeDocument doc = repository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Document not found"));
+
+        byte[] fileBytes = storageService.downloadFile(doc.getFileUrl());
+
+        return ResponseEntity.ok()
+                .header("Content-Disposition", "inline; filename=\"" + doc.getOriginalFileName() + "\"")
+                .contentType(MediaType.parseMediaType(doc.getContentType()))
+                .body(fileBytes);
+
+    } catch (Exception e) {
+        throw new RuntimeException("Download failed: " + e.getMessage());
+    }
 }
 }

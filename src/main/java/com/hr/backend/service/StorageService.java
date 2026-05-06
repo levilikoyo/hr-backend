@@ -9,6 +9,7 @@ package com.hr.backend.service;
  * @author apple
  */
 
+import com.google.cloud.storage.Blob;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import com.google.cloud.storage.Storage;
@@ -36,5 +37,14 @@ public class StorageService {
 
         return "https://storage.googleapis.com/" + bucketName + "/" + fileName;
     }
+    public byte[] downloadFile(String fileUrl) {
+    String prefix = "https://storage.googleapis.com/" + bucketName + "/";
+    String objectName = fileUrl.replace(prefix, "");
+
+    Storage storage = StorageOptions.getDefaultInstance().getService();
+    Blob blob = storage.get(bucketName, objectName);
+
+    return blob.getContent();
+}
 
 }
