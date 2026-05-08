@@ -2,30 +2,43 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
  * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
  */
-package fin_DTO;
+package com.hr.backend.fin_model;
 
 /**
  *
  * @author apple
  */
 
-import fin_model.Fund;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Table;
+import jakarta.persistence.Id;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Column;
+
 import java.math.BigDecimal;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
 
-public class FundDTO {
+@Entity
+@Table(name = "funds")
+public class FundModel {
 
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    @Column(name="fund_code", nullable = false, unique = true)
     private String fundCode;
+
+    @Column(name="fund_name", nullable = false)
     private String fundName;
+
     private String fundType;
     private String donor;
     private String currency;
     private Integer budgetYear;
     private String grantAgreementNo;
-    private LocalDate startDate;
-    private LocalDate closingDate;
+    private String startDate;
+    private String closingDate;
     private Boolean restricted;
     private Boolean blocked;
     private String status;
@@ -41,76 +54,12 @@ public class FundDTO {
     private BigDecimal amountToDemand;
     private String organization;
     private String createdBy;
-    private LocalDateTime createdDate;
-    private LocalDateTime updatedDate;
-
-    public FundDTO() {
-    }
-
-    public FundDTO(Fund fund) {
-        this.id = fund.getId();
-        this.fundCode = fund.getFundCode();
-        this.fundName = fund.getFundName();
-        this.fundType = fund.getFundType();
-        this.donor = fund.getDonor();
-        this.currency = fund.getCurrency();
-        this.budgetYear = fund.getBudgetYear();
-        this.grantAgreementNo = fund.getGrantAgreementNo();
-        this.startDate = fund.getStartDate();
-        this.closingDate = fund.getClosingDate();
-        this.restricted = fund.getRestricted();
-        this.blocked = fund.getBlocked();
-        this.status = fund.getStatus();
-        this.description = fund.getDescription();
-        this.logoPath = fund.getLogoPath();
-        this.headerPath = fund.getHeaderPath();
-        this.footerPath = fund.getFooterPath();
-        this.budget = fund.getBudget();
-        this.commitments = fund.getCommitments();
-        this.encumbrances = fund.getEncumbrances();
-        this.actuals = fund.getActuals();
-        this.actualYtd = fund.getActualYtd();
-        this.amountToDemand = fund.getAmountToDemand();
-        this.organization = fund.getOrganization();
-        this.createdBy = fund.getCreatedBy();
-        this.createdDate = fund.getCreatedDate();
-        this.updatedDate = fund.getUpdatedDate();
-    }
-
-    public Fund toEntity() {
-        Fund fund = new Fund();
-
-        fund.setFundCode(this.fundCode);
-        fund.setFundName(this.fundName);
-        fund.setFundType(this.fundType);
-        fund.setDonor(this.donor);
-        fund.setCurrency(this.currency);
-        fund.setBudgetYear(this.budgetYear);
-        fund.setGrantAgreementNo(this.grantAgreementNo);
-        fund.setStartDate(this.startDate);
-        fund.setClosingDate(this.closingDate);
-        fund.setRestricted(this.restricted);
-        fund.setBlocked(this.blocked);
-        fund.setStatus(this.status);
-        fund.setDescription(this.description);
-        fund.setLogoPath(this.logoPath);
-        fund.setHeaderPath(this.headerPath);
-        fund.setFooterPath(this.footerPath);
-        fund.setBudget(this.budget);
-        fund.setCommitments(this.commitments);
-        fund.setEncumbrances(this.encumbrances);
-        fund.setActuals(this.actuals);
-        fund.setActualYtd(this.actualYtd);
-        fund.setAmountToDemand(this.amountToDemand);
-        fund.setOrganization(this.organization);
-        fund.setCreatedBy(this.createdBy);
-
-        return fund;
-    }
 
     public Long getId() {
         return id;
     }
+
+
 
     public String getFundCode() {
         return fundCode;
@@ -168,19 +117,19 @@ public class FundDTO {
         this.grantAgreementNo = grantAgreementNo;
     }
 
-    public LocalDate getStartDate() {
+    public String getStartDate() {
         return startDate;
     }
 
-    public void setStartDate(LocalDate startDate) {
+    public void setStartDate(String startDate) {
         this.startDate = startDate;
     }
 
-    public LocalDate getClosingDate() {
+    public String getClosingDate() {
         return closingDate;
     }
 
-    public void setClosingDate(LocalDate closingDate) {
+    public void setClosingDate(String closingDate) {
         this.closingDate = closingDate;
     }
 
@@ -302,13 +251,5 @@ public class FundDTO {
 
     public void setCreatedBy(String createdBy) {
         this.createdBy = createdBy;
-    }
-
-    public LocalDateTime getCreatedDate() {
-        return createdDate;
-    }
-
-    public LocalDateTime getUpdatedDate() {
-        return updatedDate;
     }
 }
