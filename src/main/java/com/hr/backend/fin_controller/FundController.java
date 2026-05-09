@@ -46,28 +46,28 @@ public class FundController {
     }
     
     @PutMapping("/funds-info")
-    public FundModel updateFundInfo(@RequestBody FundModel updatedData) {
-        FundModel employee = fundRepository
-                
-                .findByOrganizationAndFund(updatedData.getFundCode(), updatedData.getOrganization())
-                .orElseThrow(() -> new RuntimeException("Fund not found"));
+public FundModel updateFundInfo(@RequestBody FundModel updatedData) {
 
-            employee.setCurrency(updatedData.getCurrency());
-            employee.setBudgetYear(updatedData.getBudgetYear());
-            employee.setGrantAgreementNo(updatedData.getGrantAgreementNo());
-            employee.setBlocked(updatedData.getBlocked());
-            employee.setStartDate(updatedData.getStartDate());
-             // String logoPath,String headerPath,String footerPath
-           
-            employee.setClosingDate(updatedData.getClosingDate());
-            employee.setRestricted(updatedData.getRestricted());
-            employee.setStatus(updatedData.getStatus());
-            employee.setDescription(updatedData.getDescription());
-            employee.setLogoPath(updatedData.getLogoPath());
-            employee.setHeaderPath(updatedData.getHeaderPath());
-            employee.setFooterPath(updatedData.getFundCode());
-            
+    FundModel fund = fundRepository
+            .findByFundCodeAndOrganization(
+                    updatedData.getFundCode(),
+                    updatedData.getOrganization()
+            )
+            .orElseThrow(() -> new RuntimeException("Fund not found"));
 
-        return fundRepository.save(employee);
-    }
+    fund.setCurrency(updatedData.getCurrency());
+    fund.setBudgetYear(updatedData.getBudgetYear());
+    fund.setGrantAgreementNo(updatedData.getGrantAgreementNo());
+    fund.setBlocked(updatedData.getBlocked());
+    fund.setStartDate(updatedData.getStartDate());
+    fund.setClosingDate(updatedData.getClosingDate());
+    fund.setRestricted(updatedData.getRestricted());
+    fund.setStatus(updatedData.getStatus());
+    fund.setDescription(updatedData.getDescription());
+    fund.setLogoPath(updatedData.getLogoPath());
+    fund.setHeaderPath(updatedData.getHeaderPath());
+    fund.setFooterPath(updatedData.getFooterPath());
+
+    return fundRepository.save(fund);
+}
 }
