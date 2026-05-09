@@ -97,6 +97,7 @@ public String deleteEmployee(
     public Ajouter_employee updateEmploymentInfo(@RequestBody Ajouter_employee updatedData) {
         Ajouter_employee employee = employeeRepository
                 .findByRollAndOrganization(updatedData.getRoll(), updatedData.getOrganization())
+               
                 .orElseThrow(() -> new RuntimeException("Employee not found"));
 
         employee.setHiredDate(updatedData.getHiredDate());

@@ -44,4 +44,30 @@ public class FundController {
     public String test() {
         return "Fund API is working";
     }
+    
+    @PutMapping("/funds-info")
+    public FundModel updateFundInfo(@RequestBody FundModel updatedData) {
+        FundModel employee = fundRepository
+                
+                .findByOrganizationAndFund(updatedData.getFundCode(), updatedData.getOrganization())
+                .orElseThrow(() -> new RuntimeException("Fund not found"));
+
+            employee.setCurrency(updatedData.getCurrency());
+            employee.setBudgetYear(updatedData.getBudgetYear());
+            employee.setGrantAgreementNo(updatedData.getGrantAgreementNo());
+            employee.setBlocked(updatedData.getBlocked());
+            employee.setStartDate(updatedData.getStartDate());
+             // String logoPath,String headerPath,String footerPath
+           
+            employee.setClosingDate(updatedData.getClosingDate());
+            employee.setRestricted(updatedData.getRestricted());
+            employee.setStatus(updatedData.getStatus());
+            employee.setDescription(updatedData.getDescription());
+            employee.setLogoPath(updatedData.getLogoPath());
+            employee.setHeaderPath(updatedData.getHeaderPath());
+            employee.setFooterPath(updatedData.getFundCode());
+            
+
+        return fundRepository.save(employee);
+    }
 }

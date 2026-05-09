@@ -20,6 +20,7 @@ public interface FundRepository extends JpaRepository<FundModel, Long> {
 
     boolean existsByFundCode(String fundCode);
 
+    Optional<FundModel> findByOrganizationAndFund(String fundCode,String organization);
     List<FundModel> findByOrganization(String organization);
 
     List<FundModel> findByStatus(String status);
