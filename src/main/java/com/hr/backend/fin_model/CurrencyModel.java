@@ -1,113 +1,115 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
 package com.hr.backend.fin_model;
 
-/**
- *
- * @author apple
- */
-
-import jakarta.persistence.Entity;
-import jakarta.persistence.Table;
-import jakarta.persistence.Id;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Column;
+import jakarta.persistence.*;
 
 @Entity
-@Table(name = "funds")
+@Table(
+    name = "currencies",
+    uniqueConstraints = {
+        @UniqueConstraint(columnNames = {"organization", "curency_code"})
+    }
+)
 public class CurrencyModel {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name="curency_code", nullable = false, unique = true)
+    private String organization;
+
+    @Column(name = "curency_code", nullable = false)
     private String curencyCode;
 
-    @Column(name="curency_name", nullable = false)
+    @Column(name = "curency_name")
     private String curencyName;
 
+    @Column(name = "curency_symbole")
     private String curencySymbole;
+
+    @Column(name = "unrealized_gain")
     private String unrealizedGain;
+
+    @Column(name = "unrealized_losse")
     private String unrealizedLosse;
+
+    @Column(name = "realized_gain")
     private String realizedGain;
+
+    @Column(name = "realized_losse")
     private String realizedLosse;
-    private String organization;
+
+    public CurrencyModel() {
+    }
 
     public Long getId() {
         return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public String getCurencyCode() {
-        return curencyCode;
-    }
-
-    public void setCurencyCode(String curencyCode) {
-        this.curencyCode = curencyCode;
-    }
-
-    public String getCurencyName() {
-        return curencyName;
-    }
-
-    public void setCurencyName(String curencyName) {
-        this.curencyName = curencyName;
-    }
-
-    public String getCurencySymbole() {
-        return curencySymbole;
-    }
-
-    public void setCurencySymbole(String curencySymbole) {
-        this.curencySymbole = curencySymbole;
-    }
-
-    public String getUnrealizedGain() {
-        return unrealizedGain;
-    }
-
-    public void setUnrealizedGain(String unrealizedGain) {
-        this.unrealizedGain = unrealizedGain;
-    }
-
-    public String getUnrealizedLosse() {
-        return unrealizedLosse;
-    }
-
-    public void setUnrealizedLosse(String unrealizedLosse) {
-        this.unrealizedLosse = unrealizedLosse;
-    }
-
-    public String getRealizedGain() {
-        return realizedGain;
-    }
-
-    public void setRealizedGain(String realizedGain) {
-        this.realizedGain = realizedGain;
-    }
-
-    public String getRealizedLosse() {
-        return realizedLosse;
-    }
-
-    public void setRealizedLosse(String realizedLosse) {
-        this.realizedLosse = realizedLosse;
     }
 
     public String getOrganization() {
         return organization;
     }
 
+    public String getCurencyCode() {
+        return curencyCode;
+    }
+
+    public String getCurencyName() {
+        return curencyName;
+    }
+
+    public String getCurencySymbole() {
+        return curencySymbole;
+    }
+
+    public String getUnrealizedGain() {
+        return unrealizedGain;
+    }
+
+    public String getUnrealizedLosse() {
+        return unrealizedLosse;
+    }
+
+    public String getRealizedGain() {
+        return realizedGain;
+    }
+
+    public String getRealizedLosse() {
+        return realizedLosse;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
     public void setOrganization(String organization) {
         this.organization = organization;
     }
 
-  
+    public void setCurencyCode(String curencyCode) {
+        this.curencyCode = curencyCode;
+    }
+
+    public void setCurencyName(String curencyName) {
+        this.curencyName = curencyName;
+    }
+
+    public void setCurencySymbole(String curencySymbole) {
+        this.curencySymbole = curencySymbole;
+    }
+
+    public void setUnrealizedGain(String unrealizedGain) {
+        this.unrealizedGain = unrealizedGain;
+    }
+
+    public void setUnrealizedLosse(String unrealizedLosse) {
+        this.unrealizedLosse = unrealizedLosse;
+    }
+
+    public void setRealizedGain(String realizedGain) {
+        this.realizedGain = realizedGain;
+    }
+
+    public void setRealizedLosse(String realizedLosse) {
+        this.realizedLosse = realizedLosse;
+    }
 }
