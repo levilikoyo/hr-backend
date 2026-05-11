@@ -2,10 +2,9 @@ package com.hr.backend.fin_controller;
 
 import com.hr.backend.fin_model.CurrencyModel;
 import com.hr.backend.fin_repository.CurrencyRepository;
-import org.springframework.web.bind.annotation.*;
-import org.springframework.beans.factory.annotation.Autowired;
-
 import java.util.List;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/currencies")
@@ -21,40 +20,38 @@ public class CurrencyController {
     }
 
     @GetMapping
-    public List<CurrencyModel> getAllFunds() {
+    public List<CurrencyModel> getAllCurrencies() {
         return currencyRepository.findAll();
     }
 
     @GetMapping("/organization/{organization}")
-    public List<CurrencyModel> getFundByOrganization(@PathVariable String organization) {
+    public List<CurrencyModel> getCurrencyByOrganization(@PathVariable String organization) {
         return currencyRepository.findByOrganization(organization);
     }
 
-   
-
     @GetMapping("/test")
     public String test() {
-        return "Fund API is working";
+        return "Currency API is working";
     }
-    
-    @PutMapping("/funds-info")
-public CurrencyModel updateFundInfo(@RequestBody CurrencyModel updatedData) {
 
-    CurrencyModel currency = currencyRepository
-            .findByCurrencyCodeAndOrganization(
-                    updatedData.getCurencyCode(),
-                    updatedData.getOrganization()
-            )
-            .orElseThrow(() -> new RuntimeException("Fund not found"));
+    @PutMapping("/currency-info")
+    public CurrencyModel updateCurrencyInfo(@RequestBody CurrencyModel updatedData) {
 
-    currency.setCurencyCode(updatedData.getCurencyCode());
-    currency.setCurencyName(updatedData.getCurencyName());
-    currency.setCurencySymbole(updatedData.getCurencySymbole());
-    currency.setUnrealizedGain(updatedData.getUnrealizedGain());
-    currency.setUnrealizedLosse(updatedData.getUnrealizedLosse());
-    currency.setRealizedGain(updatedData.getRealizedGain());
-    currency.setRealizedLosse(updatedData.getRealizedLosse());
+        CurrencyModel currency = currencyRepository
+                .findByCurencyCodeAndOrganization(
+                        updatedData.getCurencyCode(),
+                        updatedData.getOrganization()
+                )
+                .orElseThrow(() -> new RuntimeException("Currency not found"));
 
-    return currencyRepository.save(currency);
-}
+        currency.setCurencyCode(updatedData.getCurencyCode());
+        currency.setCurencyName(updatedData.getCurencyName());
+        currency.setCurencySymbole(updatedData.getCurencySymbole());
+        currency.setUnrealizedGain(updatedData.getUnrealizedGain());
+        currency.setUnrealizedLosse(updatedData.getUnrealizedLosse());
+        currency.setRealizedGain(updatedData.getRealizedGain());
+        currency.setRealizedLosse(updatedData.getRealizedLosse());
+
+        return currencyRepository.save(currency);
+    }
 }
