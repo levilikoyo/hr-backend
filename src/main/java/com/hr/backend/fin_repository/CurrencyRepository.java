@@ -16,11 +16,11 @@ import java.util.Optional;
 
 public interface CurrencyRepository extends JpaRepository<CurrencyModel, Long> {
 
-    Optional<CurrencyModel> findByCurrencyCode(String currencyCode);
+    Optional<CurrencyModel> findByCurrencyCode(String curencyCode);
 
-    boolean existsByCurrencyCode(String currencyCode);
+    boolean existsByCurrencyCode(String curencyCode);
 
-    Optional<CurrencyModel> findByCurrencyCodeAndOrganization(String currencyCode, String organization);
+    Optional<CurrencyModel> findByCurrencyCodeAndOrganization(String curencyCode, String organization);
     List<CurrencyModel> findByOrganization(String organization);
 
 }
