@@ -37,13 +37,12 @@ public class CurrencyModel {
 
     @Column(name = "realized_losse")
     private String realizedLosse;
-    
-    @Column(name = "realized_gain")
-    private Boolean blocked;
 
-    @Column(name = "realized_losse")
-    private Boolean lcy;
-    
+    @Column(name = "lcy")
+    private Boolean lcy = false;
+
+    @Column(name = "blocked")
+    private Boolean blocked = false;
 
     public CurrencyModel() {
     }
@@ -84,6 +83,14 @@ public class CurrencyModel {
         return realizedLosse;
     }
 
+    public Boolean getLcy() {
+        return lcy;
+    }
+
+    public Boolean getBlocked() {
+        return blocked;
+    }
+
     public void setId(Long id) {
         this.id = id;
     }
@@ -119,21 +126,12 @@ public class CurrencyModel {
     public void setRealizedLosse(String realizedLosse) {
         this.realizedLosse = realizedLosse;
     }
-    
-  
-      public Boolean getLcy() {
-    return lcy;
-}
 
-public void setLcy(Boolean lcy) {
-    this.lcy = lcy;
-}
+    public void setLcy(Boolean lcy) {
+        this.lcy = lcy;
+    }
 
-public Boolean getBlocked() {
-    return blocked;
-}
-
-public void setBlocked(Boolean blocked) {
-    this.blocked = blocked;
-}
+    public void setBlocked(Boolean blocked) {
+        this.blocked = blocked;
+    }
 }
