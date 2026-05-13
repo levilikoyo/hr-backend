@@ -116,4 +116,8 @@ public ResponseEntity<?> updateCurrencyLCYBlocked(@RequestBody CurrencyModel upd
                 .body("Currency LCY/Blocked update failed: " + e.getMessage());
     }
 }
+@GetMapping("/lcy-blocked-info-test")
+public String testLCYBlockedEndpoint() {
+    return "LCY Blocked endpoint is available";
+}
 }
