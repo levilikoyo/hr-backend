@@ -117,8 +117,8 @@ public ResponseEntity<?> updateCurrencyLCYBlocked(@RequestBody CurrencyModel upd
     }
 }
 
-   @PutMapping("/rate-dated-info")
-public ResponseEntity<?> updateCurrencyRateDate(@RequestBody CurrencyModel updatedData) {
+  @PutMapping("/rate-info")
+public ResponseEntity<?> updateCurrencyRate(@RequestBody CurrencyModel updatedData) {
     try {
         if (updatedData.getOrganization() == null || updatedData.getOrganization().trim().isEmpty()) {
             return ResponseEntity.badRequest().body("Organization is required");
@@ -140,8 +140,8 @@ public ResponseEntity<?> updateCurrencyRateDate(@RequestBody CurrencyModel updat
                         + updatedData.getOrganization()
                 ));
 
-        currency.setLcy(updatedData.getLcy() != null ? updatedData.getLcy() : false);
-        currency.setBlocked(updatedData.getBlocked() != null ? updatedData.getBlocked() : false);
+        currency.setExchangeRateDate(updatedData.getExchangeRateDate());
+        currency.setExchangeRate(updatedData.getExchangeRate());
 
         return ResponseEntity.ok(currencyRepository.save(currency));
 
@@ -149,11 +149,16 @@ public ResponseEntity<?> updateCurrencyRateDate(@RequestBody CurrencyModel updat
         e.printStackTrace();
         return ResponseEntity
                 .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body("Currency LCY/Blocked update failed: " + e.getMessage());
+                .body("Currency rate update failed: " + e.getMessage());
     }
 }
 @GetMapping("/lcy-blocked-info-test")
 public String testLCYBlockedEndpoint() {
     return "LCY Blocked endpoint is available";
+}
+
+@GetMapping("/rate-info-test")
+public String testRateInfoEndpoint() {
+    return "Currency Rate endpoint is available";
 }
 }
