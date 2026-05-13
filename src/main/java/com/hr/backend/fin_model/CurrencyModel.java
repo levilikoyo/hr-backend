@@ -37,6 +37,13 @@ public class CurrencyModel {
 
     @Column(name = "realized_losse")
     private String realizedLosse;
+    
+    @Column(name = "realized_gain")
+    private Boolean blocked;
+
+    @Column(name = "realized_losse")
+    private Boolean lcy;
+    
 
     public CurrencyModel() {
     }
@@ -111,5 +118,12 @@ public class CurrencyModel {
 
     public void setRealizedLosse(String realizedLosse) {
         this.realizedLosse = realizedLosse;
+    }
+    
+     public void setBloked(Boolean blocked) {
+        this.blocked = blocked;
+    }
+      public void setLcy(Boolean lcy) {
+        this.lcy = lcy;
     }
 }
