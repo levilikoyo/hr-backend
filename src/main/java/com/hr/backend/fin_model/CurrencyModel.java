@@ -120,10 +120,20 @@ public class CurrencyModel {
         this.realizedLosse = realizedLosse;
     }
     
-     public void setBloked(Boolean blocked) {
-        this.blocked = blocked;
-    }
-      public void setLcy(Boolean lcy) {
-        this.lcy = lcy;
-    }
+  
+      public Boolean getLcy() {
+    return lcy;
+}
+
+public void setLcy(Boolean lcy) {
+    this.lcy = lcy;
+}
+
+public Boolean getBlocked() {
+    return blocked;
+}
+
+public void setBlocked(Boolean blocked) {
+    this.blocked = blocked;
+}
 }
