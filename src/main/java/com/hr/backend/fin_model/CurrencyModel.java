@@ -43,6 +43,12 @@ public class CurrencyModel {
 
     @Column(name = "blocked")
     private Boolean blocked = false;
+    
+    @Column(name = "exchangeratedate")
+    private String exchangeratedate;
+
+    @Column(name = "exchangerate")
+    private String exchangerate;
 
     public CurrencyModel() {
     }
@@ -90,6 +96,14 @@ public class CurrencyModel {
     public Boolean getBlocked() {
         return blocked;
     }
+    
+     public String getExchangeRateDate() {
+        return exchangeratedate;
+    }
+
+    public String getExchangeRate() {
+        return exchangerate;
+    }
 
     public void setId(Long id) {
         this.id = id;
@@ -133,5 +147,13 @@ public class CurrencyModel {
 
     public void setBlocked(Boolean blocked) {
         this.blocked = blocked;
+    }
+    
+      public void setExchangeRateDate(String exchangeratedate) {
+        this.exchangeratedate = exchangeratedate;
+    }
+
+    public void setExchangeRate(String exchangerate) {
+        this.exchangerate = exchangerate;
     }
 }
