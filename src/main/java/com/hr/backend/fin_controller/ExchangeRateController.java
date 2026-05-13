@@ -134,6 +134,17 @@ public class ExchangeRateController {
                     .body("Exchange rate delete failed: " + e.getMessage());
         }
     }
+    
+    @GetMapping("/organization/{organization}/currency/{currencyCode}")
+public List<ExchangeRateModel> getByOrganizationAndCurrencyCode(
+        @PathVariable String organization,
+        @PathVariable String currencyCode) {
+
+    return exchangeRateRepository.findByOrganizationAndCurrencyCode(
+            organization,
+            currencyCode
+    );
+}
 
     @GetMapping("/test")
     public String test() {

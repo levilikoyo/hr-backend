@@ -29,4 +29,8 @@ public interface ExchangeRateRepository extends JpaRepository<ExchangeRateModel,
             String exchangeCurrencyDate,
             String organization
     );
+    List<ExchangeRateModel> findByOrganizationAndCurrencyCode(
+        String organization,
+        String currencyCode
+);
 }
