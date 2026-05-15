@@ -69,44 +69,56 @@ public class CustomerController {
     }
 
     @PutMapping("/customer-info")
-    public ResponseEntity<?> updateCustomerInfo(@RequestBody CustomerModel updatedData) {
-        try {
-            if (updatedData.getOrganization() == null || updatedData.getOrganization().trim().isEmpty()) {
-                return ResponseEntity.badRequest().body("Organization is required");
-            }
-
-            if (updatedData.getCustomerCode() == null || updatedData.getCustomerCode().trim().isEmpty()) {
-                return ResponseEntity.badRequest().body("Customer code is required");
-            }
-
-            CustomerModel customer = customerRepository
-                    .findByCustomerCodeAndOrganization(
-                            updatedData.getCustomerCode(),
-                            updatedData.getOrganization()
-                    )
-                    .orElseThrow(() -> new RuntimeException("Customer not found"));
-
-            customer.setCustomerName(updatedData.getCustomerName());
-            customer.setCustomerAddress(updatedData.getCustomerAddress());
-            customer.setCustomerCity(updatedData.getCustomerCity());
-            customer.setCustomerPhone(updatedData.getCustomerPhone());
-            customer.setCustomerMail(updatedData.getCustomerMail());
-            customer.setInvoicing(updatedData.getInvoicing());
-            customer.setBlocked(updatedData.getBlocked() != null ? updatedData.getBlocked() : false);
-            customer.setStartingDate(updatedData.getStartingDate());
-            customer.setClosingDate(updatedData.getClosingDate());
-            customer.setStatus(updatedData.getStatus());
-            customer.setDescription(updatedData.getDescription());
-
-            return ResponseEntity.ok(customerRepository.save(customer));
-
-        } catch (Exception e) {
-            e.printStackTrace();
-            return ResponseEntity
-                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Customer update failed: " + e.getMessage());
+public ResponseEntity<?> updateCustomerInfo(@RequestBody CustomerModel updatedData) {
+    try {
+        if (updatedData.getOrganization() == null || updatedData.getOrganization().trim().isEmpty()) {
+            return ResponseEntity.badRequest().body("Organization is required");
         }
+
+        if (updatedData.getCustomerCode() == null || updatedData.getCustomerCode().trim().isEmpty()) {
+            return ResponseEntity.badRequest().body("Customer code is required");
+        }
+
+        CustomerModel customer = customerRepository
+                .findByCustomerCodeAndOrganization(
+                        updatedData.getCustomerCode(),
+                        updatedData.getOrganization()
+                )
+                .orElseThrow(() -> new RuntimeException(
+                        "Customer not found for code: "
+                        + updatedData.getCustomerCode()
+                        + " and organization: "
+                        + updatedData.getOrganization()
+                ));
+
+        // General infos
+        customer.setCustomerName(updatedData.getCustomerName());
+        customer.setCustomerAddress(updatedData.getCustomerAddress());
+        customer.setCustomerCity(updatedData.getCustomerCity());
+
+        // Other infos
+        customer.setCustomerPhone(updatedData.getCustomerPhone());
+        customer.setCustomerMail(updatedData.getCustomerMail());
+        customer.setInvoicing(updatedData.getInvoicing());
+
+        // New fields you requested
+        customer.setStartingDate(updatedData.getStartingDate());
+        customer.setClosingDate(updatedData.getClosingDate());
+        customer.setBlocked(updatedData.getBlocked() != null ? updatedData.getBlocked() : false);
+        customer.setDescription(updatedData.getDescription());
+
+        // Optional status
+        customer.setStatus(updatedData.getStatus());
+
+        return ResponseEntity.ok(customerRepository.save(customer));
+
+    } catch (Exception e) {
+        e.printStackTrace();
+        return ResponseEntity
+                .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body("Customer update failed: " + e.getMessage());
     }
+}
 
     @DeleteMapping("/organization/{organization}/code/{customerCode}")
     public ResponseEntity<?> deleteCustomer(
