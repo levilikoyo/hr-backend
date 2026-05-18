@@ -60,4 +60,15 @@ public class GLAccountController {
     public String test() {
         return "G/L Account controller is working";
     }
+    
+    @GetMapping("/organization/{organization}/framework/{frameworkCode}")
+public List<GLAccountModel> getGLAccountsByOrganizationAndFramework(
+        @PathVariable String organization,
+        @PathVariable String frameworkCode
+) {
+    return glAccountRepository.findByOrganizationAndFrameworkCode(
+            organization,
+            frameworkCode
+    );
+}
 }

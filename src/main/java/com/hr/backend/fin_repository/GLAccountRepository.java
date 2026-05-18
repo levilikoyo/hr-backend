@@ -27,4 +27,9 @@ public interface GLAccountRepository extends JpaRepository<GLAccountModel, Long>
     List<GLAccountModel> findByOrganizationAndAccountCategory(String organization, String accountCategory);
 
     List<GLAccountModel> findByOrganizationAndIncomeBalance(String organization, String incomeBalance);
+    
+    List<GLAccountModel> findByOrganizationAndFrameworkCode(
+        String organization,
+        String frameworkCode
+);
 }
