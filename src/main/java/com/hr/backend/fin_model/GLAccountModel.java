@@ -1,24 +1,16 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
 package com.hr.backend.fin_model;
 
-/**
- *
- * @author apple
- */
-
 import jakarta.persistence.*;
-import java.math.BigDecimal;
-
 import java.math.BigDecimal;
 
 @Entity
 @Table(
     name = "gl_accounts",
     uniqueConstraints = {
-        @UniqueConstraint(columnNames = {"organization", "gl_code"})
+        @UniqueConstraint(
+            name = "uk_org_framework_gl_code",
+            columnNames = {"organization", "framework_code", "gl_code"}
+        )
     }
 )
 public class GLAccountModel {
@@ -28,6 +20,9 @@ public class GLAccountModel {
     private Long id;
 
     private String organization;
+
+    @Column(name = "framework_code", nullable = false)
+    private String frameworkCode;
 
     @Column(name = "gl_group_code")
     private String glGroupCode;
@@ -83,6 +78,10 @@ public class GLAccountModel {
 
     public String getOrganization() {
         return organization;
+    }
+
+    public String getFrameworkCode() {
+        return frameworkCode;
     }
 
     public String getGlGroupCode() {
@@ -163,6 +162,10 @@ public class GLAccountModel {
 
     public void setOrganization(String organization) {
         this.organization = organization;
+    }
+
+    public void setFrameworkCode(String frameworkCode) {
+        this.frameworkCode = frameworkCode;
     }
 
     public void setGlGroupCode(String glGroupCode) {
