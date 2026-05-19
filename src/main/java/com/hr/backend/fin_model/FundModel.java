@@ -26,40 +26,78 @@ public class FundModel {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name="fund_code", nullable = false, unique = true)
+    @Column(name = "fund_code")
     private String fundCode;
 
-    @Column(name="fund_name", nullable = false)
+    @Column(name = "fund_name")
     private String fundName;
 
+    @Column(name = "fund_type")
     private String fundType;
+
+    @Column(name = "donor")
     private String donor;
+
+    @Column(name = "currency")
     private String currency;
+
+    @Column(name = "budget_year")
     private Integer budgetYear;
+
+    @Column(name = "grant_agreement_no")
     private String grantAgreementNo;
+
+    @Column(name = "start_date")
     private String startDate;
+
+    @Column(name = "closing_date")
     private String closingDate;
+
+    @Column(name = "restricted")
     private Boolean restricted;
+
+    @Column(name = "blocked")
     private Boolean blocked;
+
+    @Column(name = "status")
     private String status;
+
+    @Column(name = "description", columnDefinition = "TEXT")
     private String description;
+
+    @Column(name = "logo_path", columnDefinition = "TEXT")
     private String logoPath;
+
+    @Column(name = "header_path", columnDefinition = "TEXT")
     private String headerPath;
+
+    @Column(name = "footer_path", columnDefinition = "TEXT")
     private String footerPath;
-    private BigDecimal budget;
-    private BigDecimal commitments;
-    private BigDecimal encumbrances;
-    private BigDecimal actuals;
-    private BigDecimal actualYtd;
-    private BigDecimal amountToDemand;
+
+    @Column(name = "organization")
     private String organization;
+
+    @Column(name = "created_by")
     private String createdBy;
+    
+    @Column(name = "curency_code")
+private String curencyCode;
+
+@Column(name = "curency_name")
+private String curencyName;
+
+@Column(name = "curency_symbole")
+private String curencySymbole;
+
+    // getters and setters
 
     public Long getId() {
         return id;
     }
 
-
+    public void setId(Long id) {
+        this.id = id;
+    }
 
     public String getFundCode() {
         return fundCode;
@@ -189,54 +227,6 @@ public class FundModel {
         this.footerPath = footerPath;
     }
 
-    public BigDecimal getBudget() {
-        return budget;
-    }
-
-    public void setBudget(BigDecimal budget) {
-        this.budget = budget;
-    }
-
-    public BigDecimal getCommitments() {
-        return commitments;
-    }
-
-    public void setCommitments(BigDecimal commitments) {
-        this.commitments = commitments;
-    }
-
-    public BigDecimal getEncumbrances() {
-        return encumbrances;
-    }
-
-    public void setEncumbrances(BigDecimal encumbrances) {
-        this.encumbrances = encumbrances;
-    }
-
-    public BigDecimal getActuals() {
-        return actuals;
-    }
-
-    public void setActuals(BigDecimal actuals) {
-        this.actuals = actuals;
-    }
-
-    public BigDecimal getActualYtd() {
-        return actualYtd;
-    }
-
-    public void setActualYtd(BigDecimal actualYtd) {
-        this.actualYtd = actualYtd;
-    }
-
-    public BigDecimal getAmountToDemand() {
-        return amountToDemand;
-    }
-
-    public void setAmountToDemand(BigDecimal amountToDemand) {
-        this.amountToDemand = amountToDemand;
-    }
-
     public String getOrganization() {
         return organization;
     }
@@ -252,4 +242,28 @@ public class FundModel {
     public void setCreatedBy(String createdBy) {
         this.createdBy = createdBy;
     }
+    
+    public String getCurencyCode() {
+    return curencyCode;
+}
+
+public void setCurencyCode(String curencyCode) {
+    this.curencyCode = curencyCode;
+}
+
+public String getCurencyName() {
+    return curencyName;
+}
+
+public void setCurencyName(String curencyName) {
+    this.curencyName = curencyName;
+}
+
+public String getCurencySymbole() {
+    return curencySymbole;
+}
+
+public void setCurencySymbole(String curencySymbole) {
+    this.curencySymbole = curencySymbole;
+}
 }

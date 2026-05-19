@@ -17,28 +17,37 @@ public class FundController {
     @Autowired
     private FundRepository fundRepository;
 
-   @PostMapping
+ 
+@PostMapping
 public ResponseEntity<?> saveFund(@RequestBody FundModel fund) {
     try {
-        System.out.println("===== FUND RECEIVED =====");
-        System.out.println("Fund Code: " + fund.getFundCode());
-        System.out.println("Fund Name: " + fund.getFundName());
-        System.out.println("Fund Type: " + fund.getFundType());
-        System.out.println("Donor: " + fund.getDonor());
-        System.out.println("Currency: " + fund.getCurrency());
-        System.out.println("Budget Year: " + fund.getBudgetYear());
-        System.out.println("Organization: " + fund.getOrganization());
-        System.out.println("Created By: " + fund.getCreatedBy());
+
+        if (fund.getCurrency() == null || fund.getCurrency().trim().isEmpty()) {
+            fund.setCurrency("USD");
+        }
+
+        fund.setCurencyCode(fund.getCurrency());
+
+        if ("USD".equalsIgnoreCase(fund.getCurrency())) {
+            fund.setCurencyName("US Dollar");
+            fund.setCurencySymbole("$");
+        } else if ("EUR".equalsIgnoreCase(fund.getCurrency())) {
+            fund.setCurencyName("Euro");
+            fund.setCurencySymbole("€");
+        } else if ("FBU".equalsIgnoreCase(fund.getCurrency())) {
+            fund.setCurencyName("Burundi Franc");
+            fund.setCurencySymbole("FBu");
+        } else {
+            fund.setCurencyName(fund.getCurrency());
+            fund.setCurencySymbole(fund.getCurrency());
+        }
 
         FundModel saved = fundRepository.save(fund);
-
         return ResponseEntity.ok(saved);
 
     } catch (Exception e) {
         e.printStackTrace();
-
-        return ResponseEntity
-                .status(HttpStatus.INTERNAL_SERVER_ERROR)
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body("Backend error: " + e.getClass().getName() + " - " + e.getMessage());
     }
 }
