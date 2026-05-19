@@ -6,6 +6,8 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.List;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 
 @RestController
 @RequestMapping("/api/funds")
@@ -15,10 +17,31 @@ public class FundController {
     @Autowired
     private FundRepository fundRepository;
 
-    @PostMapping
-    public FundModel saveFund(@RequestBody FundModel fund) {
-        return fundRepository.save(fund);
+   @PostMapping
+public ResponseEntity<?> saveFund(@RequestBody FundModel fund) {
+    try {
+        System.out.println("===== FUND RECEIVED =====");
+        System.out.println("Fund Code: " + fund.getFundCode());
+        System.out.println("Fund Name: " + fund.getFundName());
+        System.out.println("Fund Type: " + fund.getFundType());
+        System.out.println("Donor: " + fund.getDonor());
+        System.out.println("Currency: " + fund.getCurrency());
+        System.out.println("Budget Year: " + fund.getBudgetYear());
+        System.out.println("Organization: " + fund.getOrganization());
+        System.out.println("Created By: " + fund.getCreatedBy());
+
+        FundModel saved = fundRepository.save(fund);
+
+        return ResponseEntity.ok(saved);
+
+    } catch (Exception e) {
+        e.printStackTrace();
+
+        return ResponseEntity
+                .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body("Backend error: " + e.getClass().getName() + " - " + e.getMessage());
     }
+}
 
     @GetMapping
     public List<FundModel> getAllFunds() {
