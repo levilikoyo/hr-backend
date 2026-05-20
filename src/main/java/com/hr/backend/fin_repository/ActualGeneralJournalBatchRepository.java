@@ -1,13 +1,29 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
 package com.hr.backend.fin_repository;
 
-/**
- *
- * @author apple
- */
-public class ActualGeneralJournalBatchRepository {
-    
+import com.hr.backend.fin_model.ActualGeneralJournalBatchModel;
+import java.util.List;
+import java.util.Optional;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+public interface ActualGeneralJournalBatchRepository
+        extends JpaRepository<ActualGeneralJournalBatchModel, Long> {
+
+    List<ActualGeneralJournalBatchModel> findByOrganization(String organization);
+
+    List<ActualGeneralJournalBatchModel> findByOrganizationAndFrameworkCode(
+            String organization,
+            String frameworkCode
+    );
+
+    Optional<ActualGeneralJournalBatchModel> findByOrganizationAndFrameworkCodeAndBatchName(
+            String organization,
+            String frameworkCode,
+            String batchName
+    );
+
+    boolean existsByOrganizationAndFrameworkCodeAndBatchName(
+            String organization,
+            String frameworkCode,
+            String batchName
+    );
 }
