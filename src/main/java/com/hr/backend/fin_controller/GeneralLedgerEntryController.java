@@ -187,4 +187,46 @@ public class GeneralLedgerEntryController {
     private String todayDate() {
         return new SimpleDateFormat("yyyy-MM-dd").format(new Date());
     }
+    
+    @GetMapping("/next-document-no/organization/{organization}/framework/{frameworkCode}/journal/{journalBatchName}/series/{noSeries}")
+public String getNextDocumentNo(
+        @PathVariable String organization,
+        @PathVariable String frameworkCode,
+        @PathVariable String journalBatchName,
+        @PathVariable String noSeries) {
+
+    List<GeneralLedgerEntryModel> entries =
+            ledgerRepository.findByOrganizationAndFrameworkCodeAndJournalBatchNameOrderByIdDesc(
+                    organization,
+                    frameworkCode,
+                    journalBatchName
+            );
+
+    if (entries == null || entries.isEmpty()) {
+        return noSeries + "-000001";
+    }
+
+    for (GeneralLedgerEntryModel entry : entries) {
+        String lastDocumentNo = entry.getDocumentNo();
+
+        if (lastDocumentNo != null && lastDocumentNo.startsWith(noSeries + "-")) {
+            return generateNextDocumentNo(noSeries, lastDocumentNo);
+        }
+    }
+
+    return noSeries + "-000001";
+}
+private String generateNextDocumentNo(String noSeries, String lastDocumentNo) {
+    try {
+        String numberPart = lastDocumentNo.substring((noSeries + "-").length());
+
+        int lastNumber = Integer.parseInt(numberPart);
+        int nextNumber = lastNumber + 1;
+
+        return noSeries + "-" + String.format("%06d", nextNumber);
+
+    } catch (Exception e) {
+        return noSeries + "-000001";
+    }
+}
 }

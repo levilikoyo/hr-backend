@@ -37,4 +37,10 @@ public interface GeneralLedgerEntryRepository
             String sourceDocumentNo,
             String sourceLineNo
     );
+    List<GeneralLedgerEntryModel> findByOrganizationAndFrameworkCodeAndJournalBatchNameOrderByIdDesc(
+        String organization,
+        String frameworkCode,
+        String journalBatchName
+);
+    
 }

@@ -26,4 +26,6 @@ public interface ActualGeneralJournalBatchRepository
             String frameworkCode,
             String batchName
     );
+    
+  
 }

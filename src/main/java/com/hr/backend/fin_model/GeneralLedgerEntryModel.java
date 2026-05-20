@@ -187,6 +187,9 @@ public class GeneralLedgerEntryModel {
 
     @Column(name = "created_date")
     private String createdDate;
+    
+    @Column(name = "journal_batch_name")
+private String journalBatchName;
 
     public GeneralLedgerEntryModel() {
     }
@@ -664,4 +667,11 @@ public class GeneralLedgerEntryModel {
     public void setCreatedDate(String createdDate) {
         this.createdDate = createdDate;
     }
+    public String getJournalBatchName() {
+    return journalBatchName;
+}
+
+public void setJournalBatchName(String journalBatchName) {
+    this.journalBatchName = journalBatchName;
+}
 }
