@@ -164,7 +164,7 @@ public String testRateInfoEndpoint() {
 @GetMapping("/lcy/organization/{organization}")
 public ResponseEntity<?> getLCYCurrencyCode(@PathVariable String organization) {
     try {
-        return currencyRepository.findByOrganizationAndLcy(organization, 1)
+        return currencyRepository.findByOrganizationAndLcy(organization, true)
                 .map(currency -> ResponseEntity.ok(currency.getCurencyCode()))
                 .orElse(ResponseEntity.notFound().build());
 
