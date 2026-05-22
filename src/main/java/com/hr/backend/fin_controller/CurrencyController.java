@@ -161,4 +161,17 @@ public String testLCYBlockedEndpoint() {
 public String testRateInfoEndpoint() {
     return "Currency Rate endpoint is available";
 }
+@GetMapping("/lcy/organization/{organization}")
+public ResponseEntity<?> getLCYCurrencyCode(@PathVariable String organization) {
+    try {
+        return currencyRepository.findByOrganizationAndLcy(organization, 1)
+                .map(currency -> ResponseEntity.ok(currency.getCurencyCode()))
+                .orElse(ResponseEntity.notFound().build());
+
+    } catch (Exception e) {
+        e.printStackTrace();
+        return ResponseEntity.internalServerError()
+                .body("Get LCY currency failed: " + e.getMessage());
+    }
+}
 }

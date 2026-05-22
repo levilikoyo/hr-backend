@@ -14,5 +14,8 @@ public interface CurrencyRepository extends JpaRepository<CurrencyModel, Long> {
     boolean existsByCurencyCode(String curencyCode);
 
     Optional<CurrencyModel> findByCurencyCodeAndOrganization(String curencyCode, String organization);
+    
+
+    Optional<CurrencyModel> findByOrganizationAndLcy(String organization, Integer lcy);
   
 }
