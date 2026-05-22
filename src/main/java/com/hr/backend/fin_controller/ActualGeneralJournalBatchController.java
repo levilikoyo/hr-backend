@@ -152,6 +152,8 @@ public class ActualGeneralJournalBatchController {
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
+    
+
 
     @GetMapping("/test")
     public String test() {
