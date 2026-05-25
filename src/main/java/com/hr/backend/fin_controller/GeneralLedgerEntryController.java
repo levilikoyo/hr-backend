@@ -188,45 +188,73 @@ public class GeneralLedgerEntryController {
         return new SimpleDateFormat("yyyy-MM-dd").format(new Date());
     }
     
-    @GetMapping("/next-document-no/organization/{organization}/framework/{frameworkCode}/journal/{journalBatchName}/series/{noSeries}")
-public String getNextDocumentNo(
-        @PathVariable String organization,
-        @PathVariable String frameworkCode,
-        @PathVariable String journalBatchName,
-        @PathVariable String noSeries) {
+  
 
-    List<GeneralLedgerEntryModel> entries =
-            ledgerRepository.findByOrganizationAndFrameworkCodeAndJournalBatchNameOrderByIdDesc(
+
+@GetMapping("/next-document-no")
+public String getNextDocumentNo(
+        @RequestParam String organization,
+        @RequestParam String frameworkCode,
+        @RequestParam String noSeries) {
+
+    organization = organization == null ? "" : organization.trim();
+    frameworkCode = frameworkCode == null ? "" : frameworkCode.trim();
+    noSeries = noSeries == null ? "" : noSeries.trim();
+
+    if (noSeries.isEmpty()) {
+        return "";
+    }
+
+    String pattern = noSeries + "-%";
+
+    System.out.println("NEXT DOC PARAMS");
+    System.out.println("organization = " + organization);
+    System.out.println("frameworkCode = " + frameworkCode);
+    System.out.println("noSeries = " + noSeries);
+    System.out.println("pattern = " + pattern);
+
+    String lastDocumentNo =
+            ledgerRepository.findLastDocumentNo(
                     organization,
                     frameworkCode,
-                    journalBatchName
+                    pattern
             );
 
-    if (entries == null || entries.isEmpty()) {
+    System.out.println("lastDocumentNo found = " + lastDocumentNo);
+
+    if (lastDocumentNo == null || lastDocumentNo.trim().isEmpty()) {
         return noSeries + "-000001";
     }
 
-    for (GeneralLedgerEntryModel entry : entries) {
-        String lastDocumentNo = entry.getDocumentNo();
-
-        if (lastDocumentNo != null && lastDocumentNo.startsWith(noSeries + "-")) {
-            return generateNextDocumentNo(noSeries, lastDocumentNo);
-        }
-    }
-
-    return noSeries + "-000001";
+    return incrementDocumentNo(lastDocumentNo);
 }
-private String generateNextDocumentNo(String noSeries, String lastDocumentNo) {
+private String incrementDocumentNo(String lastDocumentNo) {
+
     try {
-        String numberPart = lastDocumentNo.substring((noSeries + "-").length());
+        if (lastDocumentNo == null || lastDocumentNo.trim().isEmpty()) {
+            return "";
+        }
 
-        int lastNumber = Integer.parseInt(numberPart);
-        int nextNumber = lastNumber + 1;
+        lastDocumentNo = lastDocumentNo.trim();
 
-        return noSeries + "-" + String.format("%06d", nextNumber);
+        int dashIndex = lastDocumentNo.lastIndexOf("-");
+
+        if (dashIndex < 0) {
+            return lastDocumentNo + "-000001";
+        }
+
+        String prefix = lastDocumentNo.substring(0, dashIndex).trim();
+        String numberPart = lastDocumentNo.substring(dashIndex + 1).trim();
+
+        int nextNumber = Integer.parseInt(numberPart) + 1;
+
+        return prefix + "-" + String.format("%06d", nextNumber);
 
     } catch (Exception e) {
-        return noSeries + "-000001";
+        e.printStackTrace();
+        return lastDocumentNo + "-000001";
     }
 }
+
 }
+
