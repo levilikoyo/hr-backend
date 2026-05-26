@@ -61,6 +61,11 @@ Integer findMaxDocumentNumberBySeries(
         @Param("documentNoPattern") String documentNoPattern
 );
 
-
+List<GeneralLedgerEntryModel> findByOrganizationAndFrameworkCodeAndJournalBatchNameAndPosted(
+        String organization,
+        String frameworkCode,
+        String journalBatchName,
+        Boolean posted
+);
     
 }

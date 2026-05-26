@@ -257,6 +257,18 @@ private String incrementDocumentNo(String lastDocumentNo) {
         return lastDocumentNo + "-000001";
     }
 }
+@GetMapping("/pending")
+public List<GeneralLedgerEntryModel> getPendingEntries(
+        @RequestParam String organization,
+        @RequestParam String frameworkCode,
+        @RequestParam String journalBatchName) {
 
+    return ledgerRepository.findByOrganizationAndFrameworkCodeAndJournalBatchNameAndPosted(
+            organization,
+            frameworkCode,
+            journalBatchName,
+            false
+    );
+}
 }
 

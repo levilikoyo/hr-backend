@@ -190,6 +190,18 @@ public class GeneralLedgerEntryModel {
     
     @Column(name = "journal_batch_name")
 private String journalBatchName;
+    
+   
+    @Column(name = "vat_base_Amount")
+    private BigDecimal vatBaseAmount = BigDecimal.ZERO;
+    
+    
+    @Column(name = "bal_accountNo")
+private String balaccountNo;
+    @Column(name = "budget_planNo")
+private String budgetplanNo;
+    
+ 
 
     public GeneralLedgerEntryModel() {
     }
@@ -674,4 +686,32 @@ private String journalBatchName;
 public void setJournalBatchName(String journalBatchName) {
     this.journalBatchName = journalBatchName;
 }
+
+
+
+
+
+
+
+        public BigDecimal getVatBaseAmount() {
+    return vatBaseAmount;
+}
+
+public void setVatBaseAmount(BigDecimal vatBaseAmount) {
+    this.vatBaseAmount = vatBaseAmount == null ? BigDecimal.ZERO : vatBaseAmount;
+}
+     
+      public String getBalAccountNo() {
+        return balaccountNo;
+    }
+       public String getBudgetPlanNo() {
+        return budgetplanNo;
+    }
+   
+    public void setBalAccountNo(String balaccountNo) {
+        this.balaccountNo = balaccountNo;
+    }
+    public void setBudgetPlanNo(String budgetplanNo) {
+        this.budgetplanNo = budgetplanNo;
+    }
 }
