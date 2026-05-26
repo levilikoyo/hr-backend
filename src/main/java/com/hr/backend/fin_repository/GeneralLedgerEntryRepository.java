@@ -45,17 +45,17 @@ public interface GeneralLedgerEntryRepository
         String journalBatchName
 );
     
-    @Query(value = """
-        SELECT document_no
+@Query(value = """
+        SELECT COALESCE(
+            MAX(CAST(SUBSTRING_INDEX(document_no, '-', -1) AS UNSIGNED)),
+            0
+        )
         FROM general_ledger_entries
         WHERE organization = :organization
           AND framework_code = :frameworkCode
-          AND journal_batch_name = :journalBatchName
           AND document_no LIKE :documentNoPattern
-        ORDER BY id DESC
-        LIMIT 1
         """, nativeQuery = true)
-String findLastDocumentNo(
+Integer findMaxDocumentNumberBySeries(
         @Param("organization") String organization,
         @Param("frameworkCode") String frameworkCode,
         @Param("documentNoPattern") String documentNoPattern

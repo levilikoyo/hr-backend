@@ -207,26 +207,28 @@ public String getNextDocumentNo(
 
     String pattern = noSeries + "-%";
 
-    System.out.println("NEXT DOC PARAMS");
-    System.out.println("organization = " + organization);
-    System.out.println("frameworkCode = " + frameworkCode);
-    System.out.println("noSeries = " + noSeries);
-    System.out.println("pattern = " + pattern);
+    System.out.println("===== NEXT DOCUMENT NO DEBUG =====");
+    System.out.println("organization = [" + organization + "]");
+    System.out.println("frameworkCode = [" + frameworkCode + "]");
+    System.out.println("noSeries = [" + noSeries + "]");
+    System.out.println("pattern = [" + pattern + "]");
 
-    String lastDocumentNo =
-            ledgerRepository.findLastDocumentNo(
+    Integer maxNumber =
+            ledgerRepository.findMaxDocumentNumberBySeries(
                     organization,
                     frameworkCode,
                     pattern
             );
 
-    System.out.println("lastDocumentNo found = " + lastDocumentNo);
+    System.out.println("maxNumber found = [" + maxNumber + "]");
 
-    if (lastDocumentNo == null || lastDocumentNo.trim().isEmpty()) {
-        return noSeries + "-000001";
-    }
+    int nextNumber = maxNumber == null ? 1 : maxNumber + 1;
 
-    return incrementDocumentNo(lastDocumentNo);
+    String nextDocumentNo = noSeries + "-" + String.format("%06d", nextNumber);
+
+    System.out.println("nextDocumentNo = [" + nextDocumentNo + "]");
+
+    return nextDocumentNo;
 }
 private String incrementDocumentNo(String lastDocumentNo) {
 
