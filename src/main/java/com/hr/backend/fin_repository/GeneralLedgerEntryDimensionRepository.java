@@ -10,10 +10,14 @@ package com.hr.backend.fin_repository;
  */
 
 import com.hr.backend.fin_model.GeneralLedgerEntryDimensionModel;
+import jakarta.transaction.Transactional;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
 import java.util.Optional;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 public interface GeneralLedgerEntryDimensionRepository
         extends JpaRepository<GeneralLedgerEntryDimensionModel, Long> {
@@ -51,5 +55,15 @@ public interface GeneralLedgerEntryDimensionRepository
 
     
 
-   
+   @Transactional
+@Modifying
+@Query(value = """
+        DELETE FROM general_ledger_entry_dimensions
+        WHERE organization = :organization
+          AND gl_entry_id = :glEntryId
+        """, nativeQuery = true)
+int deleteDimensionsByGlEntryId(
+        @Param("organization") String organization,
+        @Param("glEntryId") Long glEntryId
+);
 }

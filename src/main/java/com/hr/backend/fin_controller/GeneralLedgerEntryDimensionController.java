@@ -91,11 +91,20 @@ public String deleteByGlEntryId(
         @PathVariable String organization,
         @PathVariable Long glEntryId
 ) {
-    repository.deleteByOrganizationAndGlEntryId(
-            organization.trim(),
-            glEntryId
-    );
+    try {
+        int deletedRows =
+                repository.deleteDimensionsByGlEntryId(
+                        organization.trim(),
+                        glEntryId
+                );
 
-    return "SUCCESS";
+        System.out.println("Deleted dimension rows: " + deletedRows);
+
+        return "SUCCESS";
+
+    } catch (Exception e) {
+        e.printStackTrace();
+        return "ERROR: " + e.getMessage();
+    }
 }
 }
