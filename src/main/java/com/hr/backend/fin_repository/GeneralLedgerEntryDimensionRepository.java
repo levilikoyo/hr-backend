@@ -47,4 +47,9 @@ public interface GeneralLedgerEntryDimensionRepository
             String organization,
             Long glEntryId
     );
+    
+
+    
+
+   
 }
