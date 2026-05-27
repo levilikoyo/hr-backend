@@ -79,17 +79,23 @@ public class GeneralLedgerEntryDimensionController {
         return repository.findByOrganizationAndDocumentNo(organization, documentNo);
     }
 
-    @DeleteMapping("/organization/{organization}/gl-entry/{glEntryId}")
-    public String deleteByGlEntryId(
-            @PathVariable String organization,
-            @PathVariable Long glEntryId
-    ) {
-        repository.deleteByOrganizationAndGlEntryId(organization, glEntryId);
-        return "DELETED";
-    }
+   
 
     @GetMapping("/test")
     public String test() {
         return "General Ledger Entry Dimensions API is working.";
     }
+    
+@DeleteMapping("/organization/{organization}/gl-entry/{glEntryId}")
+public String deleteByGlEntryId(
+        @PathVariable String organization,
+        @PathVariable Long glEntryId
+) {
+    repository.deleteByOrganizationAndGlEntryId(
+            organization.trim(),
+            glEntryId
+    );
+
+    return "SUCCESS";
+}
 }
