@@ -1,13 +1,4 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
 package com.hr.backend.fin_model;
-
-/**
- *
- * @author apple
- */
 
 import jakarta.persistence.*;
 import java.math.BigDecimal;
@@ -44,6 +35,9 @@ public class GeneralLedgerEntryModel {
     private String entryNo;
 
     private String place;
+
+    @Column(name = "journal_batch_name")
+    private String journalBatchName;
 
     @Column(name = "account_category")
     private String accountCategory;
@@ -88,6 +82,9 @@ public class GeneralLedgerEntryModel {
     @Column(name = "amount_lcy")
     private BigDecimal amountLcy = BigDecimal.ZERO;
 
+    @Column(name = "vat_base_amount")
+    private BigDecimal vatBaseAmount = BigDecimal.ZERO;
+
     @Column(name = "currency_code")
     private String currencyCode;
 
@@ -99,6 +96,12 @@ public class GeneralLedgerEntryModel {
 
     @Column(name = "exchange_rate_date")
     private String exchangeRateDate;
+
+    @Column(name = "bal_account_no")
+    private String balAccountNo;
+
+    @Column(name = "budget_plan_no")
+    private String budgetPlanNo;
 
     @Column(name = "fund_code")
     private String fundCode;
@@ -187,28 +190,15 @@ public class GeneralLedgerEntryModel {
 
     @Column(name = "created_date")
     private String createdDate;
-    
-    @Column(name = "journal_batch_name")
-private String journalBatchName;
-    
-   
-    @Column(name = "vat_base_Amount")
-    private BigDecimal vatBaseAmount = BigDecimal.ZERO;
-    
-    
-    @Column(name = "bal_accountNo")
-private String balaccountNo;
-    @Column(name = "budget_planNo")
-private String budgetplanNo;
-    
-       @Column(name = "posted_by")
+
+    @Column(name = "posted_by")
     private String postedBy;
- 
+
+    @Column(name = "posted_date")
+    private String postedDate;
 
     public GeneralLedgerEntryModel() {
     }
-
-    // getters and setters
 
     public Long getId() {
         return id;
@@ -288,6 +278,14 @@ private String budgetplanNo;
 
     public void setPlace(String place) {
         this.place = place;
+    }
+
+    public String getJournalBatchName() {
+        return journalBatchName;
+    }
+
+    public void setJournalBatchName(String journalBatchName) {
+        this.journalBatchName = journalBatchName;
     }
 
     public String getAccountCategory() {
@@ -383,7 +381,7 @@ private String budgetplanNo;
     }
 
     public void setDebitAmount(BigDecimal debitAmount) {
-        this.debitAmount = debitAmount;
+        this.debitAmount = debitAmount == null ? BigDecimal.ZERO : debitAmount;
     }
 
     public BigDecimal getCreditAmount() {
@@ -391,7 +389,7 @@ private String budgetplanNo;
     }
 
     public void setCreditAmount(BigDecimal creditAmount) {
-        this.creditAmount = creditAmount;
+        this.creditAmount = creditAmount == null ? BigDecimal.ZERO : creditAmount;
     }
 
     public BigDecimal getAmount() {
@@ -399,7 +397,7 @@ private String budgetplanNo;
     }
 
     public void setAmount(BigDecimal amount) {
-        this.amount = amount;
+        this.amount = amount == null ? BigDecimal.ZERO : amount;
     }
 
     public BigDecimal getAmountLcy() {
@@ -407,7 +405,15 @@ private String budgetplanNo;
     }
 
     public void setAmountLcy(BigDecimal amountLcy) {
-        this.amountLcy = amountLcy;
+        this.amountLcy = amountLcy == null ? BigDecimal.ZERO : amountLcy;
+    }
+
+    public BigDecimal getVatBaseAmount() {
+        return vatBaseAmount;
+    }
+
+    public void setVatBaseAmount(BigDecimal vatBaseAmount) {
+        this.vatBaseAmount = vatBaseAmount == null ? BigDecimal.ZERO : vatBaseAmount;
     }
 
     public String getCurrencyCode() {
@@ -431,7 +437,7 @@ private String budgetplanNo;
     }
 
     public void setExchangeRate(BigDecimal exchangeRate) {
-        this.exchangeRate = exchangeRate;
+        this.exchangeRate = exchangeRate == null ? BigDecimal.ZERO : exchangeRate;
     }
 
     public String getExchangeRateDate() {
@@ -440,6 +446,22 @@ private String budgetplanNo;
 
     public void setExchangeRateDate(String exchangeRateDate) {
         this.exchangeRateDate = exchangeRateDate;
+    }
+
+    public String getBalAccountNo() {
+        return balAccountNo;
+    }
+
+    public void setBalAccountNo(String balAccountNo) {
+        this.balAccountNo = balAccountNo;
+    }
+
+    public String getBudgetPlanNo() {
+        return budgetPlanNo;
+    }
+
+    public void setBudgetPlanNo(String budgetPlanNo) {
+        this.budgetPlanNo = budgetPlanNo;
     }
 
     public String getFundCode() {
@@ -542,10 +564,6 @@ private String budgetplanNo;
         return employeeName;
     }
 
-    public void setEmployeeName(String employeeName) {
-        this.employeeName = employeeName;
-    }
-
     public String getFixedAssetNo() {
         return fixedAssetNo;
     }
@@ -560,6 +578,10 @@ private String budgetplanNo;
 
     public void setFixedAssetName(String fixedAssetName) {
         this.fixedAssetName = fixedAssetName;
+    }
+
+    public void setEmployeeName(String employeeName) {
+        this.employeeName = employeeName;
     }
 
     public String getProjectCode() {
@@ -655,7 +677,7 @@ private String budgetplanNo;
     }
 
     public void setReversed(Boolean reversed) {
-        this.reversed = reversed;
+        this.reversed = reversed == null ? false : reversed;
     }
 
     public Boolean getPosted() {
@@ -663,7 +685,7 @@ private String budgetplanNo;
     }
 
     public void setPosted(Boolean posted) {
-        this.posted = posted;
+        this.posted = posted == null ? false : posted;
     }
 
     public String getCreatedBy() {
@@ -681,44 +703,20 @@ private String budgetplanNo;
     public void setCreatedDate(String createdDate) {
         this.createdDate = createdDate;
     }
-    public String getJournalBatchName() {
-    return journalBatchName;
-}
 
-public void setJournalBatchName(String journalBatchName) {
-    this.journalBatchName = journalBatchName;
-}
-
-public String getPostedBy() {
+    public String getPostedBy() {
         return postedBy;
     }
-
 
     public void setPostedBy(String postedBy) {
         this.postedBy = postedBy;
     }
 
-
-
-        public BigDecimal getVatBaseAmount() {
-    return vatBaseAmount;
-}
-
-public void setVatBaseAmount(BigDecimal vatBaseAmount) {
-    this.vatBaseAmount = vatBaseAmount == null ? BigDecimal.ZERO : vatBaseAmount;
-}
-     
-      public String getBalAccountNo() {
-        return balaccountNo;
+    public String getPostedDate() {
+        return postedDate;
     }
-       public String getBudgetPlanNo() {
-        return budgetplanNo;
-    }
-   
-    public void setBalAccountNo(String balaccountNo) {
-        this.balaccountNo = balaccountNo;
-    }
-    public void setBudgetPlanNo(String budgetplanNo) {
-        this.budgetplanNo = budgetplanNo;
+
+    public void setPostedDate(String postedDate) {
+        this.postedDate = postedDate;
     }
 }
