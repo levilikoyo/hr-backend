@@ -201,6 +201,8 @@ private String balaccountNo;
     @Column(name = "budget_planNo")
 private String budgetplanNo;
     
+       @Column(name = "posted_by")
+    private String postedBy;
  
 
     public GeneralLedgerEntryModel() {
@@ -687,9 +689,14 @@ public void setJournalBatchName(String journalBatchName) {
     this.journalBatchName = journalBatchName;
 }
 
+public String getPostedBy() {
+        return postedBy;
+    }
 
 
-
+    public void setPostedBy(String postedBy) {
+        this.postedBy = postedBy;
+    }
 
 
 
