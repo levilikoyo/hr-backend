@@ -270,5 +270,18 @@ public List<GeneralLedgerEntryModel> getPendingEntries(
             false
     );
 }
+
+@DeleteMapping("/{id}")
+public String deleteEntryById(@PathVariable Long id) {
+
+    try {
+        ledgerRepository.deleteById(id);
+        return "SUCCESS";
+
+    } catch (Exception e) {
+        e.printStackTrace();
+        return "ERROR: " + e.getMessage();
+    }
+}
 }
 
