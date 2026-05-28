@@ -26,49 +26,69 @@ public class GeneralLedgerEntryController {
     @Autowired
     private GeneralLedgerEntryRepository ledgerRepository;
 
-    @PostMapping
-    public ResponseEntity<?> saveEntry(@RequestBody GeneralLedgerEntryModel entry) {
-        try {
-            if (isEmpty(entry.getOrganization())) {
-                return ResponseEntity.badRequest().body("Organization is required");
-            }
+@PostMapping
+public ResponseEntity<?> saveEntry(@RequestBody GeneralLedgerEntryModel entry) {
+    try {
+        System.out.println("===== SAVE GL ENTRY DEBUG =====");
+        System.out.println("ID = [" + entry.getId() + "]");
+        System.out.println("ORGANIZATION = [" + entry.getOrganization() + "]");
+        System.out.println("DOCUMENT NO = [" + entry.getDocumentNo() + "]");
+        System.out.println("ACCOUNT NO = [" + entry.getAccountNo() + "]");
+        System.out.println("BAL ACCOUNT NO = [" + entry.getBalAccountNo() + "]");
+        System.out.println("BUDGET PLAN NO = [" + entry.getBudgetPlanNo() + "]");
+        System.out.println("VAT BASE AMOUNT = [" + entry.getVatBaseAmount() + "]");
+        System.out.println("CREATED BY = [" + entry.getCreatedBy() + "]");
+        System.out.println("POSTED BY = [" + entry.getPostedBy() + "]");
+        System.out.println("POSTED = [" + entry.getPosted() + "]");
 
-            if (isEmpty(entry.getTransactionType())) {
-                entry.setTransactionType("ACTUAL");
-            }
-
-            if (isEmpty(entry.getPostingDate())) {
-                return ResponseEntity.badRequest().body("Posting date is required");
-            }
-
-            if (isEmpty(entry.getDocumentNo())) {
-                return ResponseEntity.badRequest().body("Document number is required");
-            }
-
-            if (isEmpty(entry.getAccountNo())) {
-                return ResponseEntity.badRequest().body("Account number is required");
-            }
-
-            if (entry.getPosted() == null) {
-                entry.setPosted(false);
-            }
-
-            if (entry.getReversed() == null) {
-                entry.setReversed(false);
-            }
-
-            if (isEmpty(entry.getCreatedDate())) {
-                entry.setCreatedDate(todayDate());
-            }
-
-            return ResponseEntity.ok(ledgerRepository.save(entry));
-
-        } catch (Exception e) {
-            e.printStackTrace();
-            return ResponseEntity.internalServerError()
-                    .body("Save general ledger entry failed: " + e.getMessage());
+        if (isEmpty(entry.getOrganization())) {
+            return ResponseEntity.badRequest().body("Organization is required");
         }
+
+        if (isEmpty(entry.getTransactionType())) {
+            entry.setTransactionType("ACTUAL");
+        }
+
+        if (isEmpty(entry.getPostingDate())) {
+            return ResponseEntity.badRequest().body("Posting date is required");
+        }
+
+        if (isEmpty(entry.getDocumentNo())) {
+            return ResponseEntity.badRequest().body("Document number is required");
+        }
+
+        if (isEmpty(entry.getAccountNo())) {
+            return ResponseEntity.badRequest().body("Account number is required");
+        }
+
+        if (entry.getPosted() == null) {
+            entry.setPosted(false);
+        }
+
+        if (entry.getReversed() == null) {
+            entry.setReversed(false);
+        }
+
+        if (isEmpty(entry.getCreatedDate())) {
+            entry.setCreatedDate(todayDate());
+        }
+
+        GeneralLedgerEntryModel saved = ledgerRepository.save(entry);
+
+        System.out.println("===== SAVED GL ENTRY DEBUG =====");
+        System.out.println("SAVED ID = [" + saved.getId() + "]");
+        System.out.println("SAVED BAL ACCOUNT NO = [" + saved.getBalAccountNo() + "]");
+        System.out.println("SAVED BUDGET PLAN NO = [" + saved.getBudgetPlanNo() + "]");
+        System.out.println("SAVED VAT BASE AMOUNT = [" + saved.getVatBaseAmount() + "]");
+
+        return ResponseEntity.ok(saved);
+
+    } catch (Exception e) {
+        e.printStackTrace();
+        return ResponseEntity.internalServerError()
+                .body("Save general ledger entry failed: " + e.getMessage());
     }
+}
 
     @PostMapping("/batch")
     public ResponseEntity<?> saveEntries(@RequestBody List<GeneralLedgerEntryModel> entries) {
