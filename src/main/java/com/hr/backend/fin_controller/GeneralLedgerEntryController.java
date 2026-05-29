@@ -303,5 +303,17 @@ public String deleteEntryById(@PathVariable Long id) {
         return "ERROR: " + e.getMessage();
     }
 }
+
+@GetMapping("/posted")
+public List<GeneralLedgerEntryModel> getPostedEntries(
+        @RequestParam String organization,
+        @RequestParam String frameworkCode) {
+
+    return ledgerRepository.findByOrganizationAndFrameworkCodeAndPostedOrderByPostingDateAscIdAsc(
+            organization,
+            frameworkCode,
+            true
+    );
+}
 }
 

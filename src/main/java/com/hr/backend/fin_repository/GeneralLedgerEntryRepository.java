@@ -44,6 +44,11 @@ public interface GeneralLedgerEntryRepository
         String frameworkCode,
         String journalBatchName
 );
+    List<GeneralLedgerEntryModel> findByOrganizationAndFrameworkCodeAndPostedOrderByPostingDateAscIdAsc(
+        String organization,
+        String frameworkCode,
+        Boolean posted
+);
     
 @Query(value = """
         SELECT COALESCE(
