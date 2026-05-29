@@ -196,7 +196,14 @@ public class GeneralLedgerEntryModel {
 
     @Column(name = "posted_date")
     private String postedDate;
+@Column(name = "bal_account_type")
+private String balAccountType;
 
+@Column(name = "entry_type")
+private String entryType;
+
+@Column(name = "original_entry_id")
+private Long originalEntryId;
     public GeneralLedgerEntryModel() {
     }
 
@@ -719,4 +726,27 @@ public class GeneralLedgerEntryModel {
     public void setPostedDate(String postedDate) {
         this.postedDate = postedDate;
     }
+    public String getBalAccountType() {
+    return balAccountType;
+}
+
+public void setBalAccountType(String balAccountType) {
+    this.balAccountType = balAccountType;
+}
+
+public String getEntryType() {
+    return entryType;
+}
+
+public void setEntryType(String entryType) {
+    this.entryType = entryType;
+}
+
+public Long getOriginalEntryId() {
+    return originalEntryId;
+}
+
+public void setOriginalEntryId(Long originalEntryId) {
+    this.originalEntryId = originalEntryId;
+}
 }
