@@ -26,6 +26,10 @@ public interface ActualGeneralJournalBatchRepository
             String frameworkCode,
             String batchName
     );
-    
+    List<ActualGeneralJournalBatchModel> findByOrganizationAndFrameworkCodeAndTransactionType(
+        String organization,
+        String frameworkCode,
+        String transactionType
+);
   
 }

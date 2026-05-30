@@ -167,4 +167,17 @@ public class ActualGeneralJournalBatchController {
     private String todayDate() {
         return new SimpleDateFormat("yyyy-MM-dd").format(new Date());
     }
+    
+    @GetMapping("/organization/{organization}/framework/{frameworkCode}/transaction-type/{transactionType}")
+public List<ActualGeneralJournalBatchModel> getByOrganizationFrameworkAndTransactionType(
+        @PathVariable String organization,
+        @PathVariable String frameworkCode,
+        @PathVariable String transactionType) {
+
+    return batchRepository.findByOrganizationAndFrameworkCodeAndTransactionType(
+            organization,
+            frameworkCode,
+            transactionType
+    );
+}
 }

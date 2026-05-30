@@ -60,6 +60,8 @@ public class ActualGeneralJournalBatchModel {
 
     @Column(name = "created_date")
     private String createdDate;
+    @Column(name = "transaction_type")
+private String transactionType;
 
     public ActualGeneralJournalBatchModel() {
     }
@@ -167,4 +169,11 @@ public class ActualGeneralJournalBatchModel {
     public void setCreatedDate(String createdDate) {
         this.createdDate = createdDate;
     }
+    public String getTransactionType() {
+    return transactionType;
+}
+
+public void setTransactionType(String transactionType) {
+    this.transactionType = transactionType;
+}
 }
