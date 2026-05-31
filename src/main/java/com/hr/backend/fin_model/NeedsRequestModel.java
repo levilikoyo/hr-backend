@@ -9,6 +9,7 @@ package com.hr.backend.fin_model;
  * @author apple
  */
 
+
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import java.math.BigDecimal;
@@ -43,7 +44,6 @@ public class NeedsRequestModel {
     private String requesterEmail;
 
     private String department;
-
     private String title;
 
     @Column(columnDefinition = "TEXT")
@@ -73,6 +73,27 @@ public class NeedsRequestModel {
     private String attachmentName;
 
     private String status;
+
+    @Column(name = "current_approval_level")
+    private String currentApprovalLevel;
+
+    @Column(name = "hod_approved_by")
+    private String hodApprovedBy;
+
+    @Column(name = "hod_approved_at")
+    private LocalDateTime hodApprovedAt;
+
+    @Column(name = "finance_reviewed_by")
+    private String financeReviewedBy;
+
+    @Column(name = "finance_reviewed_at")
+    private LocalDateTime financeReviewedAt;
+
+    @Column(name = "director_approved_by")
+    private String directorApprovedBy;
+
+    @Column(name = "director_approved_at")
+    private LocalDateTime directorApprovedAt;
 
     @Column(name = "approved_by")
     private String approvedBy;
@@ -252,6 +273,62 @@ public class NeedsRequestModel {
 
     public void setStatus(String status) {
         this.status = status;
+    }
+
+    public String getCurrentApprovalLevel() {
+        return currentApprovalLevel;
+    }
+
+    public void setCurrentApprovalLevel(String currentApprovalLevel) {
+        this.currentApprovalLevel = currentApprovalLevel;
+    }
+
+    public String getHodApprovedBy() {
+        return hodApprovedBy;
+    }
+
+    public void setHodApprovedBy(String hodApprovedBy) {
+        this.hodApprovedBy = hodApprovedBy;
+    }
+
+    public LocalDateTime getHodApprovedAt() {
+        return hodApprovedAt;
+    }
+
+    public void setHodApprovedAt(LocalDateTime hodApprovedAt) {
+        this.hodApprovedAt = hodApprovedAt;
+    }
+
+    public String getFinanceReviewedBy() {
+        return financeReviewedBy;
+    }
+
+    public void setFinanceReviewedBy(String financeReviewedBy) {
+        this.financeReviewedBy = financeReviewedBy;
+    }
+
+    public LocalDateTime getFinanceReviewedAt() {
+        return financeReviewedAt;
+    }
+
+    public void setFinanceReviewedAt(LocalDateTime financeReviewedAt) {
+        this.financeReviewedAt = financeReviewedAt;
+    }
+
+    public String getDirectorApprovedBy() {
+        return directorApprovedBy;
+    }
+
+    public void setDirectorApprovedBy(String directorApprovedBy) {
+        this.directorApprovedBy = directorApprovedBy;
+    }
+
+    public LocalDateTime getDirectorApprovedAt() {
+        return directorApprovedAt;
+    }
+
+    public void setDirectorApprovedAt(LocalDateTime directorApprovedAt) {
+        this.directorApprovedAt = directorApprovedAt;
     }
 
     public String getApprovedBy() {

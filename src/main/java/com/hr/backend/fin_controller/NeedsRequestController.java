@@ -9,8 +9,11 @@ package com.hr.backend.fin_controller;
  * @author apple
  */
 
+
+import com.hr.backend.fin_model.NeedsRequestApprovalHistoryModel;
 import com.hr.backend.fin_model.NeedsRequestItemModel;
 import com.hr.backend.fin_model.NeedsRequestModel;
+import com.hr.backend.fin_repository.NeedsRequestApprovalHistoryRepository;
 import com.hr.backend.fin_repository.NeedsRequestItemRepository;
 import com.hr.backend.fin_repository.NeedsRequestRepository;
 import java.math.BigDecimal;
@@ -18,7 +21,9 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -31,6 +36,9 @@ public class NeedsRequestController {
 
     @Autowired
     private NeedsRequestItemRepository needsRequestItemRepository;
+
+    @Autowired
+    private NeedsRequestApprovalHistoryRepository approvalHistoryRepository;
 
     @GetMapping("/test")
     public String test() {
@@ -48,9 +56,8 @@ public class NeedsRequestController {
             request.setRequestDate(LocalDate.now());
         }
 
-        if (request.getStatus() == null || request.getStatus().trim().isEmpty()) {
-            request.setStatus("PENDING_APPROVAL");
-        }
+        request.setStatus("PENDING_HOD_APPROVAL");
+        request.setCurrentApprovalLevel("HOD");
 
         BigDecimal total = BigDecimal.ZERO;
 
@@ -60,15 +67,15 @@ public class NeedsRequestController {
                 item.setNeedsRequest(request);
                 item.setOrganization(request.getOrganization());
 
-                if (item.getBudgetPlan() == null || item.getBudgetPlan().trim().isEmpty()) {
+                if (isBlank(item.getBudgetPlan())) {
                     item.setBudgetPlan(request.getBudgetPlan());
                 }
 
-                if (item.getGlAccountNo() == null || item.getGlAccountNo().trim().isEmpty()) {
+                if (isBlank(item.getGlAccountNo())) {
                     item.setGlAccountNo(request.getGlAccountNo());
                 }
 
-                if (item.getFundCode() == null || item.getFundCode().trim().isEmpty()) {
+                if (isBlank(item.getFundCode())) {
                     item.setFundCode(request.getFundCode());
                 }
 
@@ -86,71 +93,200 @@ public class NeedsRequestController {
 
         request.setEstimatedAmount(total);
 
-        return needsRequestRepository.save(request);
+        NeedsRequestModel saved = needsRequestRepository.save(request);
+
+        saveHistory(
+                saved,
+                "REQUESTER",
+                "SUBMITTED",
+                saved.getCreatedBy(),
+                "REQUESTER",
+                "Expression de besoin submitted"
+        );
+
+        return saved;
     }
 
     @GetMapping("/organization/{organization}")
-    public List<NeedsRequestModel> getByOrganization(
-            @PathVariable String organization) {
-
+    public List<NeedsRequestModel> getByOrganization(@PathVariable String organization) {
         return needsRequestRepository.findByOrganizationOrderByIdDesc(organization);
     }
 
     @GetMapping("/pending-approval/{organization}")
-    public List<NeedsRequestModel> getPendingApproval(
-            @PathVariable String organization) {
-
+    public List<NeedsRequestModel> getPendingApproval(@PathVariable String organization) {
         return needsRequestRepository.findByOrganizationAndStatusOrderByIdDesc(
                 organization,
-                "PENDING_APPROVAL"
+                "PENDING_HOD_APPROVAL"
         );
     }
 
-    @PutMapping("/{id}/approve")
-    public NeedsRequestModel approve(
-            @PathVariable Long id,
-            @RequestParam(required = false) String approvedBy) {
+    @GetMapping("/pending-approval/{organization}/{role}")
+    public List<NeedsRequestModel> getPendingApprovalByRole(
+            @PathVariable String organization,
+            @PathVariable String role) {
+
+        String normalizedRole = safe(role).toUpperCase();
+
+        if ("ADMIN".equals(normalizedRole)) {
+            return needsRequestRepository.findByOrganizationAndStatusStartingWithOrderByIdDesc(
+                    organization,
+                    "PENDING_"
+            );
+        }
+
+        String status = getPendingStatusForRole(normalizedRole);
+
+        return needsRequestRepository.findByOrganizationAndStatusOrderByIdDesc(
+                organization,
+                status
+        );
+    }
+
+    @GetMapping("/{id}/history")
+    public List<NeedsRequestApprovalHistoryModel> getHistory(@PathVariable Long id) {
 
         NeedsRequestModel request = needsRequestRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Request not found"));
 
+        return approvalHistoryRepository.findByOrganizationAndNeedsRequestIdOrderByIdAsc(
+                request.getOrganization(),
+                request.getId()
+        );
+    }
+
+    @PutMapping("/{id}/approve")
+    public ResponseEntity<?> approve(
+            @PathVariable Long id,
+            @RequestParam(required = false) String approvedBy,
+            @RequestParam(required = false) String role,
+            @RequestParam(required = false) String comment) {
+
+        NeedsRequestModel request = needsRequestRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Request not found"));
+
+        if ("APPROVED".equals(request.getStatus())) {
+            return ResponseEntity.badRequest().body("Request is already approved");
+        }
+
+        if ("REJECTED".equals(request.getStatus())) {
+            return ResponseEntity.badRequest().body("Request is already rejected");
+        }
+
+        String approverRole = safe(role).toUpperCase();
+
+        if (!canApproveCurrentLevel(request, approverRole)) {
+            return ResponseEntity.status(403).body(
+                    "You are not allowed to approve this level: "
+                            + request.getCurrentApprovalLevel()
+            );
+        }
+
         recalculateRequestTotal(request);
 
-        request.setStatus("APPROVED");
-        request.setApprovedBy(approvedBy == null ? "Mobile Approver" : approvedBy);
-        request.setApprovedAt(LocalDateTime.now());
+        LocalDateTime now = LocalDateTime.now();
 
-        return needsRequestRepository.save(request);
+        if ("HOD".equals(request.getCurrentApprovalLevel())) {
+
+            request.setHodApprovedBy(approvedBy);
+            request.setHodApprovedAt(now);
+            request.setStatus("PENDING_FINANCE_REVIEW");
+            request.setCurrentApprovalLevel("FINANCE");
+
+            saveHistory(request, "HOD", "APPROVED", approvedBy, approverRole, comment);
+
+        } else if ("FINANCE".equals(request.getCurrentApprovalLevel())) {
+
+            request.setFinanceReviewedBy(approvedBy);
+            request.setFinanceReviewedAt(now);
+            request.setStatus("PENDING_DIRECTOR_APPROVAL");
+            request.setCurrentApprovalLevel("DIRECTOR");
+
+            saveHistory(request, "FINANCE", "APPROVED", approvedBy, approverRole, comment);
+
+        } else if ("DIRECTOR".equals(request.getCurrentApprovalLevel())) {
+
+            request.setDirectorApprovedBy(approvedBy);
+            request.setDirectorApprovedAt(now);
+
+            request.setApprovedBy(approvedBy);
+            request.setApprovedAt(now);
+
+            request.setStatus("APPROVED");
+            request.setCurrentApprovalLevel("COMPLETED");
+
+            saveHistory(request, "DIRECTOR", "APPROVED", approvedBy, approverRole, comment);
+        }
+
+        NeedsRequestModel saved = needsRequestRepository.save(request);
+
+        return ResponseEntity.ok(saved);
     }
 
     @PutMapping("/{id}/reject")
-    public NeedsRequestModel reject(
+    public ResponseEntity<?> reject(
             @PathVariable Long id,
             @RequestParam(required = false) String rejectedBy,
+            @RequestParam(required = false) String role,
             @RequestParam(required = false) String reason) {
 
         NeedsRequestModel request = needsRequestRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Request not found"));
 
+        if ("APPROVED".equals(request.getStatus())) {
+            return ResponseEntity.badRequest().body("Approved request cannot be rejected");
+        }
+
+        if ("REJECTED".equals(request.getStatus())) {
+            return ResponseEntity.badRequest().body("Request is already rejected");
+        }
+
+        String approverRole = safe(role).toUpperCase();
+
+        if (!canApproveCurrentLevel(request, approverRole)) {
+            return ResponseEntity.status(403).body(
+                    "You are not allowed to reject this level: "
+                            + request.getCurrentApprovalLevel()
+            );
+        }
+
         request.setStatus("REJECTED");
-        request.setRejectedBy(rejectedBy == null ? "Mobile Approver" : rejectedBy);
+        request.setCurrentApprovalLevel("REJECTED");
+        request.setRejectedBy(rejectedBy);
         request.setRejectedAt(LocalDateTime.now());
         request.setRejectionReason(reason);
 
-        return needsRequestRepository.save(request);
+        saveHistory(
+                request,
+                safe(request.getCurrentApprovalLevel()),
+                "REJECTED",
+                rejectedBy,
+                approverRole,
+                reason
+        );
+
+        NeedsRequestModel saved = needsRequestRepository.save(request);
+
+        return ResponseEntity.ok(saved);
     }
 
     @PutMapping("/{requestId}/items/{itemId}/quantity")
-    public NeedsRequestModel updateItemQuantity(
+    public ResponseEntity<?> updateItemQuantity(
             @PathVariable Long requestId,
             @PathVariable Long itemId,
             @RequestParam BigDecimal quantity) {
+
+        NeedsRequestModel request = needsRequestRepository.findById(requestId)
+                .orElseThrow(() -> new RuntimeException("Request not found"));
+
+        if ("APPROVED".equals(request.getStatus()) || "REJECTED".equals(request.getStatus())) {
+            return ResponseEntity.badRequest().body("Cannot modify completed request");
+        }
 
         NeedsRequestItemModel item = needsRequestItemRepository.findById(itemId)
                 .orElseThrow(() -> new RuntimeException("Item not found"));
 
         if (!item.getNeedsRequest().getId().equals(requestId)) {
-            throw new RuntimeException("Item does not belong to this request");
+            return ResponseEntity.badRequest().body("Item does not belong to this request");
         }
 
         BigDecimal unitPrice = safeBigDecimal(item.getUnitPrice());
@@ -161,37 +297,39 @@ public class NeedsRequestController {
 
         needsRequestItemRepository.save(item);
 
-        NeedsRequestModel request = needsRequestRepository.findById(requestId)
-                .orElseThrow(() -> new RuntimeException("Request not found"));
-
         recalculateRequestTotal(request);
 
-        return needsRequestRepository.save(request);
+        NeedsRequestModel saved = needsRequestRepository.save(request);
+
+        return ResponseEntity.ok(saved);
     }
 
     @DeleteMapping("/{requestId}/items/{itemId}")
-    public NeedsRequestModel deleteItem(
+    public ResponseEntity<?> deleteItem(
             @PathVariable Long requestId,
             @PathVariable Long itemId) {
 
         NeedsRequestModel request = needsRequestRepository.findById(requestId)
                 .orElseThrow(() -> new RuntimeException("Request not found"));
 
-        if (request.getItems() == null || request.getItems().size() <= 1) {
-            throw new RuntimeException("You cannot delete all items");
+        if ("APPROVED".equals(request.getStatus()) || "REJECTED".equals(request.getStatus())) {
+            return ResponseEntity.badRequest().body("Cannot modify completed request");
         }
 
-        Optional<NeedsRequestItemModel> optionalItem =
-                needsRequestItemRepository.findById(itemId);
+        if (request.getItems() == null || request.getItems().size() <= 1) {
+            return ResponseEntity.badRequest().body("You cannot delete all items");
+        }
+
+        Optional<NeedsRequestItemModel> optionalItem = needsRequestItemRepository.findById(itemId);
 
         if (optionalItem.isEmpty()) {
-            throw new RuntimeException("Item not found");
+            return ResponseEntity.badRequest().body("Item not found");
         }
 
         NeedsRequestItemModel item = optionalItem.get();
 
         if (!item.getNeedsRequest().getId().equals(requestId)) {
-            throw new RuntimeException("Item does not belong to this request");
+            return ResponseEntity.badRequest().body("Item does not belong to this request");
         }
 
         needsRequestItemRepository.delete(item);
@@ -201,7 +339,71 @@ public class NeedsRequestController {
 
         recalculateRequestTotal(updatedRequest);
 
-        return needsRequestRepository.save(updatedRequest);
+        NeedsRequestModel saved = needsRequestRepository.save(updatedRequest);
+
+        return ResponseEntity.ok(saved);
+    }
+
+    private boolean canApproveCurrentLevel(NeedsRequestModel request, String role) {
+
+        if ("ADMIN".equals(role)) {
+            return true;
+        }
+
+        String level = safe(request.getCurrentApprovalLevel()).toUpperCase();
+
+        if ("HOD".equals(level)) {
+            return "HOD".equals(role);
+        }
+
+        if ("FINANCE".equals(level)) {
+            return "FINANCE".equals(role);
+        }
+
+        if ("DIRECTOR".equals(level)) {
+            return "DIRECTOR".equals(role);
+        }
+
+        return false;
+    }
+
+    private String getPendingStatusForRole(String role) {
+
+        if ("HOD".equals(role)) {
+            return "PENDING_HOD_APPROVAL";
+        }
+
+        if ("FINANCE".equals(role)) {
+            return "PENDING_FINANCE_REVIEW";
+        }
+
+        if ("DIRECTOR".equals(role)) {
+            return "PENDING_DIRECTOR_APPROVAL";
+        }
+
+        return "NO_STATUS";
+    }
+
+    private void saveHistory(
+            NeedsRequestModel request,
+            String level,
+            String action,
+            String actedBy,
+            String actedRole,
+            String comment) {
+
+        NeedsRequestApprovalHistoryModel history = new NeedsRequestApprovalHistoryModel();
+
+        history.setOrganization(request.getOrganization());
+        history.setNeedsRequestId(request.getId());
+        history.setRequestNo(request.getRequestNo());
+        history.setApprovalLevel(level);
+        history.setAction(action);
+        history.setActedBy(actedBy);
+        history.setActedRole(actedRole);
+        history.setActionComment(comment);
+
+        approvalHistoryRepository.save(history);
     }
 
     private void recalculateRequestTotal(NeedsRequestModel request) {
@@ -239,5 +441,13 @@ public class NeedsRequestController {
                 .size() + 1L;
 
         return "EB-" + year + "-" + String.format("%04d", count);
+    }
+
+    private boolean isBlank(String value) {
+        return value == null || value.trim().isEmpty();
+    }
+
+    private String safe(String value) {
+        return value == null ? "" : value.trim();
     }
 }
