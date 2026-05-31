@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Approbations</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- CSS -->
+    <link rel="stylesheet" href="css/mobile.css">
+    <link rel="stylesheet" href="css/dialog.css">
+</head>
+<body>
+
+<div class="app">
+
+    <div class="header">
+        <a href="index.html" class="back-link">← Retour</a>
+        <h1>Approbations</h1>
+        <p>Demandes en attente</p>
+
+        <div class="user-box">
+            <strong id="currentUserName">User</strong>
+            <span id="currentUserRole">Role</span>
+        </div>
+    </div>
+
+    <div class="approval-container">
+
+        <div class="approval-toolbar">
+            <h2>Pending requests</h2>
+            <span id="pendingCount">0</span>
+        </div>
+
+        <div id="approvalList"></div>
+
+    </div>
+
+</div>
+
+<script src="js/config.js"></script>
+<script src="js/mobile-dialog.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/approvals.js"></script>
+
+</body>
+</html>

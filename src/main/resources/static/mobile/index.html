@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Mobile Approval</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- CSS -->
+    <link rel="stylesheet" href="css/mobile.css">
+    <link rel="stylesheet" href="css/dialog.css">
+</head>
+<body>
+
+<div class="app">
+
+    <div class="header">
+        <h1>Mobile Approval</h1>
+        <p>Expression de besoin & approbation</p>
+
+        <div class="user-box">
+            <strong id="currentUserName">User</strong>
+            <span id="currentUserRole">Role</span>
+        </div>
+
+        <button type="button" class="logout-btn" onclick="logoutUser()">
+            Logout
+        </button>
+    </div>
+
+    <div class="menu">
+
+        <a href="needs-request.html" class="menu-card">
+            <div class="menu-icon">＋</div>
+            <div>
+                <h2>Nouvelle demande</h2>
+                <p>Créer une expression de besoin</p>
+            </div>
+        </a>
+
+        <a href="approvals.html" class="menu-card">
+            <div class="menu-icon">✓</div>
+            <div>
+                <h2>Approbations</h2>
+                <p>Valider ou rejeter les demandes</p>
+            </div>
+        </a>
+
+        <a href="my-requests.html" class="menu-card">
+            <div class="menu-icon">📄</div>
+            <div>
+                <h2>Mes demandes</h2>
+                <p>Suivre les demandes soumises</p>
+            </div>
+        </a>
+
+    </div>
+
+</div>
+
+<script src="js/mobile-dialog.js"></script>
+<script src="js/auth.js"></script>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        requireLogin();
+        displayCurrentUser();
+    });
+</script>
+
+</body>
+</html>

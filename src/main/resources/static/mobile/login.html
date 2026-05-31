@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Connexion mobile</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- CSS -->
+    <link rel="stylesheet" href="css/mobile.css">
+    <link rel="stylesheet" href="css/dialog.css">
+</head>
+<body>
+
+<div class="app">
+
+    <div class="header">
+        <h1>Connexion</h1>
+        <p>Accès mobile approval</p>
+    </div>
+
+    <form class="form-card" id="loginForm">
+
+        <div class="form-group">
+            <label for="email">Email</label>
+            <input
+                    type="email"
+                    id="email"
+                    placeholder="Ex: user@email.com"
+                    autocomplete="email"
+                    required>
+        </div>
+
+        <div class="form-group">
+            <label for="pinCode">PIN Code</label>
+            <input
+                    type="password"
+                    id="pinCode"
+                    placeholder="Enter your PIN"
+                    inputmode="numeric"
+                    autocomplete="current-password"
+                    required>
+        </div>
+
+        <button type="submit" class="btn-primary">
+            Se connecter
+        </button>
+
+    </form>
+
+</div>
+
+<script src="js/config.js"></script>
+<script src="js/mobile-dialog.js"></script>
+<script src="js/auth.js"></script>
+
+</body>
+</html>

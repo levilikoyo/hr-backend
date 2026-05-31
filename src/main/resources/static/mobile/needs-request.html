@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Nouvelle expression de besoin</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- CSS -->
+    <link rel="stylesheet" href="css/mobile.css">
+    <link rel="stylesheet" href="css/dialog.css">
+</head>
+<body>
+
+<div class="app">
+
+    <div class="header">
+        <a href="index.html" class="back-link">← Retour</a>
+        <h1>Nouvelle demande</h1>
+        <p>Expression de besoin</p>
+
+        <div class="user-box">
+            <strong id="currentUserName">User</strong>
+            <span id="currentUserRole">Role</span>
+        </div>
+    </div>
+
+    <form class="form-card" id="needsRequestForm">
+
+        <div class="form-group">
+            <label for="title">Objet du besoin</label>
+            <input
+                    type="text"
+                    id="title"
+                    placeholder="Ex: Achat carburant terrain"
+                    required>
+        </div>
+
+        <div class="form-group">
+            <label for="description">Description générale</label>
+            <textarea
+                    id="description"
+                    placeholder="Décrivez le besoin général..."></textarea>
+        </div>
+
+        <div class="row-2">
+            <div class="form-group">
+                <label for="requiredDate">Date souhaitée</label>
+                <input type="date" id="requiredDate">
+            </div>
+
+            <div class="form-group">
+                <label for="priority">Priorité</label>
+                <select id="priority">
+                    <option value="NORMAL">NORMAL</option>
+                    <option value="URGENT">URGENT</option>
+                    <option value="HIGH">HIGH</option>
+                    <option value="LOW">LOW</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="section-title">
+            Items requested
+        </div>
+
+        <div id="itemsContainer"></div>
+
+        <button type="button" class="btn-secondary" onclick="addItemRow()">
+            + Add item
+        </button>
+
+        <div class="total-box">
+            Total Estimated Amount:
+            <strong id="grandTotal">0.00</strong>
+        </div>
+
+        <div class="form-group">
+            <label for="budgetPlan">Budget Plan</label>
+            <select id="budgetPlan" required>
+                <option value="">Sélectionner</option>
+                <option value="SALARY">SALARY</option>
+                <option value="OPEX">OPEX</option>
+                <option value="CAPEX">CAPEX</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="currencyCode">Devise</label>
+            <select id="currencyCode">
+                <option value="USD">USD</option>
+                <option value="CDF">CDF</option>
+                <option value="EUR">EUR</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="department">Département</label>
+            <input
+                    type="text"
+                    id="department"
+                    placeholder="Ex: Finance, Operations, DDD">
+        </div>
+
+        <div class="form-group">
+            <label for="glAccountNo">G/L Account</label>
+            <input
+                    type="text"
+                    id="glAccountNo"
+                    placeholder="Ex: 601001">
+        </div>
+
+        <div class="form-group">
+            <label for="fundCode">Fund</label>
+            <input
+                    type="text"
+                    id="fundCode"
+                    placeholder="Ex: NDICI2">
+        </div>
+
+        <div class="form-group">
+            <label for="attachment">Pièce jointe</label>
+            <input type="file" id="attachment">
+        </div>
+
+        <button type="submit" class="btn-primary">
+            Soumettre la demande
+        </button>
+
+    </form>
+
+</div>
+
+<script src="js/config.js"></script>
+<script src="js/mobile-dialog.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/needs-request.js"></script>
+
+</body>
+</html>
