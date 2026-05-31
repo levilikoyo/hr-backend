@@ -63,6 +63,10 @@ function displayCurrentUser() {
     const userNameElement = document.getElementById("currentUserName");
     const userRoleElement = document.getElementById("currentUserRole");
 
+    const dropdownUserName = document.getElementById("dropdownUserName");
+    const dropdownUserEmail = document.getElementById("dropdownUserEmail");
+    const dropdownUserRole = document.getElementById("dropdownUserRole");
+
     if (userNameElement && user) {
         userNameElement.textContent = user.fullName;
     }
@@ -70,7 +74,44 @@ function displayCurrentUser() {
     if (userRoleElement && user) {
         userRoleElement.textContent = user.role;
     }
+
+    if (dropdownUserName && user) {
+        dropdownUserName.textContent = user.fullName;
+    }
+
+    if (dropdownUserEmail && user) {
+        dropdownUserEmail.textContent = user.email;
+    }
+
+    if (dropdownUserRole && user) {
+        dropdownUserRole.textContent = user.role;
+    }
 }
+
+function toggleUserMenu() {
+    const dropdown = document.getElementById("userDropdown");
+
+    if (!dropdown) {
+        return;
+    }
+
+    dropdown.classList.toggle("show");
+}
+
+function closeUserMenuOnOutsideClick(event) {
+    const dropdown = document.getElementById("userDropdown");
+    const userBox = document.querySelector(".user-info-box");
+
+    if (!dropdown || !userBox) {
+        return;
+    }
+
+    if (!dropdown.contains(event.target) && !userBox.contains(event.target)) {
+        dropdown.classList.remove("show");
+    }
+}
+
+document.addEventListener("click", closeUserMenuOnOutsideClick);
 
 function setLoginLoading(isLoading) {
     const button = document.querySelector("#loginForm button[type='submit']");

@@ -23,7 +23,8 @@
         </div>
 
         <div class="top-header-right">
-            <div class="user-info-box">
+
+            <div class="user-info-box" onclick="toggleUserMenu()">
                 <div class="user-text">
                     <strong id="currentUserName">User</strong>
                     <span id="currentUserRole">Role</span>
@@ -31,6 +32,17 @@
 
                 <img src="images/user-avatar.png" alt="User" class="user-avatar">
             </div>
+
+            <div class="user-dropdown" id="userDropdown">
+                <strong id="dropdownUserName">User</strong>
+                <span id="dropdownUserEmail">email</span>
+                <small id="dropdownUserRole">Role</small>
+
+                <button type="button" onclick="logoutUser()">
+                    Logout
+                </button>
+            </div>
+
         </div>
 
     </div>
@@ -93,13 +105,6 @@
             <span class="menu-badge" id="myRequestsMenuBadge">0</span>
         </a>
 
-    </div>
-
-    <!-- LOGOUT -->
-    <div class="logout-section">
-        <button type="button" class="logout-btn-white" onclick="logoutUser()">
-            Logout
-        </button>
     </div>
 
 </div>

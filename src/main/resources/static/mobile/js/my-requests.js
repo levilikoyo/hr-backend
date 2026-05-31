@@ -24,6 +24,14 @@ function formatAmount(amount) {
         .replace(/\B(?=(\d{3})+(?!\d))/g, " ");
 }
 
+function formatDate(dateValue) {
+    if (!dateValue) {
+        return "";
+    }
+
+    return String(dateValue).substring(0, 10);
+}
+
 document.addEventListener("DOMContentLoaded", function () {
     currentUser = requireLogin();
 
@@ -100,7 +108,7 @@ async function loadMyRequests() {
 
         filtered.forEach(request => {
             const card = document.createElement("div");
-            card.className = "approval-card";
+            card.className = "approval-card request-card";
 
             card.innerHTML = `
                 <div class="approval-card-header">
@@ -114,7 +122,7 @@ async function loadMyRequests() {
                     </span>
                 </div>
 
-                <div class="approval-info">
+                <div class="request-summary-box">
                     <div>
                         <span>Requester</span>
                         <strong>${escapeHtml(request.requestedBy || "")}</strong>
@@ -141,15 +149,12 @@ async function loadMyRequests() {
                     ${buildWorkflowHtml(request)}
                 </div>
 
-                <div class="approval-description">
-                    ${escapeHtml(request.description || "")}
-                </div>
+                ${buildDescriptionHtml(request)}
 
-                <div class="approval-items">
+                <div class="items-clean-list">
                     ${buildItemsHtml(request.items)}
                 </div>
 
-                ${buildApprovalInfo(request)}
                 ${buildRejectionReason(request)}
 
                 <div class="approval-actions">
@@ -175,6 +180,18 @@ async function loadMyRequests() {
             </div>
         `;
     }
+}
+
+function buildDescriptionHtml(request) {
+    if (!request.description) {
+        return "";
+    }
+
+    return `
+        <div class="request-description-clean">
+            ${escapeHtml(request.description)}
+        </div>
+    `;
 }
 
 function buildWorkflowHtml(request) {
@@ -238,7 +255,7 @@ function getStepText(currentLevel, stepLevel, status) {
 function buildItemsHtml(items) {
     if (!items || items.length === 0) {
         return `
-            <div class="approval-item-line">
+            <div class="clean-item-line">
                 <div>
                     <strong>No items</strong>
                     <span>This request has no item line.</span>
@@ -249,60 +266,19 @@ function buildItemsHtml(items) {
 
     return items.map((item, index) => {
         return `
-            <div class="approval-item-line">
+            <div class="clean-item-line">
                 <div>
                     <strong>${index + 1}. ${escapeHtml(item.itemName)}</strong>
                     <span>
                         Qty: ${item.quantity} ${escapeHtml(item.unitOfMeasure || "")} × ${formatAmount(item.unitPrice)}
                     </span>
+                    ${item.description ? `<small>${escapeHtml(item.description)}</small>` : ""}
                 </div>
 
                 <strong>${formatAmount(item.totalAmount)}</strong>
             </div>
         `;
     }).join("");
-}
-
-function buildApprovalInfo(request) {
-    let html = "";
-
-    if (request.hodApprovedBy) {
-        html += `
-            <div class="approval-info-box success-box">
-                <strong>HOD approved by:</strong>
-                <p>${escapeHtml(request.hodApprovedBy)}</p>
-            </div>
-        `;
-    }
-
-    if (request.financeReviewedBy) {
-        html += `
-            <div class="approval-info-box success-box">
-                <strong>Finance reviewed by:</strong>
-                <p>${escapeHtml(request.financeReviewedBy)}</p>
-            </div>
-        `;
-    }
-
-    if (request.directorApprovedBy) {
-        html += `
-            <div class="approval-info-box success-box">
-                <strong>Director approved by:</strong>
-                <p>${escapeHtml(request.directorApprovedBy)}</p>
-            </div>
-        `;
-    }
-
-    if (request.status === "APPROVED") {
-        html += `
-            <div class="approval-info-box success-box">
-                <strong>Final status:</strong>
-                <p>Fully approved by ${escapeHtml(request.approvedBy || "Director")}.</p>
-            </div>
-        `;
-    }
-
-    return html;
 }
 
 function buildRejectionReason(request) {
