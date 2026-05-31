@@ -5,7 +5,6 @@
     <title>Nouvelle expression de besoin</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <!-- CSS -->
     <link rel="stylesheet" href="css/mobile.css">
     <link rel="stylesheet" href="css/dialog.css">
 </head>
@@ -13,17 +12,32 @@
 
 <div class="app">
 
-    <div class="header">
-        <a href="index.html" class="back-link">← Retour</a>
-        <h1>Nouvelle demande</h1>
-        <p>Expression de besoin</p>
+    <!-- WHITE HEADER WITH RETURN BUTTON -->
+    <div class="top-header">
 
-        <div class="user-box">
-            <strong id="currentUserName">User</strong>
-            <span id="currentUserRole">Role</span>
+        <div class="top-header-left">
+            <a href="index.html" class="return-btn">←</a>
+
+            <div class="app-title-box">
+                <h1>Nouvelle demande</h1>
+                <p>Expression de besoin</p>
+            </div>
         </div>
+
+        <div class="top-header-right">
+            <div class="user-info-box">
+                <div class="user-text">
+                    <strong id="currentUserName">User</strong>
+                    <span id="currentUserRole">Role</span>
+                </div>
+
+                <img src="images/user-avatar.png" alt="User" class="user-avatar">
+            </div>
+        </div>
+
     </div>
 
+    <!-- FORM -->
     <form class="form-card" id="needsRequestForm">
 
         <div class="form-group">
