@@ -31,5 +31,6 @@ public interface ActualGeneralJournalBatchRepository
         String frameworkCode,
         String transactionType
 );
+ 
   
 }

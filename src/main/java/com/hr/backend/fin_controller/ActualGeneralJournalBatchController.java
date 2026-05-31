@@ -180,4 +180,5 @@ public List<ActualGeneralJournalBatchModel> getByOrganizationFrameworkAndTransac
             transactionType
     );
 }
+
 }
