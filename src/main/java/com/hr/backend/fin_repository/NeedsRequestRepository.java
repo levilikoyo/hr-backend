@@ -9,6 +9,7 @@ package com.hr.backend.fin_repository;
  * @author apple
  */
 
+
 import com.hr.backend.fin_model.NeedsRequestModel;
 import java.util.List;
 import org.springframework.data.jpa.repository.JpaRepository;

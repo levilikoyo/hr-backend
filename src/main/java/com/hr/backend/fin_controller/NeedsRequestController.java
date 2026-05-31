@@ -21,7 +21,6 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -48,7 +47,7 @@ public class NeedsRequestController {
     @PostMapping
     public NeedsRequestModel create(@RequestBody NeedsRequestModel request) {
 
-        if (request.getRequestNo() == null || request.getRequestNo().trim().isEmpty()) {
+        if (isBlank(request.getRequestNo())) {
             request.setRequestNo(generateRequestNo(request.getOrganization()));
         }
 
@@ -108,12 +107,16 @@ public class NeedsRequestController {
     }
 
     @GetMapping("/organization/{organization}")
-    public List<NeedsRequestModel> getByOrganization(@PathVariable String organization) {
+    public List<NeedsRequestModel> getByOrganization(
+            @PathVariable String organization) {
+
         return needsRequestRepository.findByOrganizationOrderByIdDesc(organization);
     }
 
     @GetMapping("/pending-approval/{organization}")
-    public List<NeedsRequestModel> getPendingApproval(@PathVariable String organization) {
+    public List<NeedsRequestModel> getPendingApproval(
+            @PathVariable String organization) {
+
         return needsRequestRepository.findByOrganizationAndStatusOrderByIdDesc(
                 organization,
                 "PENDING_HOD_APPROVAL"
@@ -128,7 +131,7 @@ public class NeedsRequestController {
         String normalizedRole = safe(role).toUpperCase();
 
         if ("ADMIN".equals(normalizedRole)) {
-            return needsRequestRepository.findByOrganizationAndStatusStartingWithOrderByIdDesc(
+            return needsRequestRepository.findPendingByOrganizationAndStatusPrefix(
                     organization,
                     "PENDING_"
             );
@@ -143,7 +146,8 @@ public class NeedsRequestController {
     }
 
     @GetMapping("/{id}/history")
-    public List<NeedsRequestApprovalHistoryModel> getHistory(@PathVariable Long id) {
+    public List<NeedsRequestApprovalHistoryModel> getHistory(
+            @PathVariable Long id) {
 
         NeedsRequestModel request = needsRequestRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Request not found"));
@@ -177,33 +181,50 @@ public class NeedsRequestController {
         if (!canApproveCurrentLevel(request, approverRole)) {
             return ResponseEntity.status(403).body(
                     "You are not allowed to approve this level: "
-                            + request.getCurrentApprovalLevel()
+                    + request.getCurrentApprovalLevel()
             );
         }
 
         recalculateRequestTotal(request);
 
         LocalDateTime now = LocalDateTime.now();
+        String currentLevel = safe(request.getCurrentApprovalLevel()).toUpperCase();
 
-        if ("HOD".equals(request.getCurrentApprovalLevel())) {
+        if ("HOD".equals(currentLevel)) {
 
             request.setHodApprovedBy(approvedBy);
             request.setHodApprovedAt(now);
+
             request.setStatus("PENDING_FINANCE_REVIEW");
             request.setCurrentApprovalLevel("FINANCE");
 
-            saveHistory(request, "HOD", "APPROVED", approvedBy, approverRole, comment);
+            saveHistory(
+                    request,
+                    "HOD",
+                    "APPROVED",
+                    approvedBy,
+                    approverRole,
+                    comment
+            );
 
-        } else if ("FINANCE".equals(request.getCurrentApprovalLevel())) {
+        } else if ("FINANCE".equals(currentLevel)) {
 
             request.setFinanceReviewedBy(approvedBy);
             request.setFinanceReviewedAt(now);
+
             request.setStatus("PENDING_DIRECTOR_APPROVAL");
             request.setCurrentApprovalLevel("DIRECTOR");
 
-            saveHistory(request, "FINANCE", "APPROVED", approvedBy, approverRole, comment);
+            saveHistory(
+                    request,
+                    "FINANCE",
+                    "APPROVED",
+                    approvedBy,
+                    approverRole,
+                    comment
+            );
 
-        } else if ("DIRECTOR".equals(request.getCurrentApprovalLevel())) {
+        } else if ("DIRECTOR".equals(currentLevel)) {
 
             request.setDirectorApprovedBy(approvedBy);
             request.setDirectorApprovedAt(now);
@@ -214,7 +235,19 @@ public class NeedsRequestController {
             request.setStatus("APPROVED");
             request.setCurrentApprovalLevel("COMPLETED");
 
-            saveHistory(request, "DIRECTOR", "APPROVED", approvedBy, approverRole, comment);
+            saveHistory(
+                    request,
+                    "DIRECTOR",
+                    "APPROVED",
+                    approvedBy,
+                    approverRole,
+                    comment
+            );
+
+        } else {
+            return ResponseEntity.badRequest().body(
+                    "Invalid approval level: " + request.getCurrentApprovalLevel()
+            );
         }
 
         NeedsRequestModel saved = needsRequestRepository.save(request);
@@ -241,11 +274,12 @@ public class NeedsRequestController {
         }
 
         String approverRole = safe(role).toUpperCase();
+        String rejectedLevel = safe(request.getCurrentApprovalLevel()).toUpperCase();
 
         if (!canApproveCurrentLevel(request, approverRole)) {
             return ResponseEntity.status(403).body(
                     "You are not allowed to reject this level: "
-                            + request.getCurrentApprovalLevel()
+                    + request.getCurrentApprovalLevel()
             );
         }
 
@@ -257,7 +291,7 @@ public class NeedsRequestController {
 
         saveHistory(
                 request,
-                safe(request.getCurrentApprovalLevel()),
+                rejectedLevel,
                 "REJECTED",
                 rejectedBy,
                 approverRole,
@@ -278,14 +312,16 @@ public class NeedsRequestController {
         NeedsRequestModel request = needsRequestRepository.findById(requestId)
                 .orElseThrow(() -> new RuntimeException("Request not found"));
 
-        if ("APPROVED".equals(request.getStatus()) || "REJECTED".equals(request.getStatus())) {
+        if ("APPROVED".equals(request.getStatus())
+                || "REJECTED".equals(request.getStatus())) {
             return ResponseEntity.badRequest().body("Cannot modify completed request");
         }
 
         NeedsRequestItemModel item = needsRequestItemRepository.findById(itemId)
                 .orElseThrow(() -> new RuntimeException("Item not found"));
 
-        if (!item.getNeedsRequest().getId().equals(requestId)) {
+        if (item.getNeedsRequest() == null
+                || !item.getNeedsRequest().getId().equals(requestId)) {
             return ResponseEntity.badRequest().body("Item does not belong to this request");
         }
 
@@ -312,7 +348,8 @@ public class NeedsRequestController {
         NeedsRequestModel request = needsRequestRepository.findById(requestId)
                 .orElseThrow(() -> new RuntimeException("Request not found"));
 
-        if ("APPROVED".equals(request.getStatus()) || "REJECTED".equals(request.getStatus())) {
+        if ("APPROVED".equals(request.getStatus())
+                || "REJECTED".equals(request.getStatus())) {
             return ResponseEntity.badRequest().body("Cannot modify completed request");
         }
 
@@ -320,7 +357,8 @@ public class NeedsRequestController {
             return ResponseEntity.badRequest().body("You cannot delete all items");
         }
 
-        Optional<NeedsRequestItemModel> optionalItem = needsRequestItemRepository.findById(itemId);
+        Optional<NeedsRequestItemModel> optionalItem =
+                needsRequestItemRepository.findById(itemId);
 
         if (optionalItem.isEmpty()) {
             return ResponseEntity.badRequest().body("Item not found");
@@ -328,7 +366,8 @@ public class NeedsRequestController {
 
         NeedsRequestItemModel item = optionalItem.get();
 
-        if (!item.getNeedsRequest().getId().equals(requestId)) {
+        if (item.getNeedsRequest() == null
+                || !item.getNeedsRequest().getId().equals(requestId)) {
             return ResponseEntity.badRequest().body("Item does not belong to this request");
         }
 
@@ -392,7 +431,8 @@ public class NeedsRequestController {
             String actedRole,
             String comment) {
 
-        NeedsRequestApprovalHistoryModel history = new NeedsRequestApprovalHistoryModel();
+        NeedsRequestApprovalHistoryModel history =
+                new NeedsRequestApprovalHistoryModel();
 
         history.setOrganization(request.getOrganization());
         history.setNeedsRequestId(request.getId());
