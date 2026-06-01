@@ -1,14 +1,4 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
 package com.hr.backend.fin_controller;
-
-/**
- *
- * @author apple
- */
-
 
 import com.hr.backend.fin_model.NeedsRequestApprovalHistoryModel;
 import com.hr.backend.fin_model.NeedsRequestItemModel;
@@ -16,6 +6,7 @@ import com.hr.backend.fin_model.NeedsRequestModel;
 import com.hr.backend.fin_repository.NeedsRequestApprovalHistoryRepository;
 import com.hr.backend.fin_repository.NeedsRequestItemRepository;
 import com.hr.backend.fin_repository.NeedsRequestRepository;
+import com.hr.backend.service.MobileNotificationService;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -38,6 +29,9 @@ public class NeedsRequestController {
 
     @Autowired
     private NeedsRequestApprovalHistoryRepository approvalHistoryRepository;
+
+    @Autowired
+    private MobileNotificationService mobileNotificationService;
 
     @GetMapping("/test")
     public String test() {
@@ -101,6 +95,15 @@ public class NeedsRequestController {
                 saved.getCreatedBy(),
                 "REQUESTER",
                 "Expression de besoin submitted"
+        );
+
+        mobileNotificationService.notifyRole(
+                saved.getOrganization(),
+                "HOD",
+                "New request pending HOD approval",
+                saved.getRequestNo() + " - " + saved.getTitle(),
+                "REQUEST_SUBMITTED",
+                saved
         );
 
         return saved;
@@ -207,6 +210,15 @@ public class NeedsRequestController {
                     comment
             );
 
+            mobileNotificationService.notifyRole(
+                    request.getOrganization(),
+                    "FINANCE",
+                    "Request pending Finance review",
+                    request.getRequestNo() + " - " + request.getTitle(),
+                    "PENDING_FINANCE_REVIEW",
+                    request
+            );
+
         } else if ("FINANCE".equals(currentLevel)) {
 
             request.setFinanceReviewedBy(approvedBy);
@@ -222,6 +234,15 @@ public class NeedsRequestController {
                     approvedBy,
                     approverRole,
                     comment
+            );
+
+            mobileNotificationService.notifyRole(
+                    request.getOrganization(),
+                    "DIRECTOR",
+                    "Request pending Director approval",
+                    request.getRequestNo() + " - " + request.getTitle(),
+                    "PENDING_DIRECTOR_APPROVAL",
+                    request
             );
 
         } else if ("DIRECTOR".equals(currentLevel)) {
@@ -242,6 +263,15 @@ public class NeedsRequestController {
                     approvedBy,
                     approverRole,
                     comment
+            );
+
+            mobileNotificationService.notifyUser(
+                    request.getOrganization(),
+                    request.getRequesterEmail(),
+                    "Request fully approved",
+                    request.getRequestNo() + " - " + request.getTitle(),
+                    "REQUEST_APPROVED",
+                    request
             );
 
         } else {
@@ -296,6 +326,15 @@ public class NeedsRequestController {
                 rejectedBy,
                 approverRole,
                 reason
+        );
+
+        mobileNotificationService.notifyUser(
+                request.getOrganization(),
+                request.getRequesterEmail(),
+                "Request rejected",
+                request.getRequestNo() + " - " + request.getTitle(),
+                "REQUEST_REJECTED",
+                request
         );
 
         NeedsRequestModel saved = needsRequestRepository.save(request);
