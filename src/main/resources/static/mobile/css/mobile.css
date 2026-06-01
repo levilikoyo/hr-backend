@@ -1580,3 +1580,37 @@ input[type="date"] {
     cursor: pointer;
 }
 }
+/* =========================================================
+   COLLAPSIBLE NEEDS REQUEST ITEM CARD
+   ========================================================= */
+
+.item-card.collapsed .item-body {
+    display: none;
+}
+
+.item-card.collapsed {
+    padding-bottom: 0;
+}
+
+.item-card.collapsed .item-header {
+    margin-bottom: 0;
+}
+
+.item-header {
+    cursor: pointer;
+}
+
+.collapse-icon {
+    transition: transform 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.item-card.collapsed .collapse-icon {
+    transform: rotate(180deg);
+}
+
+.remove-item {
+    cursor: pointer;
+}

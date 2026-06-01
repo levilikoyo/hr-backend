@@ -487,7 +487,7 @@ function createDimensionField(dimension) {
 }
 
 /* =========================================================
-   Items management - restored design
+   Items management - Collapsible card design
    ========================================================= */
 
 function ensureAtLeastOneItem() {
