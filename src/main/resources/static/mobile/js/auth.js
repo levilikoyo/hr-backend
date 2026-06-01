@@ -24,8 +24,9 @@
     ];
 
     document.addEventListener("DOMContentLoaded", function () {
-        bindUserDropdown();
         displayCurrentUser();
+        ensureUserDropdown();
+        bindUserDropdown();
     });
 
     /* =========================================================
@@ -212,7 +213,7 @@
             ? allowedRoles.map(normalizeRole)
             : [normalizeRole(allowedRoles)];
 
-        if (!allowed.includes(role) && !allowed.includes("ADMIN")) {
+        if (!allowed.includes(role) && role !== "ADMIN") {
             showAuthError("You are not allowed to access this page.");
             redirectToHome();
             throw new Error("Unauthorized role.");
@@ -269,39 +270,175 @@
     }
 
     /* =========================================================
-       USER DROPDOWN LOGOUT
+       USER DROPDOWN
        ========================================================= */
 
-    function bindUserDropdown() {
-        const userInfoBox = document.getElementById("userInfoBox");
-        const userDropdown = document.getElementById("userDropdown");
+    function ensureUserDropdown() {
+        const user = getCurrentUser();
 
-        if (!userInfoBox || !userDropdown) {
+        if (!user) {
             return;
         }
 
+        let userInfoBox = document.getElementById("userInfoBox");
+
+        if (!userInfoBox) {
+            const possibleUserName =
+                document.getElementById("currentUserName") ||
+                document.getElementById("userName");
+
+            if (possibleUserName) {
+                userInfoBox = possibleUserName.closest(".user-info-box") ||
+                    possibleUserName.closest(".user-box") ||
+                    possibleUserName.parentElement;
+            }
+        }
+
+        if (!userInfoBox) {
+            return;
+        }
+
+        userInfoBox.id = "userInfoBox";
         userInfoBox.style.cursor = "pointer";
+        userInfoBox.style.position = "relative";
 
-        userInfoBox.addEventListener("click", function (event) {
-            event.preventDefault();
-            event.stopPropagation();
+        let userDropdown = document.getElementById("userDropdown");
 
-            userDropdown.classList.toggle("show");
-        });
+        if (!userDropdown) {
+            userDropdown = document.createElement("div");
+            userDropdown.id = "userDropdown";
+            userDropdown.className = "user-dropdown";
 
-        userDropdown.addEventListener("click", function (event) {
-            event.stopPropagation();
-        });
+            userInfoBox.parentElement.appendChild(userDropdown);
+        }
 
-        document.addEventListener("click", function () {
-            userDropdown.classList.remove("show");
+        const name =
+            user.fullName ||
+            user.name ||
+            user.username ||
+            user.email ||
+            "User";
+
+        const role =
+            user.role ||
+            user.userRole ||
+            "USER";
+
+        const email =
+            user.email ||
+            "";
+
+        userDropdown.innerHTML = `
+            <strong id="dropdownUserName">${escapeHtml(name)}</strong>
+            <span id="dropdownUserEmail">${escapeHtml(email)}</span>
+            <small id="dropdownUserRole">${escapeHtml(role)}</small>
+            <button type="button" id="logoutBtn">Logout</button>
+        `;
+
+        forceDropdownBaseStyle(userDropdown);
+
+        const logoutBtn = document.getElementById("logoutBtn");
+
+        if (logoutBtn) {
+            logoutBtn.onclick = function (event) {
+                event.preventDefault();
+                event.stopPropagation();
+                logout();
+            };
+        }
+    }
+
+    function bindUserDropdown() {
+        document.addEventListener("click", function (event) {
+            const clickedUserBox =
+                event.target.closest("#userInfoBox") ||
+                event.target.closest(".user-info-box") ||
+                event.target.closest(".user-box") ||
+                event.target.closest("#currentUserName") ||
+                event.target.closest(".user-name");
+
+            const clickedDropdown = event.target.closest("#userDropdown");
+
+            if (clickedDropdown) {
+                event.stopPropagation();
+                return;
+            }
+
+            if (clickedUserBox) {
+                event.preventDefault();
+                event.stopPropagation();
+
+                toggleUserDropdown();
+                return;
+            }
+
+            hideUserDropdown();
         });
 
         document.addEventListener("keydown", function (event) {
             if (event.key === "Escape") {
-                userDropdown.classList.remove("show");
+                hideUserDropdown();
             }
         });
+    }
+
+    function toggleUserDropdown() {
+        const dropdown = document.getElementById("userDropdown");
+
+        if (!dropdown) {
+            ensureUserDropdown();
+            return;
+        }
+
+        const isOpen =
+            dropdown.classList.contains("show") ||
+            dropdown.style.display === "block";
+
+        if (isOpen) {
+            hideUserDropdown();
+        } else {
+            showUserDropdown();
+        }
+    }
+
+    function showUserDropdown() {
+        const dropdown = document.getElementById("userDropdown");
+
+        if (!dropdown) {
+            return;
+        }
+
+        dropdown.classList.add("show");
+        dropdown.style.display = "block";
+        dropdown.style.position = "absolute";
+        dropdown.style.right = "0";
+        dropdown.style.top = "48px";
+        dropdown.style.zIndex = "9999";
+    }
+
+    function hideUserDropdown() {
+        const dropdown = document.getElementById("userDropdown");
+
+        if (!dropdown) {
+            return;
+        }
+
+        dropdown.classList.remove("show");
+        dropdown.style.display = "none";
+    }
+
+    function forceDropdownBaseStyle(dropdown) {
+        dropdown.style.display = "none";
+        dropdown.style.position = "absolute";
+        dropdown.style.right = "0";
+        dropdown.style.top = "48px";
+        dropdown.style.width = "230px";
+        dropdown.style.background = "#ffffff";
+        dropdown.style.border = "1px solid #e5e7eb";
+        dropdown.style.borderRadius = "18px";
+        dropdown.style.boxShadow = "0 18px 45px rgba(15, 23, 42, 0.18)";
+        dropdown.style.padding = "14px";
+        dropdown.style.zIndex = "9999";
     }
 
     /* =========================================================
@@ -419,6 +556,15 @@
         }
 
         alert(message);
+    }
+
+    function escapeHtml(value) {
+        return String(value || "")
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
     }
 
     /* =========================================================
