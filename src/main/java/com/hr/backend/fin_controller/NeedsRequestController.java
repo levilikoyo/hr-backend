@@ -2,21 +2,27 @@
 
 package com.hr.backend.fin_controller;
 
+
+
 import com.hr.backend.fin_model.NeedsRequestApprovalHistoryModel;
 import com.hr.backend.fin_model.NeedsRequestItemModel;
 import com.hr.backend.fin_model.NeedsRequestModel;
 import com.hr.backend.fin_repository.NeedsRequestApprovalHistoryRepository;
 import com.hr.backend.fin_repository.NeedsRequestItemRepository;
 import com.hr.backend.fin_repository.NeedsRequestRepository;
-import com.hr.backend.service.MobileNotificationService;
+
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/needs-requests")
@@ -32,9 +38,6 @@ public class NeedsRequestController {
     @Autowired
     private NeedsRequestApprovalHistoryRepository approvalHistoryRepository;
 
-    @Autowired
-    private MobileNotificationService mobileNotificationService;
-
     @GetMapping("/test")
     public String test() {
         return "Needs Requests API is working";
@@ -42,10 +45,6 @@ public class NeedsRequestController {
 
     @PostMapping
     public NeedsRequestModel create(@RequestBody NeedsRequestModel request) {
-
-        if (isBlank(request.getOrganization())) {
-            throw new RuntimeException("Organization is required");
-        }
 
         if (isBlank(request.getRequestNo())) {
             request.setRequestNo(generateRequestNo(request.getOrganization()));
@@ -107,29 +106,16 @@ public class NeedsRequestController {
                 "Expression de besoin submitted"
         );
 
-        mobileNotificationService.notifyRole(
-                saved.getOrganization(),
-                "HOD",
-                "New request pending HOD approval",
-                saved.getRequestNo() + " - " + saved.getTitle(),
-                "REQUEST_SUBMITTED",
-                saved
-        );
-
         return saved;
     }
 
     @GetMapping("/organization/{organization}")
-    public List<NeedsRequestModel> getByOrganization(
-            @PathVariable String organization) {
-
+    public List<NeedsRequestModel> getByOrganization(@PathVariable String organization) {
         return needsRequestRepository.findByOrganizationOrderByIdDesc(organization);
     }
 
     @GetMapping("/pending-approval/{organization}")
-    public List<NeedsRequestModel> getPendingApproval(
-            @PathVariable String organization) {
-
+    public List<NeedsRequestModel> getPendingApproval(@PathVariable String organization) {
         return needsRequestRepository.findByOrganizationAndStatusOrderByIdDesc(
                 organization,
                 "PENDING_HOD_APPROVAL"
@@ -144,7 +130,7 @@ public class NeedsRequestController {
         String normalizedRole = safe(role).toUpperCase();
 
         if ("ADMIN".equals(normalizedRole)) {
-            return needsRequestRepository.findPendingByOrganizationAndStatusPrefix(
+            return needsRequestRepository.findByOrganizationAndStatusStartingWithOrderByIdDesc(
                     organization,
                     "PENDING_"
             );
@@ -159,8 +145,7 @@ public class NeedsRequestController {
     }
 
     @GetMapping("/{id}/history")
-    public List<NeedsRequestApprovalHistoryModel> getHistory(
-            @PathVariable Long id) {
+    public List<NeedsRequestApprovalHistoryModel> getHistory(@PathVariable Long id) {
 
         NeedsRequestModel request = needsRequestRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Request not found"));
@@ -201,61 +186,26 @@ public class NeedsRequestController {
         recalculateRequestTotal(request);
 
         LocalDateTime now = LocalDateTime.now();
-        String currentLevel = safe(request.getCurrentApprovalLevel()).toUpperCase();
 
-        if ("HOD".equals(currentLevel)) {
+        if ("HOD".equals(safe(request.getCurrentApprovalLevel()).toUpperCase())) {
 
             request.setHodApprovedBy(approvedBy);
             request.setHodApprovedAt(now);
-
             request.setStatus("PENDING_FINANCE_REVIEW");
             request.setCurrentApprovalLevel("FINANCE");
 
-            saveHistory(
-                    request,
-                    "HOD",
-                    "APPROVED",
-                    approvedBy,
-                    approverRole,
-                    comment
-            );
+            saveHistory(request, "HOD", "APPROVED", approvedBy, approverRole, comment);
 
-            mobileNotificationService.notifyRole(
-                    request.getOrganization(),
-                    "FINANCE",
-                    "Request pending Finance review",
-                    request.getRequestNo() + " - " + request.getTitle(),
-                    "PENDING_FINANCE_REVIEW",
-                    request
-            );
-
-        } else if ("FINANCE".equals(currentLevel)) {
+        } else if ("FINANCE".equals(safe(request.getCurrentApprovalLevel()).toUpperCase())) {
 
             request.setFinanceReviewedBy(approvedBy);
             request.setFinanceReviewedAt(now);
-
             request.setStatus("PENDING_DIRECTOR_APPROVAL");
             request.setCurrentApprovalLevel("DIRECTOR");
 
-            saveHistory(
-                    request,
-                    "FINANCE",
-                    "APPROVED",
-                    approvedBy,
-                    approverRole,
-                    comment
-            );
+            saveHistory(request, "FINANCE", "APPROVED", approvedBy, approverRole, comment);
 
-            mobileNotificationService.notifyRole(
-                    request.getOrganization(),
-                    "DIRECTOR",
-                    "Request pending Director approval",
-                    request.getRequestNo() + " - " + request.getTitle(),
-                    "PENDING_DIRECTOR_APPROVAL",
-                    request
-            );
-
-        } else if ("DIRECTOR".equals(currentLevel)) {
+        } else if ("DIRECTOR".equals(safe(request.getCurrentApprovalLevel()).toUpperCase())) {
 
             request.setDirectorApprovedBy(approvedBy);
             request.setDirectorApprovedAt(now);
@@ -266,28 +216,7 @@ public class NeedsRequestController {
             request.setStatus("APPROVED");
             request.setCurrentApprovalLevel("COMPLETED");
 
-            saveHistory(
-                    request,
-                    "DIRECTOR",
-                    "APPROVED",
-                    approvedBy,
-                    approverRole,
-                    comment
-            );
-
-            mobileNotificationService.notifyUser(
-                    request.getOrganization(),
-                    request.getRequesterEmail(),
-                    "Request fully approved",
-                    request.getRequestNo() + " - " + request.getTitle(),
-                    "REQUEST_APPROVED",
-                    request
-            );
-
-        } else {
-            return ResponseEntity.badRequest().body(
-                    "Invalid approval level: " + request.getCurrentApprovalLevel()
-            );
+            saveHistory(request, "DIRECTOR", "APPROVED", approvedBy, approverRole, comment);
         }
 
         NeedsRequestModel saved = needsRequestRepository.save(request);
@@ -314,7 +243,6 @@ public class NeedsRequestController {
         }
 
         String approverRole = safe(role).toUpperCase();
-        String rejectedLevel = safe(request.getCurrentApprovalLevel()).toUpperCase();
 
         if (!canApproveCurrentLevel(request, approverRole)) {
             return ResponseEntity.status(403).body(
@@ -322,6 +250,8 @@ public class NeedsRequestController {
                             + request.getCurrentApprovalLevel()
             );
         }
+
+        String levelBeforeReject = safe(request.getCurrentApprovalLevel());
 
         request.setStatus("REJECTED");
         request.setCurrentApprovalLevel("REJECTED");
@@ -331,20 +261,11 @@ public class NeedsRequestController {
 
         saveHistory(
                 request,
-                rejectedLevel,
+                levelBeforeReject,
                 "REJECTED",
                 rejectedBy,
                 approverRole,
                 reason
-        );
-
-        mobileNotificationService.notifyUser(
-                request.getOrganization(),
-                request.getRequesterEmail(),
-                "Request rejected",
-                request.getRequestNo() + " - " + request.getTitle(),
-                "REQUEST_REJECTED",
-                request
         );
 
         NeedsRequestModel saved = needsRequestRepository.save(request);
@@ -356,38 +277,194 @@ public class NeedsRequestController {
     public ResponseEntity<?> updateItemQuantity(
             @PathVariable Long requestId,
             @PathVariable Long itemId,
-            @RequestParam BigDecimal quantity) {
+            @RequestParam BigDecimal quantity,
+            @RequestParam(required = false) String updatedBy,
+            @RequestParam(required = false) String role) {
 
-        NeedsRequestModel request = needsRequestRepository.findById(requestId)
-                .orElseThrow(() -> new RuntimeException("Request not found"));
+        NeedsRequestModel request = getRequestOrThrow(requestId);
 
-        if ("APPROVED".equals(request.getStatus())
-                || "REJECTED".equals(request.getStatus())) {
+        if (isCompleted(request)) {
             return ResponseEntity.badRequest().body("Cannot modify completed request");
         }
 
-        NeedsRequestItemModel item = needsRequestItemRepository.findById(itemId)
-                .orElseThrow(() -> new RuntimeException("Item not found"));
+        String normalizedRole = safe(role).toUpperCase();
 
-        if (item.getNeedsRequest() == null
-                || !item.getNeedsRequest().getId().equals(requestId)) {
-            return ResponseEntity.badRequest().body("Item does not belong to this request");
+        if (!canModifyQuantity(request, normalizedRole)) {
+            return ResponseEntity.status(403).body("Only HOD or DIRECTOR can modify quantity at their approval level");
         }
 
-        BigDecimal unitPrice = safeBigDecimal(item.getUnitPrice());
+        NeedsRequestItemModel item = getItemOrThrow(requestId, itemId);
+
         BigDecimal safeQuantity = safeBigDecimal(quantity);
+        BigDecimal unitPrice = safeBigDecimal(item.getUnitPrice());
 
         item.setQuantity(safeQuantity);
         item.setTotalAmount(safeQuantity.multiply(unitPrice));
 
         needsRequestItemRepository.save(item);
 
-        NeedsRequestModel updatedRequest = needsRequestRepository.findById(requestId)
-                .orElseThrow(() -> new RuntimeException("Request not found"));
+        NeedsRequestModel refreshedRequest = getRequestOrThrow(requestId);
+        recalculateRequestTotal(refreshedRequest);
 
-        recalculateRequestTotal(updatedRequest);
+        saveHistory(
+                refreshedRequest,
+                safe(refreshedRequest.getCurrentApprovalLevel()),
+                "UPDATED",
+                updatedBy,
+                normalizedRole,
+                "Quantity updated for item: " + safe(item.getItemName())
+        );
 
-        NeedsRequestModel saved = needsRequestRepository.save(updatedRequest);
+        NeedsRequestModel saved = needsRequestRepository.save(refreshedRequest);
+
+        return ResponseEntity.ok(saved);
+    }
+
+    @PutMapping("/{requestId}/finance-fields")
+    public ResponseEntity<?> updateFinanceFields(
+            @PathVariable Long requestId,
+            @RequestBody FinanceUpdateRequest financeUpdateRequest) {
+
+        NeedsRequestModel request = getRequestOrThrow(requestId);
+
+        if (isCompleted(request)) {
+            return ResponseEntity.badRequest().body("Cannot modify completed request");
+        }
+
+        String role = safe(financeUpdateRequest.getRole()).toUpperCase();
+
+        if (!canModifyFinanceFields(request, role)) {
+            return ResponseEntity.status(403).body("Only Finance can modify budget, fund, currency, G/L account and dimensions at Finance level");
+        }
+
+        if (!isBlank(financeUpdateRequest.getBudgetPlan())) {
+            request.setBudgetPlan(financeUpdateRequest.getBudgetPlan());
+        }
+
+        if (!isBlank(financeUpdateRequest.getFundCode())) {
+            request.setFundCode(financeUpdateRequest.getFundCode());
+        }
+
+        if (!isBlank(financeUpdateRequest.getCurrencyCode())) {
+            request.setCurrencyCode(financeUpdateRequest.getCurrencyCode());
+        }
+
+        if (!isBlank(financeUpdateRequest.getGlAccountNo())) {
+            request.setGlAccountNo(financeUpdateRequest.getGlAccountNo());
+        }
+
+        if (!isBlank(financeUpdateRequest.getGlAccountCode())) {
+            request.setGlAccountNo(financeUpdateRequest.getGlAccountCode());
+        }
+
+        if (!isBlank(financeUpdateRequest.getDimensionValues())) {
+            request.setDimensionValues(financeUpdateRequest.getDimensionValues());
+        }
+
+        if (request.getItems() != null) {
+            for (NeedsRequestItemModel item : request.getItems()) {
+
+                if (!isBlank(financeUpdateRequest.getBudgetPlan())) {
+                    item.setBudgetPlan(financeUpdateRequest.getBudgetPlan());
+                }
+
+                if (!isBlank(financeUpdateRequest.getFundCode())) {
+                    item.setFundCode(financeUpdateRequest.getFundCode());
+                }
+
+                if (!isBlank(financeUpdateRequest.getGlAccountNo())) {
+                    item.setGlAccountNo(financeUpdateRequest.getGlAccountNo());
+                }
+
+                if (!isBlank(financeUpdateRequest.getGlAccountCode())) {
+                    item.setGlAccountNo(financeUpdateRequest.getGlAccountCode());
+                }
+
+                if (!isBlank(financeUpdateRequest.getDimensionValues())) {
+                    item.setDimensionValues(financeUpdateRequest.getDimensionValues());
+                }
+            }
+        }
+
+        recalculateRequestTotal(request);
+
+        saveHistory(
+                request,
+                "FINANCE",
+                "UPDATED",
+                financeUpdateRequest.getUpdatedBy(),
+                role,
+                "Finance fields updated"
+        );
+
+        NeedsRequestModel saved = needsRequestRepository.save(request);
+
+        return ResponseEntity.ok(saved);
+    }
+
+    @PutMapping("/{requestId}/items/{itemId}/finance-fields")
+    public ResponseEntity<?> updateItemFinanceFields(
+            @PathVariable Long requestId,
+            @PathVariable Long itemId,
+            @RequestBody FinanceUpdateRequest financeUpdateRequest) {
+
+        NeedsRequestModel request = getRequestOrThrow(requestId);
+
+        if (isCompleted(request)) {
+            return ResponseEntity.badRequest().body("Cannot modify completed request");
+        }
+
+        String role = safe(financeUpdateRequest.getRole()).toUpperCase();
+
+        if (!canModifyFinanceFields(request, role)) {
+            return ResponseEntity.status(403).body("Only Finance can modify unit price and item finance fields at Finance level");
+        }
+
+        NeedsRequestItemModel item = getItemOrThrow(requestId, itemId);
+
+        if (financeUpdateRequest.getUnitPrice() != null) {
+            BigDecimal unitPrice = safeBigDecimal(financeUpdateRequest.getUnitPrice());
+            BigDecimal quantity = safeBigDecimal(item.getQuantity());
+
+            item.setUnitPrice(unitPrice);
+            item.setTotalAmount(quantity.multiply(unitPrice));
+        }
+
+        if (!isBlank(financeUpdateRequest.getBudgetPlan())) {
+            item.setBudgetPlan(financeUpdateRequest.getBudgetPlan());
+        }
+
+        if (!isBlank(financeUpdateRequest.getFundCode())) {
+            item.setFundCode(financeUpdateRequest.getFundCode());
+        }
+
+        if (!isBlank(financeUpdateRequest.getGlAccountNo())) {
+            item.setGlAccountNo(financeUpdateRequest.getGlAccountNo());
+        }
+
+        if (!isBlank(financeUpdateRequest.getGlAccountCode())) {
+            item.setGlAccountNo(financeUpdateRequest.getGlAccountCode());
+        }
+
+        if (!isBlank(financeUpdateRequest.getDimensionValues())) {
+            item.setDimensionValues(financeUpdateRequest.getDimensionValues());
+        }
+
+        needsRequestItemRepository.save(item);
+
+        NeedsRequestModel refreshedRequest = getRequestOrThrow(requestId);
+        recalculateRequestTotal(refreshedRequest);
+
+        saveHistory(
+                refreshedRequest,
+                "FINANCE",
+                "UPDATED",
+                financeUpdateRequest.getUpdatedBy(),
+                role,
+                "Unit price / finance fields updated for item: " + safe(item.getItemName())
+        );
+
+        NeedsRequestModel saved = needsRequestRepository.save(refreshedRequest);
 
         return ResponseEntity.ok(saved);
     }
@@ -395,13 +472,13 @@ public class NeedsRequestController {
     @DeleteMapping("/{requestId}/items/{itemId}")
     public ResponseEntity<?> deleteItem(
             @PathVariable Long requestId,
-            @PathVariable Long itemId) {
+            @PathVariable Long itemId,
+            @RequestParam(required = false) String deletedBy,
+            @RequestParam(required = false) String role) {
 
-        NeedsRequestModel request = needsRequestRepository.findById(requestId)
-                .orElseThrow(() -> new RuntimeException("Request not found"));
+        NeedsRequestModel request = getRequestOrThrow(requestId);
 
-        if ("APPROVED".equals(request.getStatus())
-                || "REJECTED".equals(request.getStatus())) {
+        if (isCompleted(request)) {
             return ResponseEntity.badRequest().body("Cannot modify completed request");
         }
 
@@ -409,8 +486,7 @@ public class NeedsRequestController {
             return ResponseEntity.badRequest().body("You cannot delete all items");
         }
 
-        Optional<NeedsRequestItemModel> optionalItem =
-                needsRequestItemRepository.findById(itemId);
+        Optional<NeedsRequestItemModel> optionalItem = needsRequestItemRepository.findById(itemId);
 
         if (optionalItem.isEmpty()) {
             return ResponseEntity.badRequest().body("Item not found");
@@ -418,21 +494,44 @@ public class NeedsRequestController {
 
         NeedsRequestItemModel item = optionalItem.get();
 
-        if (item.getNeedsRequest() == null
-                || !item.getNeedsRequest().getId().equals(requestId)) {
+        if (item.getNeedsRequest() == null || !item.getNeedsRequest().getId().equals(requestId)) {
             return ResponseEntity.badRequest().body("Item does not belong to this request");
         }
 
         needsRequestItemRepository.delete(item);
 
-        NeedsRequestModel updatedRequest = needsRequestRepository.findById(requestId)
-                .orElseThrow(() -> new RuntimeException("Request not found"));
-
+        NeedsRequestModel updatedRequest = getRequestOrThrow(requestId);
         recalculateRequestTotal(updatedRequest);
+
+        saveHistory(
+                updatedRequest,
+                safe(updatedRequest.getCurrentApprovalLevel()),
+                "UPDATED",
+                deletedBy,
+                safe(role).toUpperCase(),
+                "Item deleted: " + safe(item.getItemName())
+        );
 
         NeedsRequestModel saved = needsRequestRepository.save(updatedRequest);
 
         return ResponseEntity.ok(saved);
+    }
+
+    private NeedsRequestModel getRequestOrThrow(Long requestId) {
+        return needsRequestRepository.findById(requestId)
+                .orElseThrow(() -> new RuntimeException("Request not found"));
+    }
+
+    private NeedsRequestItemModel getItemOrThrow(Long requestId, Long itemId) {
+
+        NeedsRequestItemModel item = needsRequestItemRepository.findById(itemId)
+                .orElseThrow(() -> new RuntimeException("Item not found"));
+
+        if (item.getNeedsRequest() == null || !item.getNeedsRequest().getId().equals(requestId)) {
+            throw new RuntimeException("Item does not belong to this request");
+        }
+
+        return item;
     }
 
     private boolean canApproveCurrentLevel(NeedsRequestModel request, String role) {
@@ -456,6 +555,41 @@ public class NeedsRequestController {
         }
 
         return false;
+    }
+
+    private boolean canModifyQuantity(NeedsRequestModel request, String role) {
+
+        if ("ADMIN".equals(role)) {
+            return true;
+        }
+
+        String level = safe(request.getCurrentApprovalLevel()).toUpperCase();
+
+        if ("HOD".equals(level)) {
+            return "HOD".equals(role);
+        }
+
+        if ("DIRECTOR".equals(level)) {
+            return "DIRECTOR".equals(role);
+        }
+
+        return false;
+    }
+
+    private boolean canModifyFinanceFields(NeedsRequestModel request, String role) {
+
+        if ("ADMIN".equals(role)) {
+            return true;
+        }
+
+        String level = safe(request.getCurrentApprovalLevel()).toUpperCase();
+
+        return "FINANCE".equals(level) && "FINANCE".equals(role);
+    }
+
+    private boolean isCompleted(NeedsRequestModel request) {
+        String status = safe(request.getStatus()).toUpperCase();
+        return "APPROVED".equals(status) || "REJECTED".equals(status);
     }
 
     private String getPendingStatusForRole(String role) {
@@ -483,8 +617,7 @@ public class NeedsRequestController {
             String actedRole,
             String comment) {
 
-        NeedsRequestApprovalHistoryModel history =
-                new NeedsRequestApprovalHistoryModel();
+        NeedsRequestApprovalHistoryModel history = new NeedsRequestApprovalHistoryModel();
 
         history.setOrganization(request.getOrganization());
         history.setNeedsRequestId(request.getId());
@@ -526,14 +659,13 @@ public class NeedsRequestController {
 
     private String generateRequestNo(String organization) {
 
-        String safeOrganization = safe(organization);
         String year = String.valueOf(LocalDate.now().getYear());
 
         long count = needsRequestRepository
-                .findByOrganizationOrderByIdDesc(safeOrganization)
+                .findByOrganizationOrderByIdDesc(organization)
                 .size() + 1L;
 
-        return safeOrganization + "-EB-" + year + "-" + String.format("%04d", count);
+        return "EB-" + year + "-" + String.format("%04d", count);
     }
 
     private boolean isBlank(String value) {
@@ -542,5 +674,99 @@ public class NeedsRequestController {
 
     private String safe(String value) {
         return value == null ? "" : value.trim();
+    }
+
+    public static class FinanceUpdateRequest {
+
+        private String updatedBy;
+        private String role;
+        private BigDecimal unitPrice;
+        private String budgetPlan;
+        private String fundCode;
+        private String currencyCode;
+        private String glAccountNo;
+        private String glAccountCode;
+        private String dimensionValues;
+        private Map<String, String> dimensions;
+
+        public String getUpdatedBy() {
+            return updatedBy;
+        }
+
+        public void setUpdatedBy(String updatedBy) {
+            this.updatedBy = updatedBy;
+        }
+
+        public String getRole() {
+            return role;
+        }
+
+        public void setRole(String role) {
+            this.role = role;
+        }
+
+        public BigDecimal getUnitPrice() {
+            return unitPrice;
+        }
+
+        public void setUnitPrice(BigDecimal unitPrice) {
+            this.unitPrice = unitPrice;
+        }
+
+        public String getBudgetPlan() {
+            return budgetPlan;
+        }
+
+        public void setBudgetPlan(String budgetPlan) {
+            this.budgetPlan = budgetPlan;
+        }
+
+        public String getFundCode() {
+            return fundCode;
+        }
+
+        public void setFundCode(String fundCode) {
+            this.fundCode = fundCode;
+        }
+
+        public String getCurrencyCode() {
+            return currencyCode;
+        }
+
+        public void setCurrencyCode(String currencyCode) {
+            this.currencyCode = currencyCode;
+        }
+
+        public String getGlAccountNo() {
+            return glAccountNo;
+        }
+
+        public void setGlAccountNo(String glAccountNo) {
+            this.glAccountNo = glAccountNo;
+        }
+
+        public String getGlAccountCode() {
+            return glAccountCode;
+        }
+
+        public void setGlAccountCode(String glAccountCode) {
+            this.glAccountCode = glAccountCode;
+        }
+
+        public String getDimensionValues() {
+            return dimensionValues;
+        }
+
+        public void setDimensionValues(String dimensionValues) {
+            this.dimensionValues = dimensionValues;
+        }
+
+        public Map<String, String> getDimensions() {
+            return dimensions;
+        }
+
+        public void setDimensions(Map<String, String> dimensions) {
+            this.dimensions = dimensions;
+        }
     }
 }

@@ -10,12 +10,13 @@ package com.hr.backend.fin_repository;
  */
 
 
+
 import com.hr.backend.fin_model.NeedsRequestModel;
 import java.util.List;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.query.Param;
+import org.springframework.stereotype.Repository;
 
+@Repository
 public interface NeedsRequestRepository extends JpaRepository<NeedsRequestModel, Long> {
 
     List<NeedsRequestModel> findByOrganizationOrderByIdDesc(String organization);
@@ -25,14 +26,23 @@ public interface NeedsRequestRepository extends JpaRepository<NeedsRequestModel,
             String status
     );
 
-    boolean existsByOrganizationAndRequestNo(String organization, String requestNo);
+    List<NeedsRequestModel> findByOrganizationAndStatusStartingWithOrderByIdDesc(
+            String organization,
+            String statusPrefix
+    );
 
-    @Query("SELECT n FROM NeedsRequestModel n " +
-           "WHERE n.organization = :organization " +
-           "AND n.status LIKE CONCAT(:statusPrefix, '%') " +
-           "ORDER BY n.id DESC")
-    List<NeedsRequestModel> findPendingByOrganizationAndStatusPrefix(
-            @Param("organization") String organization,
-            @Param("statusPrefix") String statusPrefix
+    List<NeedsRequestModel> findByOrganizationAndCurrentApprovalLevelOrderByIdDesc(
+            String organization,
+            String currentApprovalLevel
+    );
+
+    List<NeedsRequestModel> findByOrganizationAndRequestedByOrderByIdDesc(
+            String organization,
+            String requestedBy
+    );
+
+    List<NeedsRequestModel> findByOrganizationAndRequesterEmailOrderByIdDesc(
+            String organization,
+            String requesterEmail
     );
 }
