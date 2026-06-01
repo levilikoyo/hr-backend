@@ -110,10 +110,14 @@
             <strong id="grandTotal">0.00</strong>
         </div>
 
+        <div class="section-title">
+            Accounting information
+        </div>
+
         <div class="form-group">
             <label for="budgetPlan">Budget Plan</label>
             <select id="budgetPlan" required>
-                <option value="">Sélectionner</option>
+                <option value="">Select budget plan</option>
                 <option value="SALARY">SALARY</option>
                 <option value="OPEX">OPEX</option>
                 <option value="CAPEX">CAPEX</option>
@@ -121,36 +125,36 @@
         </div>
 
         <div class="form-group">
-            <label for="currencyCode">Devise</label>
-            <select id="currencyCode">
-                <option value="USD">USD</option>
-                <option value="CDF">CDF</option>
-                <option value="EUR">EUR</option>
+            <label for="fundCode">Fund</label>
+            <select id="fundCode" required>
+                <option value="">Loading funds...</option>
             </select>
         </div>
 
         <div class="form-group">
-            <label for="department">Département</label>
-            <input
-                    type="text"
-                    id="department"
-                    placeholder="Ex: Finance, Operations, DDD">
+            <label for="currencyCode">Devise</label>
+            <select id="currencyCode" required>
+                <option value="">Loading currencies...</option>
+            </select>
         </div>
 
         <div class="form-group">
             <label for="glAccountNo">G/L Account</label>
-            <input
-                    type="text"
-                    id="glAccountNo"
-                    placeholder="Ex: 601001">
+            <select id="glAccountNo" required>
+                <option value="">Loading G/L accounts...</option>
+            </select>
         </div>
 
-        <div class="form-group">
-            <label for="fundCode">Fund</label>
-            <input
-                    type="text"
-                    id="fundCode"
-                    placeholder="Ex: NDICI2">
+        <div class="section-title">
+            Dimensions
+        </div>
+
+        <div id="dynamicDimensionsContainer">
+            <div class="empty-state small-empty">
+                <div class="empty-icon">...</div>
+                <h3>Loading dimensions</h3>
+                <p>Please wait...</p>
+            </div>
         </div>
 
         <div class="form-group">
