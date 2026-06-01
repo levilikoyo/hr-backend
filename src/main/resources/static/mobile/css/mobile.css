@@ -665,15 +665,53 @@ input[type="date"] {
 .item-card-header {
     display: flex;
     justify-content: space-between;
-    align-items: center;
+    align-items: flex-start;
+    gap: 12px;
     margin-bottom: 14px;
+    cursor: pointer;
 }
 
-.item-header strong,
-.item-card-header strong {
-    font-size: 16px;
+.item-header-left {
+    min-width: 0;
+    flex: 1;
+}
+
+.item-title {
+    font-size: 17px;
     font-weight: 900;
     color: #111827;
+    line-height: 1.2;
+}
+
+.item-summary {
+    margin-top: 4px !important;
+    font-size: 12px !important;
+    font-weight: 500 !important;
+    color: #6b7280 !important;
+    line-height: 1.3 !important;
+    letter-spacing: 0 !important;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.item-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+.collapse-icon {
+    width: 30px;
+    height: 30px;
+    color: #374151;
+    transition: transform 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    font-weight: 900;
 }
 
 .btn-remove-item,
@@ -683,9 +721,35 @@ input[type="date"] {
     background: #fee2e2;
     color: #991b1b;
     border-radius: 999px;
-    padding: 7px 11px;
-    font-size: 13px;
+    min-width: 34px;
+    height: 34px;
+    padding: 0 11px;
+    font-size: 18px;
     font-weight: 900;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+}
+
+.item-body {
+    display: block;
+}
+
+.item-card.collapsed .item-body {
+    display: none;
+}
+
+.item-card.collapsed {
+    padding-bottom: 0;
+}
+
+.item-card.collapsed .item-header {
+    margin-bottom: 0;
+}
+
+.item-card.collapsed .collapse-icon {
+    transform: rotate(180deg);
 }
 
 .item-total-box,
@@ -1545,72 +1609,4 @@ input[type="date"] {
     .approval-actions {
         grid-template-columns: 1fr;
     }
-    /* =========================================================
-   COLLAPSIBLE NEEDS REQUEST ITEM CARD
-   ========================================================= */
-
-.item-card.collapsed .item-body {
-    display: none;
-}
-
-.item-card.collapsed {
-    padding-bottom: 0;
-}
-
-.item-card.collapsed .item-header {
-    margin-bottom: 0;
-}
-
-.item-card.collapsed .collapse-icon {
-    transform: rotate(180deg);
-}
-
-.item-header {
-    cursor: pointer;
-}
-
-.collapse-icon {
-    transition: transform 0.2s ease;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.remove-item {
-    cursor: pointer;
-}
-}
-/* =========================================================
-   COLLAPSIBLE NEEDS REQUEST ITEM CARD
-   ========================================================= */
-
-.item-card.collapsed .item-body {
-    display: none;
-}
-
-.item-card.collapsed {
-    padding-bottom: 0;
-}
-
-.item-card.collapsed .item-header {
-    margin-bottom: 0;
-}
-
-.item-header {
-    cursor: pointer;
-}
-
-.collapse-icon {
-    transition: transform 0.2s ease;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.item-card.collapsed .collapse-icon {
-    transform: rotate(180deg);
-}
-
-.remove-item {
-    cursor: pointer;
 }
