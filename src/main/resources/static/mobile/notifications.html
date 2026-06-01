@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Notifications</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- PWA -->
+    <link rel="manifest" href="/mobile/manifest.json">
+    <meta name="theme-color" content="#ffffff">
+
+    <link rel="apple-touch-icon" sizes="180x180" href="/mobile/icons/icon-180.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="/mobile/icons/icon-192.png">
+    <link rel="icon" type="image/png" sizes="512x512" href="/mobile/icons/icon-512.png">
+
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="EMS-L Approval">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+
+    <link rel="stylesheet" href="css/mobile.css">
+    <link rel="stylesheet" href="css/dialog.css">
+</head>
+<body>
+
+<div class="app">
+
+    <div class="top-header">
+
+        <div class="top-header-left">
+            <a href="index.html" class="return-btn">←</a>
+
+            <div class="app-title-box">
+                <h1>Notifications</h1>
+                <p>Alertes et mises à jour</p>
+            </div>
+        </div>
+
+        <div class="top-header-right">
+
+            <div class="user-info-box" onclick="toggleUserMenu()">
+                <div class="user-text">
+                    <strong id="currentUserName">User</strong>
+                    <span id="currentUserRole">Role</span>
+                </div>
+
+                <img src="images/user-avatar.png" alt="User" class="user-avatar">
+            </div>
+
+            <div class="user-dropdown" id="userDropdown">
+                <strong id="dropdownUserName">User</strong>
+                <span id="dropdownUserEmail">email</span>
+                <small id="dropdownUserRole">Role</small>
+
+                <button type="button" onclick="logoutUser()">
+                    Logout
+                </button>
+            </div>
+
+        </div>
+
+    </div>
+
+    <div class="approval-container">
+
+        <div class="approval-toolbar">
+            <h2>My notifications</h2>
+            <span id="notificationCount">0</span>
+        </div>
+
+        <div class="notification-actions">
+            <button type="button" class="btn-secondary" onclick="markAllNotificationsRead()">
+                Mark all as read
+            </button>
+        </div>
+
+        <div id="notificationList"></div>
+
+    </div>
+
+</div>
+
+<script src="js/config.js"></script>
+<script src="js/mobile-dialog.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/notifications.js"></script>
+<script src="js/pwa-register.js"></script>
+
+</body>
+</html>

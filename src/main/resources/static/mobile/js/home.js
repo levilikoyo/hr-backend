@@ -46,6 +46,9 @@ async function loadDashboardBadges() {
             updateApprovalBadges(pendingApprovals.length);
         }
 
+        const unreadNotifications = await fetchUnreadNotificationCount();
+        updateNotificationBadges(unreadNotifications);
+
     } catch (error) {
         console.error(error);
 
@@ -73,6 +76,19 @@ async function fetchAllRequests() {
 async function fetchPendingApprovalsForUser() {
     const response = await fetch(
         `${BASE_URL}/api/needs-requests/pending-approval/${encodeURIComponent(ORGANIZATION)}/${encodeURIComponent(currentUser.role)}`
+    );
+
+    if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error("HTTP " + response.status + " - " + errorText);
+    }
+
+    return await response.json();
+}
+
+async function fetchUnreadNotificationCount() {
+    const response = await fetch(
+        `${BASE_URL}/api/mobile-notifications/unread-count?organization=${encodeURIComponent(ORGANIZATION)}&email=${encodeURIComponent(currentUser.email)}&role=${encodeURIComponent(currentUser.role)}`
     );
 
     if (!response.ok) {
@@ -119,6 +135,17 @@ function updateApprovalBadges(count) {
     setText("approvalMenuBadge", count);
 
     const badge = document.getElementById("approvalMenuBadge");
+
+    if (badge) {
+        badge.style.display = count > 0 ? "inline-flex" : "none";
+    }
+}
+
+function updateNotificationBadges(count) {
+    setText("notificationUnreadCount", count);
+    setText("notificationMenuBadge", count);
+
+    const badge = document.getElementById("notificationMenuBadge");
 
     if (badge) {
         badge.style.display = count > 0 ? "inline-flex" : "none";

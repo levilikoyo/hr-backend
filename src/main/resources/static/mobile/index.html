@@ -17,6 +17,7 @@
     <meta name="apple-mobile-web-app-title" content="EMS-L Approval">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
 
+    <!-- CSS -->
     <link rel="stylesheet" href="css/mobile.css">
     <link rel="stylesheet" href="css/dialog.css">
 </head>
@@ -24,6 +25,7 @@
 
 <div class="app">
 
+    <!-- TOP HEADER -->
     <div class="top-header">
 
         <div class="top-header-left">
@@ -58,6 +60,7 @@
 
     </div>
 
+    <!-- DASHBOARD CARDS -->
     <div class="dashboard-grid">
 
         <div class="dashboard-card">
@@ -80,12 +83,19 @@
             <div class="dashboard-value approval" id="pendingApprovalCount">0</div>
         </div>
 
+        <div class="dashboard-card">
+            <div class="dashboard-label">Notifications</div>
+            <div class="dashboard-value notification" id="notificationUnreadCount">0</div>
+        </div>
+
     </div>
 
+    <!-- MAIN MENU -->
     <div class="menu">
 
         <a href="needs-request.html" class="menu-card">
             <div class="menu-icon">＋</div>
+
             <div class="menu-content">
                 <h2>Nouvelle demande</h2>
                 <p>Créer une expression de besoin</p>
@@ -112,6 +122,17 @@
             </div>
 
             <span class="menu-badge" id="myRequestsMenuBadge">0</span>
+        </a>
+
+        <a href="notifications.html" class="menu-card">
+            <div class="menu-icon">🔔</div>
+
+            <div class="menu-content">
+                <h2>Notifications</h2>
+                <p>Voir les alertes et mises à jour</p>
+            </div>
+
+            <span class="menu-badge" id="notificationMenuBadge">0</span>
         </a>
 
     </div>
