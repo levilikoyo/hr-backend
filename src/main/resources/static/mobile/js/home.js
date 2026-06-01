@@ -16,11 +16,8 @@ function prepareHomeForRole() {
     const approvalMenuCard = document.getElementById("approvalMenuCard");
     const pendingApprovalCard = document.getElementById("pendingApprovalCard");
 
-    if (!currentUser) {
-        return;
-    }
-
-    const canApprove = ["HOD", "FINANCE", "DIRECTOR", "ADMIN"].includes(currentUser.role);
+    const canApprove = ["HOD", "FINANCE", "DIRECTOR", "ADMIN"]
+            .includes(String(currentUser.role || "").toUpperCase());
 
     if (!canApprove) {
         if (approvalMenuCard) {
@@ -36,12 +33,13 @@ function prepareHomeForRole() {
 async function loadDashboardBadges() {
     try {
         const allRequests = await fetchAllRequests();
-
         const myRequests = getMyRequests(allRequests);
 
         updateMyRequestBadges(myRequests);
 
-        if (["HOD", "FINANCE", "DIRECTOR", "ADMIN"].includes(currentUser.role)) {
+        if (["HOD", "FINANCE", "DIRECTOR", "ADMIN"]
+                .includes(String(currentUser.role || "").toUpperCase())) {
+
             const pendingApprovals = await fetchPendingApprovalsForUser();
             updateApprovalBadges(pendingApprovals.length);
         }
@@ -53,16 +51,18 @@ async function loadDashboardBadges() {
         console.error(error);
 
         await showMessageDialog(
-            "Dashboard error",
-            "Failed to load dashboard badges: " + error.message,
-            "danger"
+                "Dashboard error",
+                "Failed to load dashboard badges: " + error.message,
+                "danger"
         );
     }
 }
 
 async function fetchAllRequests() {
+    const organization = getCurrentOrganization();
+
     const response = await fetch(
-        `${BASE_URL}/api/needs-requests/organization/${encodeURIComponent(ORGANIZATION)}`
+            `${BASE_URL}/api/needs-requests/organization/${encodeURIComponent(organization)}`
     );
 
     if (!response.ok) {
@@ -74,8 +74,10 @@ async function fetchAllRequests() {
 }
 
 async function fetchPendingApprovalsForUser() {
+    const organization = getCurrentOrganization();
+
     const response = await fetch(
-        `${BASE_URL}/api/needs-requests/pending-approval/${encodeURIComponent(ORGANIZATION)}/${encodeURIComponent(currentUser.role)}`
+            `${BASE_URL}/api/needs-requests/pending-approval/${encodeURIComponent(organization)}/${encodeURIComponent(currentUser.role)}`
     );
 
     if (!response.ok) {
@@ -87,8 +89,10 @@ async function fetchPendingApprovalsForUser() {
 }
 
 async function fetchUnreadNotificationCount() {
+    const organization = getCurrentOrganization();
+
     const response = await fetch(
-        `${BASE_URL}/api/mobile-notifications/unread-count?organization=${encodeURIComponent(ORGANIZATION)}&email=${encodeURIComponent(currentUser.email)}&role=${encodeURIComponent(currentUser.role)}`
+            `${BASE_URL}/api/mobile-notifications/unread-count?organization=${encodeURIComponent(organization)}&email=${encodeURIComponent(currentUser.email)}&role=${encodeURIComponent(currentUser.role)}`
     );
 
     if (!response.ok) {
@@ -104,10 +108,10 @@ function getMyRequests(allRequests) {
         return [];
     }
 
-    if (currentUser.role === "REQUESTER") {
+    if (String(currentUser.role || "").toUpperCase() === "REQUESTER") {
         return allRequests.filter(request => {
             return request.requesterEmail === currentUser.email
-                || request.requestedBy === currentUser.fullName;
+                    || request.requestedBy === currentUser.fullName;
         });
     }
 
@@ -117,8 +121,8 @@ function getMyRequests(allRequests) {
 function updateMyRequestBadges(myRequests) {
     const myPending = myRequests.filter(request => {
         return request.status === "PENDING_HOD_APPROVAL"
-            || request.status === "PENDING_FINANCE_REVIEW"
-            || request.status === "PENDING_DIRECTOR_APPROVAL";
+                || request.status === "PENDING_FINANCE_REVIEW"
+                || request.status === "PENDING_DIRECTOR_APPROVAL";
     }).length;
 
     const approved = myRequests.filter(request => request.status === "APPROVED").length;

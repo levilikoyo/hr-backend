@@ -14,6 +14,7 @@ document.addEventListener("DOMContentLoaded", function () {
 async function loadNotifications() {
     const list = document.getElementById("notificationList");
     const count = document.getElementById("notificationCount");
+    const organization = getCurrentOrganization();
 
     list.innerHTML = `
         <div class="empty-state">
@@ -25,7 +26,7 @@ async function loadNotifications() {
 
     try {
         const response = await fetch(
-            `${BASE_URL}/api/mobile-notifications/my-notifications?organization=${encodeURIComponent(ORGANIZATION)}&email=${encodeURIComponent(currentUser.email)}&role=${encodeURIComponent(currentUser.role)}`
+                `${BASE_URL}/api/mobile-notifications/my-notifications?organization=${encodeURIComponent(organization)}&email=${encodeURIComponent(currentUser.email)}&role=${encodeURIComponent(currentUser.role)}`
         );
 
         if (!response.ok) {
@@ -52,8 +53,8 @@ async function loadNotifications() {
         notifications.forEach(notification => {
             const card = document.createElement("div");
             card.className = notification.readStatus
-                ? "notification-card read"
-                : "notification-card unread";
+                    ? "notification-card read"
+                    : "notification-card unread";
 
             card.innerHTML = `
                 <div class="notification-card-header">
@@ -119,10 +120,10 @@ async function loadNotifications() {
 async function markNotificationRead(notificationId) {
     try {
         const response = await fetch(
-            `${BASE_URL}/api/mobile-notifications/${notificationId}/mark-read`,
-            {
-                method: "PUT"
-            }
+                `${BASE_URL}/api/mobile-notifications/${notificationId}/mark-read`,
+                {
+                    method: "PUT"
+                }
         );
 
         if (!response.ok) {
@@ -136,19 +137,19 @@ async function markNotificationRead(notificationId) {
         console.error(error);
 
         await showMessageDialog(
-            "Update failed",
-            error.message,
-            "danger"
+                "Update failed",
+                error.message,
+                "danger"
         );
     }
 }
 
 async function markAllNotificationsRead() {
     const confirmed = await showConfirmDialog(
-        "Mark all as read",
-        "Do you want to mark all notifications as read?",
-        "warning",
-        "Mark all"
+            "Mark all as read",
+            "Do you want to mark all notifications as read?",
+            "warning",
+            "Mark all"
     );
 
     if (!confirmed) {
@@ -156,11 +157,13 @@ async function markAllNotificationsRead() {
     }
 
     try {
+        const organization = getCurrentOrganization();
+
         const response = await fetch(
-            `${BASE_URL}/api/mobile-notifications/mark-all-read?organization=${encodeURIComponent(ORGANIZATION)}&email=${encodeURIComponent(currentUser.email)}&role=${encodeURIComponent(currentUser.role)}`,
-            {
-                method: "PUT"
-            }
+                `${BASE_URL}/api/mobile-notifications/mark-all-read?organization=${encodeURIComponent(organization)}&email=${encodeURIComponent(currentUser.email)}&role=${encodeURIComponent(currentUser.role)}`,
+                {
+                    method: "PUT"
+                }
         );
 
         if (!response.ok) {
@@ -169,9 +172,9 @@ async function markAllNotificationsRead() {
         }
 
         await showMessageDialog(
-            "Updated",
-            "All notifications marked as read.",
-            "success"
+                "Updated",
+                "All notifications marked as read.",
+                "success"
         );
 
         await loadNotifications();
@@ -180,9 +183,9 @@ async function markAllNotificationsRead() {
         console.error(error);
 
         await showMessageDialog(
-            "Update failed",
-            error.message,
-            "danger"
+                "Update failed",
+                error.message,
+                "danger"
         );
     }
 }
@@ -205,8 +208,8 @@ function escapeHtml(value) {
     }
 
     return String(value)
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;");
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;");
 }
