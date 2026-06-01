@@ -1,336 +1,429 @@
 /* =========================================================
-   EMS-L Mobile - Authentication Helpers
+   EMS-L Mobile - Auth Helper
    Full clean file
    Path: src/main/resources/static/mobile/js/auth.js
    ========================================================= */
 
-const AUTH_USER_KEY = "ems_mobile_user";
-const AUTH_TOKEN_KEY = "ems_mobile_token";
-const AUTH_ORGANIZATION_KEY = "ems_mobile_organization";
+(function () {
+    "use strict";
 
-/* =========================================================
-   Save / read current user
-   ========================================================= */
+    const USER_STORAGE_KEYS = [
+        "currentUser",
+        "emsCurrentUser",
+        "mobileUser",
+        "loggedUser",
+        "user"
+    ];
 
-function saveCurrentUser(user) {
-    if (!user || typeof user !== "object") {
-        throw new Error("Invalid user data.");
-    }
+    const TOKEN_STORAGE_KEYS = [
+        "authToken",
+        "emsAuthToken",
+        "mobileToken",
+        "token",
+        "accessToken"
+    ];
 
-    const normalizedUser = normalizeUser(user);
+    document.addEventListener("DOMContentLoaded", function () {
+        bindUserDropdown();
+        displayCurrentUser();
+    });
 
-    localStorage.setItem(AUTH_USER_KEY, JSON.stringify(normalizedUser));
+    /* =========================================================
+       Current user
+       ========================================================= */
 
-    if (normalizedUser.token) {
-        localStorage.setItem(AUTH_TOKEN_KEY, normalizedUser.token);
-    }
+    function getCurrentUser() {
+        for (const key of USER_STORAGE_KEYS) {
+            const rawValue =
+                localStorage.getItem(key) ||
+                sessionStorage.getItem(key);
 
-    if (normalizedUser.organization) {
-        localStorage.setItem(AUTH_ORGANIZATION_KEY, normalizedUser.organization);
-    }
+            if (!rawValue) {
+                continue;
+            }
 
-    return normalizedUser;
-}
+            try {
+                const parsedUser = JSON.parse(rawValue);
 
-function getCurrentUser() {
-    const rawUser = localStorage.getItem(AUTH_USER_KEY);
+                if (parsedUser && typeof parsedUser === "object") {
+                    return normalizeUser(parsedUser);
+                }
+            } catch (error) {
+                console.warn("Invalid stored user for key:", key, error);
+            }
+        }
 
-    if (!rawUser) {
         return null;
     }
 
-    try {
-        const user = JSON.parse(rawUser);
-        return normalizeUser(user);
-    } catch (error) {
-        console.error("Invalid stored user:", error);
-        clearAuth();
-        return null;
-    }
-}
+    function saveCurrentUser(user, token) {
+        if (!user || typeof user !== "object") {
+            return;
+        }
 
-function getCurrentToken() {
-    return localStorage.getItem(AUTH_TOKEN_KEY) || "";
-}
+        const normalizedUser = normalizeUser(user);
 
-function getCurrentOrganization() {
-    const user = getCurrentUser();
+        localStorage.setItem("currentUser", JSON.stringify(normalizedUser));
+        localStorage.setItem("emsCurrentUser", JSON.stringify(normalizedUser));
+        localStorage.setItem("mobileUser", JSON.stringify(normalizedUser));
 
-    const organizationFromUser =
-        user &&
-        (
-            user.organization ||
-            user.organisation ||
-            user.organizationCode ||
-            user.organisationCode ||
-            user.companyOrganization ||
-            user.company ||
-            user.org
-        );
-
-    if (organizationFromUser && String(organizationFromUser).trim() !== "") {
-        return String(organizationFromUser).trim();
-    }
-
-    const organizationFromStorage = localStorage.getItem(AUTH_ORGANIZATION_KEY);
-
-    if (organizationFromStorage && String(organizationFromStorage).trim() !== "") {
-        return String(organizationFromStorage).trim();
-    }
-
-    return "";
-}
-
-function getCurrentUserRole() {
-    const user = getCurrentUser();
-
-    if (!user) {
-        return "";
-    }
-
-    const role =
-        user.role ||
-        user.userRole ||
-        user.user_role ||
-        user.profile ||
-        user.position ||
-        "";
-
-    return String(role || "")
-        .trim()
-        .toUpperCase()
-        .replace(/\s+/g, "_");
-}
-
-function normalizeUser(user) {
-    const organization =
-        firstNonEmptyValue(user, [
-            "organization",
-            "organisation",
-            "organizationCode",
-            "organisationCode",
-            "companyOrganization",
-            "company",
-            "org"
-        ]);
-
-    const fullName =
-        firstNonEmptyValue(user, [
-            "fullName",
-            "fullname",
-            "full_name",
-            "name",
-            "names",
-            "username",
-            "userName",
-            "email"
-        ]);
-
-    const role =
-        firstNonEmptyValue(user, [
-            "role",
-            "userRole",
-            "user_role",
-            "profile",
-            "position"
-        ]);
-
-    return {
-        ...user,
-        id: user.id || user.userId || user.mobileUserId || null,
-        fullName: fullName,
-        username: user.username || user.userName || user.email || "",
-        email: user.email || user.mail || "",
-        role: role,
-        userRole: role,
-        organization: organization,
-        token: user.token || user.accessToken || ""
-    };
-}
-
-function firstNonEmptyValue(object, keys) {
-    if (!object || typeof object !== "object") {
-        return "";
-    }
-
-    for (const key of keys) {
-        const value = object[key];
-
-        if (value !== null && value !== undefined && String(value).trim() !== "") {
-            return String(value).trim();
+        if (token) {
+            localStorage.setItem("authToken", token);
+            localStorage.setItem("emsAuthToken", token);
+            localStorage.setItem("mobileToken", token);
         }
     }
 
-    return "";
-}
+    function normalizeUser(user) {
+        const normalized = Object.assign({}, user);
 
-/* =========================================================
-   Login guard
-   ========================================================= */
+        normalized.id =
+            firstExistingValue(user, [
+                "id",
+                "userId",
+                "employeeId",
+                "staffId"
+            ]) || "";
 
-function requireLogin() {
-    const user = getCurrentUser();
+        normalized.fullName =
+            firstExistingValue(user, [
+                "fullName",
+                "fullname",
+                "name",
+                "employeeName",
+                "staffName",
+                "username",
+                "userName"
+            ]) || "";
 
-    if (!user) {
-        window.location.href = "login.html";
-        return null;
+        normalized.name = normalized.fullName;
+
+        normalized.email =
+            firstExistingValue(user, [
+                "email",
+                "mail",
+                "userEmail",
+                "employeeEmail"
+            ]) || "";
+
+        normalized.role =
+            normalizeRole(
+                firstExistingValue(user, [
+                    "role",
+                    "userRole",
+                    "profile",
+                    "accessRole",
+                    "approvalRole"
+                ]) || ""
+            );
+
+        normalized.organization =
+            firstExistingValue(user, [
+                "organization",
+                "organisation",
+                "org",
+                "company",
+                "companyCode",
+                "organizationCode",
+                "organisationCode"
+            ]) || "";
+
+        normalized.department =
+            firstExistingValue(user, [
+                "department",
+                "departement",
+                "costCenter",
+                "cost_center"
+            ]) || "";
+
+        return normalized;
     }
 
-    const organization = getCurrentOrganization();
+    function requireLogin() {
+        const user = getCurrentUser();
 
-    if (!organization) {
-        alert("Organization not found. Please login again.");
+        if (!user) {
+            redirectToLogin();
+            throw new Error("User not logged in.");
+        }
+
+        return user;
+    }
+
+    function isLoggedIn() {
+        return getCurrentUser() !== null;
+    }
+
+    function getCurrentToken() {
+        for (const key of TOKEN_STORAGE_KEYS) {
+            const token =
+                localStorage.getItem(key) ||
+                sessionStorage.getItem(key);
+
+            if (token) {
+                return token;
+            }
+        }
+
+        return "";
+    }
+
+    function getCurrentOrganization() {
+        const user = getCurrentUser();
+
+        if (!user) {
+            return "";
+        }
+
+        return (
+            user.organization ||
+            user.organisation ||
+            user.org ||
+            user.company ||
+            user.companyCode ||
+            user.organizationCode ||
+            user.organisationCode ||
+            ""
+        );
+    }
+
+    function getCurrentUserRole() {
+        const user = getCurrentUser();
+
+        if (!user) {
+            return "";
+        }
+
+        return normalizeRole(
+            user.role ||
+            user.userRole ||
+            user.profile ||
+            user.accessRole ||
+            user.approvalRole ||
+            ""
+        );
+    }
+
+    function requireRole(allowedRoles) {
+        const user = requireLogin();
+        const role = getCurrentUserRole();
+
+        const allowed = Array.isArray(allowedRoles)
+            ? allowedRoles.map(normalizeRole)
+            : [normalizeRole(allowedRoles)];
+
+        if (!allowed.includes(role) && !allowed.includes("ADMIN")) {
+            showAuthError("You are not allowed to access this page.");
+            redirectToHome();
+            throw new Error("Unauthorized role.");
+        }
+
+        return user;
+    }
+
+    /* =========================================================
+       Display current user
+       ========================================================= */
+
+    function displayCurrentUser() {
+        const user = getCurrentUser();
+
+        if (!user) {
+            return;
+        }
+
+        const name =
+            user.fullName ||
+            user.name ||
+            user.username ||
+            user.email ||
+            "User";
+
+        const role =
+            user.role ||
+            user.userRole ||
+            "USER";
+
+        setText("currentUserName", name);
+        setText("currentUserRole", role);
+
+        setText("dropdownUserName", name);
+        setText("dropdownUserEmail", user.email || "");
+        setText("dropdownUserRole", role);
+
+        setText("userName", name);
+        setText("userRole", role);
+        setText("userEmail", user.email || "");
+    }
+
+    function setText(id, value) {
+        const element = document.getElementById(id);
+
+        if (element) {
+            element.textContent = value || "";
+        }
+    }
+
+    /* =========================================================
+       User dropdown
+       ========================================================= */
+
+    function bindUserDropdown() {
+        const userInfoBox = document.getElementById("userInfoBox");
+        const userDropdown = document.getElementById("userDropdown");
+
+        if (!userInfoBox || !userDropdown) {
+            return;
+        }
+
+        userInfoBox.addEventListener("click", function (event) {
+            event.stopPropagation();
+            userDropdown.classList.toggle("show");
+        });
+
+        userDropdown.addEventListener("click", function (event) {
+            event.stopPropagation();
+        });
+
+        document.addEventListener("click", function () {
+            userDropdown.classList.remove("show");
+        });
+    }
+
+    /* =========================================================
+       Logout
+       ========================================================= */
+
+    function logout() {
         clearAuth();
+
+        if (window.MobileDialog && typeof window.MobileDialog.successToast === "function") {
+            window.MobileDialog.successToast("Logged out successfully");
+        }
+
+        setTimeout(function () {
+            window.location.href = "login.html";
+        }, 300);
+    }
+
+    function clearAuth() {
+        USER_STORAGE_KEYS.forEach(function (key) {
+            localStorage.removeItem(key);
+            sessionStorage.removeItem(key);
+        });
+
+        TOKEN_STORAGE_KEYS.forEach(function (key) {
+            localStorage.removeItem(key);
+            sessionStorage.removeItem(key);
+        });
+
+        localStorage.removeItem("currentOrganization");
+        localStorage.removeItem("organisation");
+        localStorage.removeItem("organization");
+
+        sessionStorage.removeItem("currentOrganization");
+        sessionStorage.removeItem("organisation");
+        sessionStorage.removeItem("organization");
+    }
+
+    function redirectToLogin() {
+        const currentPage = getCurrentPageName();
+
+        if (currentPage === "login.html") {
+            return;
+        }
+
         window.location.href = "login.html";
-        return null;
     }
 
-    return user;
-}
-
-function requireRole(allowedRoles) {
-    const user = requireLogin();
-
-    if (!user) {
-        return null;
+    function redirectToHome() {
+        window.location.href = "index.html";
     }
 
-    const currentRole = getCurrentUserRole();
+    function getCurrentPageName() {
+        const path = window.location.pathname || "";
+        const parts = path.split("/");
+        return parts[parts.length - 1] || "index.html";
+    }
 
-    const roles = Array.isArray(allowedRoles)
-        ? allowedRoles
-        : [allowedRoles];
+    /* =========================================================
+       Auth fetch
+       ========================================================= */
 
-    const normalizedAllowedRoles = roles.map(function (role) {
+    async function authFetch(url, options) {
+        const token = getCurrentToken();
+
+        const finalOptions = options || {};
+        finalOptions.headers = finalOptions.headers || {};
+
+        if (token) {
+            finalOptions.headers.Authorization = `Bearer ${token}`;
+        }
+
+        if (!finalOptions.headers.Accept) {
+            finalOptions.headers.Accept = "application/json";
+        }
+
+        return fetch(url, finalOptions);
+    }
+
+    /* =========================================================
+       Helpers
+       ========================================================= */
+
+    function normalizeRole(role) {
         return String(role || "")
             .trim()
             .toUpperCase()
             .replace(/\s+/g, "_");
-    });
-
-    if (normalizedAllowedRoles.length > 0 && !normalizedAllowedRoles.includes(currentRole)) {
-        alert("You are not authorized to access this page.");
-        window.location.href = "index.html";
-        return null;
     }
 
-    return user;
-}
+    function firstExistingValue(object, keys) {
+        if (!object || typeof object !== "object") {
+            return "";
+        }
 
-function isLoggedIn() {
-    return getCurrentUser() !== null;
-}
+        for (const key of keys) {
+            if (!Object.prototype.hasOwnProperty.call(object, key)) {
+                continue;
+            }
 
-function logout() {
-    clearAuth();
-    window.location.href = "login.html";
-}
+            const value = object[key];
 
-function clearAuth() {
-    localStorage.removeItem(AUTH_USER_KEY);
-    localStorage.removeItem(AUTH_TOKEN_KEY);
-    localStorage.removeItem(AUTH_ORGANIZATION_KEY);
+            if (value !== null && value !== undefined && String(value).trim() !== "") {
+                return String(value).trim();
+            }
+        }
 
-    localStorage.removeItem("currentUser");
-    localStorage.removeItem("mobileUser");
-    localStorage.removeItem("user");
-    localStorage.removeItem("organization");
-    localStorage.removeItem("organisation");
-    localStorage.removeItem("ORGANIZATION");
-}
-
-/* =========================================================
-   Display current user
-   ========================================================= */
-
-function displayCurrentUser() {
-    const user = getCurrentUser();
-
-    if (!user) {
-        return;
+        return "";
     }
 
-    const name =
-        user.fullName ||
-        user.full_name ||
-        user.name ||
-        user.username ||
-        user.email ||
-        "User";
+    function showAuthError(message) {
+        if (window.MobileDialog && typeof window.MobileDialog.error === "function") {
+            window.MobileDialog.error("Access denied", message);
+            return;
+        }
 
-    const role = getCurrentUserRole();
-    const organization = getCurrentOrganization();
-
-    setTextIfExists("currentUserName", name);
-    setTextIfExists("userName", name);
-    setTextIfExists("mobileUserName", name);
-
-    setTextIfExists("currentUserRole", role);
-    setTextIfExists("userRole", role);
-    setTextIfExists("mobileUserRole", role);
-
-    setTextIfExists("currentOrganization", organization);
-    setTextIfExists("organizationName", organization);
-    setTextIfExists("mobileOrganization", organization);
-
-    const possibleNameElements = document.querySelectorAll(".user-name, .profile-name");
-    possibleNameElements.forEach(function (element) {
-        element.textContent = name;
-    });
-
-    const possibleRoleElements = document.querySelectorAll(".user-role, .profile-role");
-    possibleRoleElements.forEach(function (element) {
-        element.textContent = role;
-    });
-}
-
-function setTextIfExists(id, value) {
-    const element = document.getElementById(id);
-
-    if (element) {
-        element.textContent = value || "";
-    }
-}
-
-/* =========================================================
-   Authenticated fetch helper
-   ========================================================= */
-
-async function authFetch(url, options = {}) {
-    const token = getCurrentToken();
-
-    const headers = {
-        ...(options.headers || {})
-    };
-
-    if (token) {
-        headers.Authorization = `Bearer ${token}`;
+        alert(message);
     }
 
-    if (!headers.Accept) {
-        headers.Accept = "application/json";
-    }
+    /* =========================================================
+       Expose globally
+       ========================================================= */
 
-    return fetch(url, {
-        ...options,
-        headers: headers
-    });
-}
+    window.saveCurrentUser = saveCurrentUser;
+    window.getCurrentUser = getCurrentUser;
+    window.getCurrentToken = getCurrentToken;
+    window.getCurrentOrganization = getCurrentOrganization;
+    window.getCurrentUserRole = getCurrentUserRole;
 
-/* =========================================================
-   Expose helpers globally
-   This fixes pages/scripts that call requireLogin or requireRole.
-   ========================================================= */
+    window.requireLogin = requireLogin;
+    window.requireRole = requireRole;
+    window.isLoggedIn = isLoggedIn;
 
-window.saveCurrentUser = saveCurrentUser;
-window.getCurrentUser = getCurrentUser;
-window.getCurrentToken = getCurrentToken;
-window.getCurrentOrganization = getCurrentOrganization;
-window.getCurrentUserRole = getCurrentUserRole;
-window.requireLogin = requireLogin;
-window.requireRole = requireRole;
-window.isLoggedIn = isLoggedIn;
-window.logout = logout;
-window.clearAuth = clearAuth;
-window.displayCurrentUser = displayCurrentUser;
-window.authFetch = authFetch;
+    window.logout = logout;
+    window.clearAuth = clearAuth;
+
+    window.displayCurrentUser = displayCurrentUser;
+    window.authFetch = authFetch;
+})();
