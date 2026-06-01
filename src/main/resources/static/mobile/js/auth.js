@@ -1,214 +1,702 @@
 /* =========================================================
-   EMS-L Mobile - Authentication Helpers
+   EMS-L Mobile - Approvals
    Full clean file
-   Path: src/main/resources/static/mobile/js/auth.js
+   Path: src/main/resources/static/mobile/js/approvals.js
    ========================================================= */
 
-const AUTH_USER_KEY = "ems_mobile_user";
-const AUTH_TOKEN_KEY = "ems_mobile_token";
-const AUTH_ORGANIZATION_KEY = "ems_mobile_organization";
+let currentUser = null;
+let currentOrganization = "";
+let currentRole = "";
+let pendingRequests = [];
 
 /* =========================================================
-   Save / read current user
+   Page initialization
    ========================================================= */
 
-function saveCurrentUser(user) {
-    if (!user || typeof user !== "object") {
-        throw new Error("Invalid user data.");
+document.addEventListener("DOMContentLoaded", async function () {
+    try {
+        currentUser = requireLogin();
+        currentOrganization = getCurrentOrganization();
+        currentRole = getCurrentUserRole();
+
+        console.log("Approval current user:", currentUser);
+        console.log("Approval organization:", currentOrganization);
+        console.log("Approval role:", currentRole);
+
+        if (!currentOrganization) {
+            showError("Organization not found. Please login again.");
+            return;
+        }
+
+        if (!currentRole) {
+            showError("User role not found. Please login again.");
+            return;
+        }
+
+        displayCurrentUser();
+        displayApprovalUserInfo();
+
+        bindEvents();
+
+        await loadPendingApprovals();
+
+    } catch (error) {
+        console.error("Approvals initialization error:", error);
+        showError(error.message || "Failed to initialize approvals page.");
+    }
+});
+
+/* =========================================================
+   Events
+   ========================================================= */
+
+function bindEvents() {
+    const backBtn = findElement(
+        ["backBtn", "btnBack", "backButton"],
+        ["Back", "Retour"]
+    );
+
+    if (backBtn) {
+        backBtn.addEventListener("click", function () {
+            window.location.href = "index.html";
+        });
     }
 
-    const normalizedUser = normalizeUser(user);
+    const refreshBtn = findElement(
+        ["refreshBtn", "btnRefresh", "refreshButton"],
+        ["Refresh", "Actualiser"]
+    );
 
-    localStorage.setItem(AUTH_USER_KEY, JSON.stringify(normalizedUser));
-
-    if (normalizedUser.token) {
-        localStorage.setItem(AUTH_TOKEN_KEY, normalizedUser.token);
+    if (refreshBtn) {
+        refreshBtn.addEventListener("click", async function () {
+            await loadPendingApprovals();
+        });
     }
-
-    if (normalizedUser.organization) {
-        localStorage.setItem(AUTH_ORGANIZATION_KEY, normalizedUser.organization);
-    }
-
-    return normalizedUser;
 }
 
-function getCurrentUser() {
-    const rawUser = localStorage.getItem(AUTH_USER_KEY);
+/* =========================================================
+   Load pending approvals
+   ========================================================= */
 
-    if (!rawUser) {
-        return null;
-    }
+async function loadPendingApprovals() {
+    setLoading(true);
 
     try {
-        const user = JSON.parse(rawUser);
-        return normalizeUser(user);
-    } catch (error) {
-        console.error("Invalid stored user:", error);
-        clearAuth();
-        return null;
-    }
-}
+        const role = normalizeRole(currentRole);
 
-function getCurrentToken() {
-    return localStorage.getItem(AUTH_TOKEN_KEY) || "";
-}
+        let requests = [];
 
-function getCurrentOrganization() {
-    const user = getCurrentUser();
+        /*
+           First try the normal approval endpoint.
+        */
+        try {
+            const url =
+                `${BASE_URL}/api/needs-requests/pending-approval/${encodeURIComponent(currentOrganization)}/${encodeURIComponent(role)}`;
 
-    const organizationFromUser =
-        user &&
-        (
-            user.organization ||
-            user.organisation ||
-            user.organizationCode ||
-            user.organisationCode ||
-            user.companyOrganization ||
-            user.company ||
-            user.org
-        );
+            const data = await fetchJson(url);
+            requests = toArray(data);
 
-    if (organizationFromUser && String(organizationFromUser).trim() !== "") {
-        return String(organizationFromUser).trim();
-    }
+            console.log("Pending approvals from role endpoint:", requests);
 
-    const organizationFromStorage = localStorage.getItem(AUTH_ORGANIZATION_KEY);
-
-    if (organizationFromStorage && String(organizationFromStorage).trim() !== "") {
-        return String(organizationFromStorage).trim();
-    }
-
-    return "";
-}
-
-function normalizeUser(user) {
-    const organization =
-        firstNonEmptyValue(user, [
-            "organization",
-            "organisation",
-            "organizationCode",
-            "organisationCode",
-            "companyOrganization",
-            "company",
-            "org"
-        ]);
-
-    const fullName =
-        firstNonEmptyValue(user, [
-            "fullName",
-            "fullname",
-            "name",
-            "names",
-            "username",
-            "userName",
-            "email"
-        ]);
-
-    const role =
-        firstNonEmptyValue(user, [
-            "role",
-            "userRole",
-            "profile",
-            "position"
-        ]);
-
-    return {
-        ...user,
-        id: user.id || user.userId || user.mobileUserId || null,
-        fullName: fullName,
-        username: user.username || user.userName || user.email || "",
-        email: user.email || user.mail || "",
-        role: role,
-        organization: organization,
-        token: user.token || user.accessToken || ""
-    };
-}
-
-function firstNonEmptyValue(object, keys) {
-    if (!object || typeof object !== "object") {
-        return "";
-    }
-
-    for (const key of keys) {
-        const value = object[key];
-
-        if (value !== null && value !== undefined && String(value).trim() !== "") {
-            return String(value).trim();
+        } catch (error) {
+            console.warn("Pending approval role endpoint failed:", error);
         }
-    }
 
-    return "";
+        /*
+           ADMIN fallback: if role endpoint returns empty, load all organization
+           requests and filter pending ones.
+        */
+        if ((!requests || requests.length === 0) && role === "ADMIN") {
+            try {
+                const url =
+                    `${BASE_URL}/api/needs-requests/organization/${encodeURIComponent(currentOrganization)}`;
+
+                const data = await fetchJson(url);
+                const allRequests = toArray(data);
+
+                requests = allRequests.filter(function (request) {
+                    return isPendingForAnyApproval(request);
+                });
+
+                console.log("Pending approvals from ADMIN fallback:", requests);
+
+            } catch (error) {
+                console.warn("Admin fallback endpoint failed:", error);
+            }
+        }
+
+        pendingRequests = requests || [];
+
+        renderPendingApprovals(pendingRequests);
+        updatePendingCount(pendingRequests.length);
+
+    } catch (error) {
+        console.error("Load pending approvals error:", error);
+        showError(`Failed to load pending approvals: ${error.message}`);
+        renderPendingApprovals([]);
+        updatePendingCount(0);
+    } finally {
+        setLoading(false);
+    }
 }
 
 /* =========================================================
-   Login guard
+   Render
    ========================================================= */
 
-function requireLogin() {
-    const user = getCurrentUser();
+function renderPendingApprovals(requests) {
+    const container = findElement(
+        [
+            "approvalsContainer",
+            "pendingRequestsContainer",
+            "requestsContainer",
+            "approvalList",
+            "pendingList"
+        ],
+        [
+            "Pending requests"
+        ]
+    );
 
-    if (!user) {
-        window.location.href = "login.html";
-        return null;
-    }
-
-    const organization = getCurrentOrganization();
-
-    if (!organization) {
-        clearAuth();
-        alert("Organization not found. Please login again.");
-        window.location.href = "login.html";
-        return null;
-    }
-
-    return user;
-}
-
-function isLoggedIn() {
-    return getCurrentUser() !== null;
-}
-
-function logout() {
-    clearAuth();
-    window.location.href = "login.html";
-}
-
-function clearAuth() {
-    localStorage.removeItem(AUTH_USER_KEY);
-    localStorage.removeItem(AUTH_TOKEN_KEY);
-    localStorage.removeItem(AUTH_ORGANIZATION_KEY);
-
-    /*
-       Clean older keys that may contain APN from old versions.
-    */
-    localStorage.removeItem("currentUser");
-    localStorage.removeItem("mobileUser");
-    localStorage.removeItem("user");
-    localStorage.removeItem("organization");
-    localStorage.removeItem("organisation");
-    localStorage.removeItem("ORGANIZATION");
-}
-
-/* =========================================================
-   Display current user
-   ========================================================= */
-
-function displayCurrentUser() {
-    const user = getCurrentUser();
-
-    if (!user) {
+    if (!container) {
+        console.warn("Approval container not found in HTML.");
         return;
     }
 
-    const name =
-        user.fullName ||
-        user.name ||
-        user.username ||
-        user.email ||
-        "User";
+    container.innerHTML = "";
 
-    const role = user.role || "";
-    const organization = getCurrentOrganization();
+    if (!requests || requests.length === 0) {
+        container.innerHTML = `
+            <div class="empty-state">
+                <h3>No pending requests</h3>
+                <p>There is no request waiting for your approval.</p>
+            </div>
+        `;
+        return;
+    }
+
+    requests.forEach(function (request) {
+        container.appendChild(createApprovalCard(request));
+    });
+}
+
+function createApprovalCard(request) {
+    const card = document.createElement("div");
+    card.className = "approval-card";
+
+    const requestId = request.id;
+    const requestNo = safeText(request.requestNo || request.request_no || `REQ-${requestId}`);
+    const title = safeText(request.title || "Needs Request");
+    const status = safeText(request.status || "");
+    const requester = safeText(
+        request.requestedBy ||
+        request.requested_by ||
+        request.requesterName ||
+        request.requester_name ||
+        request.createdBy ||
+        request.created_by ||
+        ""
+    );
+
+    const department = safeText(request.department || "");
+    const fundCode = safeText(request.fundCode || request.fund_code || "");
+    const currencyCode = safeText(request.currencyCode || request.currency_code || "");
+    const glAccountNo = safeText(request.glAccountNo || request.gl_account_no || request.glAccountCode || "");
+    const requestDate = safeText(request.requestDate || request.request_date || "");
+    const priority = safeText(request.priority || "");
+    const description = safeText(request.description || "");
+
+    card.innerHTML = `
+        <div class="approval-card-header">
+            <div>
+                <h3>${title}</h3>
+                <p class="muted">${requestNo}</p>
+            </div>
+            <span class="status-badge">${status}</span>
+        </div>
+
+        <div class="approval-card-body">
+            ${description ? `<p>${description}</p>` : ""}
+
+            <div class="info-grid">
+                <div>
+                    <span class="label">Requester</span>
+                    <strong>${requester || "-"}</strong>
+                </div>
+
+                <div>
+                    <span class="label">Date</span>
+                    <strong>${formatDate(requestDate)}</strong>
+                </div>
+
+                <div>
+                    <span class="label">Department</span>
+                    <strong>${department || "-"}</strong>
+                </div>
+
+                <div>
+                    <span class="label">Fund</span>
+                    <strong>${fundCode || "-"}</strong>
+                </div>
+
+                <div>
+                    <span class="label">Currency</span>
+                    <strong>${currencyCode || "-"}</strong>
+                </div>
+
+                <div>
+                    <span class="label">G/L Account</span>
+                    <strong>${glAccountNo || "-"}</strong>
+                </div>
+
+                <div>
+                    <span class="label">Priority</span>
+                    <strong>${priority || "-"}</strong>
+                </div>
+            </div>
+        </div>
+
+        <div class="approval-card-actions">
+            <button type="button" class="btn-secondary" data-action="view">
+                View
+            </button>
+
+            <button type="button" class="btn-danger" data-action="reject">
+                Reject
+            </button>
+
+            <button type="button" class="btn-primary" data-action="approve">
+                Approve
+            </button>
+        </div>
+    `;
+
+    const viewBtn = card.querySelector('[data-action="view"]');
+    const rejectBtn = card.querySelector('[data-action="reject"]');
+    const approveBtn = card.querySelector('[data-action="approve"]');
+
+    if (viewBtn) {
+        viewBtn.addEventListener("click", function () {
+            showRequestDetails(request);
+        });
+    }
+
+    if (rejectBtn) {
+        rejectBtn.addEventListener("click", async function () {
+            await rejectRequest(requestId);
+        });
+    }
+
+    if (approveBtn) {
+        approveBtn.addEventListener("click", async function () {
+            await approveRequest(requestId);
+        });
+    }
+
+    return card;
+}
+
+/* =========================================================
+   Approval actions
+   ========================================================= */
+
+async function approveRequest(requestId) {
+    if (!requestId) {
+        showError("Invalid request.");
+        return;
+    }
+
+    const confirmed = await confirmAction(
+        "Approve request",
+        "Do you want to approve this request?"
+    );
+
+    if (!confirmed) {
+        return;
+    }
+
+    setLoading(true);
+
+    try {
+        const role = normalizeRole(currentRole);
+        const approverName = getCurrentUserDisplayName();
+
+        const payload = {
+            organization: currentOrganization,
+            approvedBy: approverName,
+            approverName: approverName,
+            approverEmail: currentUser.email || "",
+            approverRole: role,
+            role: role
+        };
+
+        const urls = getApproveUrls(requestId, role);
+
+        await postWithFallback(urls, payload);
+
+        showSuccess("Request approved successfully.");
+
+        await loadPendingApprovals();
+
+    } catch (error) {
+        console.error("Approve request error:", error);
+        showError(`Failed to approve request: ${error.message}`);
+    } finally {
+        setLoading(false);
+    }
+}
+
+async function rejectRequest(requestId) {
+    if (!requestId) {
+        showError("Invalid request.");
+        return;
+    }
+
+    const reason = await promptRejectReason();
+
+    if (reason === null) {
+        return;
+    }
+
+    if (!String(reason).trim()) {
+        showError("Please enter rejection reason.");
+        return;
+    }
+
+    setLoading(true);
+
+    try {
+        const role = normalizeRole(currentRole);
+        const rejectedBy = getCurrentUserDisplayName();
+
+        const payload = {
+            organization: currentOrganization,
+            rejectedBy: rejectedBy,
+            approverName: rejectedBy,
+            approverEmail: currentUser.email || "",
+            approverRole: role,
+            role: role,
+            rejectionReason: reason,
+            reason: reason
+        };
+
+        const urls = getRejectUrls(requestId);
+
+        await postWithFallback(urls, payload);
+
+        showSuccess("Request rejected successfully.");
+
+        await loadPendingApprovals();
+
+    } catch (error) {
+        console.error("Reject request error:", error);
+        showError(`Failed to reject request: ${error.message}`);
+    } finally {
+        setLoading(false);
+    }
+}
+
+function getApproveUrls(requestId, role) {
+    const id = encodeURIComponent(requestId);
+
+    if (role === "HOD") {
+        return [
+            `${BASE_URL}/api/needs-requests/${id}/hod-approve`,
+            `${BASE_URL}/api/needs-requests/${id}/approve/hod`,
+            `${BASE_URL}/api/needs-requests/${id}/approve`
+        ];
+    }
+
+    if (role === "FINANCE") {
+        return [
+            `${BASE_URL}/api/needs-requests/${id}/finance-approve`,
+            `${BASE_URL}/api/needs-requests/${id}/approve/finance`,
+            `${BASE_URL}/api/needs-requests/${id}/approve`
+        ];
+    }
+
+    if (role === "DIRECTOR") {
+        return [
+            `${BASE_URL}/api/needs-requests/${id}/director-approve`,
+            `${BASE_URL}/api/needs-requests/${id}/approve/director`,
+            `${BASE_URL}/api/needs-requests/${id}/approve`
+        ];
+    }
+
+    /*
+       ADMIN testing fallback.
+    */
+    return [
+        `${BASE_URL}/api/needs-requests/${id}/approve`,
+        `${BASE_URL}/api/needs-requests/${id}/hod-approve`,
+        `${BASE_URL}/api/needs-requests/${id}/finance-approve`,
+        `${BASE_URL}/api/needs-requests/${id}/director-approve`
+    ];
+}
+
+function getRejectUrls(requestId) {
+    const id = encodeURIComponent(requestId);
+
+    return [
+        `${BASE_URL}/api/needs-requests/${id}/reject`,
+        `${BASE_URL}/api/needs-requests/${id}/rejected`
+    ];
+}
+
+async function postWithFallback(urls, payload) {
+    let lastError = "";
+
+    for (const url of urls) {
+        try {
+            console.log("Posting:", url, payload);
+
+            const response = await fetch(url, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Accept": "application/json"
+                },
+                body: JSON.stringify(payload)
+            });
+
+            const text = await response.text();
+
+            console.log("Post response:", url, response.status, text);
+
+            if (!response.ok) {
+                lastError = `HTTP ${response.status} - ${text}`;
+                continue;
+            }
+
+            if (!text) {
+                return {};
+            }
+
+            try {
+                return JSON.parse(text);
+            } catch (error) {
+                return {};
+            }
+
+        } catch (error) {
+            console.warn("Post endpoint failed:", url, error);
+            lastError = error.message || String(error);
+        }
+    }
+
+    throw new Error(lastError || "All approval endpoints failed.");
+}
+
+/* =========================================================
+   Details
+   ========================================================= */
+
+function showRequestDetails(request) {
+    const dimensionValues = parseJsonSafe(request.dimensionValues || request.dimension_values);
+    const items = request.items || request.requestItems || [];
+
+    let dimensionHtml = "";
+
+    Object.keys(dimensionValues).forEach(function (key) {
+        const value = dimensionValues[key];
+
+        if (!value) {
+            return;
+        }
+
+        dimensionHtml += `
+            <div>
+                <span class="label">${safeText(key)}</span>
+                <strong>${safeText(value)}</strong>
+            </div>
+        `;
+    });
+
+    let itemsHtml = "";
+
+    if (Array.isArray(items) && items.length > 0) {
+        items.forEach(function (item) {
+            const itemName = safeText(item.itemName || item.item_name || item.description || "Item");
+            const quantity = safeText(item.quantity || "");
+            const totalAmount = safeText(item.totalAmount || item.total_amount || item.totalCost || "");
+
+            itemsHtml += `
+                <div class="detail-item">
+                    <strong>${itemName}</strong>
+                    <span>Qty: ${quantity}</span>
+                    <span>Total: ${totalAmount}</span>
+                </div>
+            `;
+        });
+    }
+
+    const message = `
+        <div class="request-details">
+            <p><strong>Request No:</strong> ${safeText(request.requestNo || request.request_no || "")}</p>
+            <p><strong>Title:</strong> ${safeText(request.title || "")}</p>
+            <p><strong>Status:</strong> ${safeText(request.status || "")}</p>
+            <p><strong>Description:</strong> ${safeText(request.description || "")}</p>
+
+            ${dimensionHtml ? `<h4>Dimensions</h4><div class="info-grid">${dimensionHtml}</div>` : ""}
+
+            ${itemsHtml ? `<h4>Items</h4>${itemsHtml}` : ""}
+        </div>
+    `;
+
+    if (window.MobileDialog && typeof window.MobileDialog.infoHtml === "function") {
+        window.MobileDialog.infoHtml("Request details", message);
+        return;
+    }
+
+    if (window.Swal) {
+        Swal.fire({
+            icon: "info",
+            title: "Request details",
+            html: message,
+            width: 700
+        });
+        return;
+    }
+
+    alert(stripHtml(message));
+}
+
+/* =========================================================
+   Helpers
+   ========================================================= */
+
+async function fetchJson(url) {
+    console.log("Fetching:", url);
+
+    const response = await fetch(url, {
+        method: "GET",
+        headers: {
+            "Accept": "application/json"
+        },
+        cache: "no-store"
+    });
+
+    const text = await response.text();
+
+    if (!response.ok) {
+        throw new Error(`HTTP ${response.status} - ${text}`);
+    }
+
+    if (!text) {
+        return [];
+    }
+
+    try {
+        return JSON.parse(text);
+    } catch (error) {
+        console.error("Invalid JSON:", text);
+        throw new Error("Invalid JSON response from server.");
+    }
+}
+
+function toArray(data) {
+    if (Array.isArray(data)) {
+        return data;
+    }
+
+    if (!data || typeof data !== "object") {
+        return [];
+    }
+
+    if (Array.isArray(data.data)) {
+        return data.data;
+    }
+
+    if (Array.isArray(data.content)) {
+        return data.content;
+    }
+
+    if (Array.isArray(data.items)) {
+        return data.items;
+    }
+
+    if (Array.isArray(data.result)) {
+        return data.result;
+    }
+
+    if (Array.isArray(data.results)) {
+        return data.results;
+    }
+
+    return [];
+}
+
+function getCurrentUserRole() {
+    const user = getCurrentUser();
+
+    if (!user) {
+        return "";
+    }
+
+    return normalizeRole(
+        user.role ||
+        user.userRole ||
+        user.user_role ||
+        user.profile ||
+        user.position ||
+        ""
+    );
+}
+
+function normalizeRole(role) {
+    return String(role || "")
+        .trim()
+        .toUpperCase()
+        .replace(/\s+/g, "_");
+}
+
+function getCurrentUserDisplayName() {
+    return (
+        currentUser.fullName ||
+        currentUser.full_name ||
+        currentUser.name ||
+        currentUser.username ||
+        currentUser.email ||
+        "User"
+    );
+}
+
+function isPendingForAnyApproval(request) {
+    const status = normalizeRole(request.status || "");
+
+    return (
+        status === "PENDING_HOD" ||
+        status === "PENDING_HOD_APPROVAL" ||
+        status === "PENDING_FINANCE" ||
+        status === "PENDING_FINANCE_APPROVAL" ||
+        status === "PENDING_DIRECTOR" ||
+        status === "PENDING_DIRECTOR_APPROVAL"
+    );
+}
+
+function updatePendingCount(count) {
+    const elements = [
+        document.getElementById("pendingCount"),
+        document.getElementById("approvalCount"),
+        document.getElementById("requestsCount")
+    ];
+
+    elements.forEach(function (element) {
+        if (element) {
+            element.textContent = String(count || 0);
+        }
+    });
+
+    const badges = document.querySelectorAll(".pending-count, .approval-count");
+
+    badges.forEach(function (badge) {
+        badge.textContent = String(count || 0);
+    });
+}
+
+function displayApprovalUserInfo() {
+    const name = getCurrentUserDisplayName();
+    const role = currentRole || "";
 
     setTextIfExists("currentUserName", name);
     setTextIfExists("userName", name);
@@ -218,9 +706,18 @@ function displayCurrentUser() {
     setTextIfExists("userRole", role);
     setTextIfExists("mobileUserRole", role);
 
-    setTextIfExists("currentOrganization", organization);
-    setTextIfExists("organizationName", organization);
-    setTextIfExists("mobileOrganization", organization);
+    /*
+       Fallback for pages where text is hardcoded as User / ROLE.
+    */
+    const possibleNameElements = document.querySelectorAll(".user-name, .profile-name");
+    possibleNameElements.forEach(function (el) {
+        el.textContent = name;
+    });
+
+    const possibleRoleElements = document.querySelectorAll(".user-role, .profile-role");
+    possibleRoleElements.forEach(function (el) {
+        el.textContent = role;
+    });
 }
 
 function setTextIfExists(id, value) {
@@ -231,27 +728,216 @@ function setTextIfExists(id, value) {
     }
 }
 
-/* =========================================================
-   Authenticated fetch helper
-   ========================================================= */
+function setLoading(isLoading) {
+    const loaders = document.querySelectorAll(".loading, .loader");
 
-async function authFetch(url, options = {}) {
-    const token = getCurrentToken();
-
-    const headers = {
-        ...(options.headers || {})
-    };
-
-    if (token) {
-        headers.Authorization = `Bearer ${token}`;
-    }
-
-    if (!headers.Accept) {
-        headers.Accept = "application/json";
-    }
-
-    return fetch(url, {
-        ...options,
-        headers: headers
+    loaders.forEach(function (loader) {
+        loader.style.display = isLoading ? "block" : "none";
     });
+}
+
+async function confirmAction(title, message) {
+    if (window.MobileDialog && typeof window.MobileDialog.confirm === "function") {
+        return await window.MobileDialog.confirm(title, message);
+    }
+
+    if (window.Swal) {
+        const result = await Swal.fire({
+            icon: "question",
+            title: title,
+            text: message,
+            showCancelButton: true,
+            confirmButtonText: "Yes",
+            cancelButtonText: "Cancel"
+        });
+
+        return result.isConfirmed;
+    }
+
+    return confirm(message);
+}
+
+async function promptRejectReason() {
+    if (window.Swal) {
+        const result = await Swal.fire({
+            icon: "warning",
+            title: "Reject request",
+            input: "textarea",
+            inputLabel: "Reason",
+            inputPlaceholder: "Enter rejection reason",
+            showCancelButton: true,
+            confirmButtonText: "Reject",
+            cancelButtonText: "Cancel"
+        });
+
+        if (!result.isConfirmed) {
+            return null;
+        }
+
+        return result.value || "";
+    }
+
+    return prompt("Enter rejection reason:");
+}
+
+function showError(message) {
+    if (window.MobileDialog && typeof window.MobileDialog.error === "function") {
+        window.MobileDialog.error("Error", message);
+        return;
+    }
+
+    if (window.Swal) {
+        Swal.fire({
+            icon: "error",
+            title: "Error",
+            text: message
+        });
+        return;
+    }
+
+    alert(message);
+}
+
+function showSuccess(message) {
+    if (window.MobileDialog && typeof window.MobileDialog.success === "function") {
+        window.MobileDialog.success("Success", message);
+        return;
+    }
+
+    if (window.Swal) {
+        Swal.fire({
+            icon: "success",
+            title: "Success",
+            text: message,
+            timer: 1500,
+            showConfirmButton: false
+        });
+        return;
+    }
+
+    alert(message);
+}
+
+function findElement(keys, labelTexts) {
+    const keyList = Array.isArray(keys) ? keys : [];
+    const labelList = Array.isArray(labelTexts) ? labelTexts : [];
+
+    for (const key of keyList) {
+        if (!key) {
+            continue;
+        }
+
+        const byId = document.getElementById(key);
+        if (byId) {
+            return byId;
+        }
+
+        const byName = document.querySelector(`[name="${cssEscape(key)}"]`);
+        if (byName) {
+            return byName;
+        }
+
+        const byDataField = document.querySelector(`[data-field="${cssEscape(key)}"]`);
+        if (byDataField) {
+            return byDataField;
+        }
+    }
+
+    for (const labelText of labelList) {
+        const found = findElementByLabelText(labelText);
+        if (found) {
+            return found;
+        }
+    }
+
+    return null;
+}
+
+function findElementByLabelText(labelText) {
+    if (!labelText) {
+        return null;
+    }
+
+    const labels = document.querySelectorAll("label");
+
+    for (const label of labels) {
+        const text = String(label.textContent || "").trim().toUpperCase();
+        const expected = String(labelText || "").trim().toUpperCase();
+
+        if (!text.includes(expected)) {
+            continue;
+        }
+
+        const forId = label.getAttribute("for");
+
+        if (forId) {
+            const element = document.getElementById(forId);
+            if (element) {
+                return element;
+            }
+        }
+
+        const parent = label.parentElement;
+
+        if (parent) {
+            return parent;
+        }
+    }
+
+    return null;
+}
+
+function parseJsonSafe(value) {
+    if (!value) {
+        return {};
+    }
+
+    if (typeof value === "object") {
+        return value;
+    }
+
+    try {
+        return JSON.parse(value);
+    } catch (error) {
+        return {};
+    }
+}
+
+function safeText(value) {
+    return escapeHtml(value || "");
+}
+
+function escapeHtml(value) {
+    return String(value || "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+}
+
+function stripHtml(value) {
+    const div = document.createElement("div");
+    div.innerHTML = value;
+    return div.textContent || div.innerText || "";
+}
+
+function formatDate(value) {
+    if (!value) {
+        return "-";
+    }
+
+    try {
+        return new Date(value).toLocaleDateString();
+    } catch (error) {
+        return value;
+    }
+}
+
+function cssEscape(value) {
+    if (window.CSS && typeof window.CSS.escape === "function") {
+        return window.CSS.escape(value);
+    }
+
+    return String(value).replace(/"/g, '\\"');
 }
