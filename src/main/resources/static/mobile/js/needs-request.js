@@ -529,7 +529,7 @@ function addItemRow() {
             <div class="item-header-left">
                 <div class="item-title">Item ${index}</div>
                 <div class="item-summary">
-                    New item • Qty: 1 PCS • Total: 0.00
+                    New item | Qty: 1 PCS | Total: 0.00
                 </div>
             </div>
 
@@ -695,7 +695,7 @@ function updateItemSummary(item) {
     const lineTotal = item.querySelector(".item-line-total");
 
     if (summary) {
-        summary.textContent = `${itemName} • Qty: ${quantity || 0} ${unit} • Total: ${formatAmount(total)}`;
+        summary.textContent = `${itemName} | Qty: ${quantity || 0} ${unit} | Total: ${formatAmount(total)}`;
     }
 
     if (lineTotal) {
