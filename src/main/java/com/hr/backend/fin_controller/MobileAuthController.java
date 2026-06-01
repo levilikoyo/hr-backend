@@ -9,14 +9,16 @@ package com.hr.backend.fin_controller;
  * @author apple
  */
 
+
 import com.hr.backend.fin_model.MobileLoginRequest;
 import com.hr.backend.fin_model.MobileLoginResponse;
 import com.hr.backend.fin_model.MobileUserModel;
 import com.hr.backend.fin_repository.MobileUserRepository;
-import java.util.Optional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/mobile-auth")
@@ -34,43 +36,49 @@ public class MobileAuthController {
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody MobileLoginRequest request) {
 
-        if (request.getOrganization() == null || request.getOrganization().trim().isEmpty()) {
-            return ResponseEntity.badRequest().body("Organization is required");
+        if (request == null) {
+            return ResponseEntity.badRequest().body("Invalid login request");
         }
 
-        if (request.getEmail() == null || request.getEmail().trim().isEmpty()) {
-            return ResponseEntity.badRequest().body("Email is required");
-        }
+        String email = safe(request.getEmail()).toLowerCase();
+        String pinCode = safe(request.getPinCode());
 
-        if (request.getPinCode() == null || request.getPinCode().trim().isEmpty()) {
-            return ResponseEntity.badRequest().body("PIN code is required");
+        if (email.isEmpty() || pinCode.isEmpty()) {
+            return ResponseEntity.badRequest().body("Email and PIN are required");
         }
 
         Optional<MobileUserModel> optionalUser =
-                mobileUserRepository.findByOrganizationAndEmailAndActiveTrue(
-                        request.getOrganization(),
-                        request.getEmail().trim()
-                );
+                mobileUserRepository.findByEmailIgnoreCase(email);
 
         if (optionalUser.isEmpty()) {
-            return ResponseEntity.status(401).body("Invalid email or inactive user");
+            return ResponseEntity.status(401).body("Invalid email or PIN");
         }
 
         MobileUserModel user = optionalUser.get();
 
-        if (!user.getPinCode().equals(request.getPinCode().trim())) {
-            return ResponseEntity.status(401).body("Invalid PIN code");
+        if (Boolean.FALSE.equals(user.getActive())) {
+            return ResponseEntity.status(403).body("This mobile user is inactive");
         }
 
-        MobileLoginResponse response = new MobileLoginResponse(
-                user.getId(),
-                user.getOrganization(),
-                user.getFullName(),
-                user.getEmail(),
-                user.getPhone(),
-                user.getUserRole()
-        );
+        if (!pinCode.equals(safe(user.getPinCode()))) {
+            return ResponseEntity.status(401).body("Invalid email or PIN");
+        }
+
+        MobileLoginResponse response = new MobileLoginResponse();
+
+        response.setId(user.getId());
+        response.setOrganization(user.getOrganization());
+        response.setFullName(user.getFullName());
+        response.setEmail(user.getEmail());
+        response.setPhone(user.getPhone());
+        response.setRole(user.getUserRole());
+        response.setActive(user.getActive());
+        response.setMessage("Login successful");
 
         return ResponseEntity.ok(response);
+    }
+
+    private String safe(String value) {
+        return value == null ? "" : value.trim();
     }
 }
