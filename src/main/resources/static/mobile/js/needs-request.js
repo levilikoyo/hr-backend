@@ -6,8 +6,8 @@
 
 let currentUser = null;
 let currentOrganization = "";
-let dynamicDimensions = [];
 let allGroupedDimensions = [];
+let dynamicDimensions = [];
 
 /* =========================================================
    Page initialization
@@ -17,6 +17,9 @@ document.addEventListener("DOMContentLoaded", async function () {
     try {
         currentUser = requireLogin();
         currentOrganization = getCurrentOrganization();
+
+        console.log("Current user:", currentUser);
+        console.log("Current organization:", currentOrganization);
 
         if (!currentOrganization) {
             showError("Organization not found. Please login again.");
@@ -32,8 +35,8 @@ document.addEventListener("DOMContentLoaded", async function () {
         await loadFunds();
         await loadCurrencies();
         await loadGLAccounts();
-        renderDynamicDimensions();
 
+        renderDynamicDimensions();
         ensureAtLeastOneItem();
 
     } catch (error) {
@@ -48,10 +51,8 @@ document.addEventListener("DOMContentLoaded", async function () {
 
 function bindEvents() {
     const addItemBtn = findElement(
-        "addItemBtn",
-        "btnAddItem",
-        "add-item-btn",
-        "addItemButton"
+        ["addItemBtn", "btnAddItem", "add-item-btn", "addItemButton"],
+        ["Add Item", "Add item", "Ajouter"]
     );
 
     if (addItemBtn) {
@@ -62,10 +63,8 @@ function bindEvents() {
     }
 
     const form = findElement(
-        "needsRequestForm",
-        "requestForm",
-        "needRequestForm",
-        "needsForm"
+        ["needsRequestForm", "requestForm", "needRequestForm", "needsForm"],
+        []
     );
 
     if (form) {
@@ -75,7 +74,10 @@ function bindEvents() {
         });
     }
 
-    const cancelBtn = findElement("cancelBtn", "btnCancel", "cancelButton");
+    const cancelBtn = findElement(
+        ["cancelBtn", "btnCancel", "cancelButton"],
+        ["Cancel", "Annuler"]
+    );
 
     if (cancelBtn) {
         cancelBtn.addEventListener("click", function () {
@@ -85,46 +87,96 @@ function bindEvents() {
 }
 
 /* =========================================================
+   API helpers
+   ========================================================= */
+
+async function fetchJson(url) {
+    console.log("Fetching:", url);
+
+    const response = await fetch(url, {
+        method: "GET",
+        headers: {
+            "Accept": "application/json"
+        },
+        cache: "no-store"
+    });
+
+    const text = await response.text();
+
+    if (!response.ok) {
+        throw new Error(`HTTP ${response.status} - ${text}`);
+    }
+
+    if (!text) {
+        return [];
+    }
+
+    try {
+        return JSON.parse(text);
+    } catch (error) {
+        console.error("Invalid JSON response:", text);
+        throw new Error("Invalid JSON response from server.");
+    }
+}
+
+function toArray(data) {
+    if (Array.isArray(data)) {
+        return data;
+    }
+
+    if (!data || typeof data !== "object") {
+        return [];
+    }
+
+    if (Array.isArray(data.data)) {
+        return data.data;
+    }
+
+    if (Array.isArray(data.content)) {
+        return data.content;
+    }
+
+    if (Array.isArray(data.items)) {
+        return data.items;
+    }
+
+    if (Array.isArray(data.result)) {
+        return data.result;
+    }
+
+    if (Array.isArray(data.results)) {
+        return data.results;
+    }
+
+    return [];
+}
+
+/* =========================================================
    Grouped dimensions
    ========================================================= */
 
 async function loadGroupedDimensions() {
     try {
-        const response = await fetch(
-            `${BASE_URL}/api/dimension-setups/organization/${encodeURIComponent(currentOrganization)}/grouped`
-        );
+        const url =
+            `${BASE_URL}/api/dimension-setups/organization/${encodeURIComponent(currentOrganization)}/grouped`;
 
-        if (!response.ok) {
-            const errorText = await response.text();
-            throw new Error(`HTTP ${response.status} - ${errorText}`);
-        }
+        const data = await fetchJson(url);
+        const dimensions = toArray(data);
 
-        const data = await response.json();
+        console.log("Grouped dimensions:", dimensions);
 
-        if (!Array.isArray(data)) {
-            allGroupedDimensions = [];
-            dynamicDimensions = [];
-            return;
-        }
+        allGroupedDimensions = dimensions;
 
-        allGroupedDimensions = data;
-
-        dynamicDimensions = data.filter(function (dimension) {
+        dynamicDimensions = dimensions.filter(function (dimension) {
             const normalizedCode = normalizeDimensionCode(dimension.dimensionCode);
-
-            /*
-               FUND is already fixed on the form.
-               If the funds table is empty, we use this FUND dimension as fallback
-               inside loadFunds().
-            */
             return normalizedCode !== "FUND";
         });
 
     } catch (error) {
         console.error("Grouped dimensions loading error:", error);
-        showError(`Failed to load dimensions: ${error.message}`);
         allGroupedDimensions = [];
         dynamicDimensions = [];
+        showError(`Failed to load dimensions: ${error.message}`);
     }
 }
 
@@ -133,13 +185,19 @@ async function loadGroupedDimensions() {
    ========================================================= */
 
 async function loadFunds() {
-    const select = findElement(
-        "fundCode",
-        "fundSelect",
-        "fund_code",
-        "fund",
-        "funds",
-        "requestFund"
+    const select = findSelect(
+        [
+            "fundCode",
+            "fundSelect",
+            "fund_code",
+            "fund",
+            "funds",
+            "requestFund"
+        ],
+        [
+            "Fund",
+            "Fonds"
+        ]
     );
 
     if (!select) {
@@ -152,66 +210,61 @@ async function loadFunds() {
     let loaded = false;
 
     try {
-        const response = await fetch(
-            `${BASE_URL}/api/funds/organization/${encodeURIComponent(currentOrganization)}`
-        );
+        const url =
+            `${BASE_URL}/api/funds/organization/${encodeURIComponent(currentOrganization)}`;
 
-        if (response.ok) {
-            const funds = await response.json();
+        const data = await fetchJson(url);
+        const funds = toArray(data);
 
-            if (Array.isArray(funds) && funds.length > 0) {
-                funds.forEach(function (fund) {
-                    const code =
-                        fund.fundCode ||
-                        fund.code ||
-                        fund.valueCode ||
-                        "";
+        console.log("Funds response:", funds);
 
-                    const name =
-                        fund.fundName ||
-                        fund.name ||
-                        fund.valueName ||
-                        "";
+        funds.forEach(function (fund) {
+            const code = firstValue(fund, [
+                "fundCode",
+                "fund_code",
+                "code",
+                "valueCode",
+                "value_code"
+            ]);
 
-                    if (!code) {
-                        return;
-                    }
+            const name = firstValue(fund, [
+                "fundName",
+                "fund_name",
+                "name",
+                "valueName",
+                "value_name",
+                "description"
+            ]);
 
-                    addOption(select, code, name ? `${code} - ${name}` : code);
-                });
-
-                loaded = true;
+            if (!code) {
+                return;
             }
-        } else {
-            console.warn("Funds endpoint failed:", response.status, await response.text());
-        }
+
+            addOption(select, code, name ? `${code} - ${name}` : code);
+            loaded = true;
+        });
 
     } catch (error) {
         console.warn("Funds endpoint error:", error);
     }
 
-    /*
-       Fallback: use FUND dimension values if funds table has no data.
-       Your grouped dimensions already contain:
-       dimensionCode: FUND
-       values: CONTROL, LRF26, etc.
-    */
     if (!loaded) {
         const fundDimension = findDimensionByCode("FUND");
 
         if (fundDimension && Array.isArray(fundDimension.values)) {
+            console.log("Using FUND dimension fallback:", fundDimension.values);
+
             fundDimension.values.forEach(function (value) {
-                const code = value.valueCode || "";
-                const name = value.valueName || "";
+                const code = firstValue(value, ["valueCode", "value_code", "code"]);
+                const name = firstValue(value, ["valueName", "value_name", "name", "description"]);
 
                 if (!code) {
                     return;
                 }
 
                 addOption(select, code, name ? `${code} - ${name}` : code);
+                loaded = true;
             });
-
-            loaded = fundDimension.values.length > 0;
         }
     }
 
@@ -221,15 +274,23 @@ async function loadFunds() {
 }
 
 async function loadCurrencies() {
-    const select = findElement(
-        "currencyCode",
-        "curencyCode",
-        "currencySelect",
-        "currency_code",
-        "curency_code",
-        "currency",
-        "devise",
-        "deviseCode"
+    const select = findSelect(
+        [
+            "currencyCode",
+            "curencyCode",
+            "currencySelect",
+            "currency_code",
+            "curency_code",
+            "currency",
+            "curency",
+            "devise",
+            "deviseCode"
+        ],
+        [
+            "Currency",
+            "Curency",
+            "Devise"
+        ]
     );
 
     if (!select) {
@@ -242,42 +303,43 @@ async function loadCurrencies() {
     let loaded = false;
 
     try {
-        const response = await fetch(
-            `${BASE_URL}/api/currencies/organization/${encodeURIComponent(currentOrganization)}`
-        );
+        const url =
+            `${BASE_URL}/api/currencies/organization/${encodeURIComponent(currentOrganization)}`;
 
-        if (!response.ok) {
-            const errorText = await response.text();
-            throw new Error(`HTTP ${response.status} - ${errorText}`);
-        }
+        const data = await fetchJson(url);
+        const currencies = toArray(data);
 
-        const currencies = await response.json();
+        console.log("Currencies response:", currencies);
 
-        if (Array.isArray(currencies) && currencies.length > 0) {
-            currencies.forEach(function (currency) {
-                const code =
-                    currency.curencyCode ||
-                    currency.currencyCode ||
-                    currency.code ||
-                    currency.valueCode ||
-                    "";
+        currencies.forEach(function (currency) {
+            const code = firstValue(currency, [
+                "curencyCode",
+                "currencyCode",
+                "curency_code",
+                "currency_code",
+                "code",
+                "valueCode",
+                "value_code"
+            ]);
 
-                const name =
-                    currency.curencyName ||
-                    currency.currencyName ||
-                    currency.name ||
-                    currency.valueName ||
-                    "";
+            const name = firstValue(currency, [
+                "curencyName",
+                "currencyName",
+                "curency_name",
+                "currency_name",
+                "name",
+                "valueName",
+                "value_name",
+                "description"
+            ]);
 
-                if (!code) {
-                    return;
-                }
+            if (!code) {
+                return;
+            }
 
-                addOption(select, code, name ? `${code} - ${name}` : code);
-            });
-
+            addOption(select, code, name ? `${code} - ${name}` : code);
             loaded = true;
-        }
+        });
 
     } catch (error) {
         console.error("Currencies loading error:", error);
@@ -290,14 +352,24 @@ async function loadCurrencies() {
 }
 
 async function loadGLAccounts() {
-    const select = findElement(
-        "glAccountCode",
-        "glAccountSelect",
-        "gl_account_code",
-        "glAccount",
-        "gl_account",
-        "accountCode",
-        "account_code"
+    const select = findSelect(
+        [
+            "glAccountCode",
+            "glAccountSelect",
+            "gl_account_code",
+            "glAccount",
+            "gl_account",
+            "accountCode",
+            "account_code",
+            "glCode",
+            "gLAccount"
+        ],
+        [
+            "G/L Account",
+            "GL Account",
+            "G/L",
+            "Account"
+        ]
     );
 
     if (!select) {
@@ -312,49 +384,67 @@ async function loadGLAccounts() {
     const urls = [
         `${BASE_URL}/api/gl-accounts/organization/${encodeURIComponent(currentOrganization)}`,
         `${BASE_URL}/api/glaccounts/organization/${encodeURIComponent(currentOrganization)}`,
-        `${BASE_URL}/api/gl-account/organization/${encodeURIComponent(currentOrganization)}`
+        `${BASE_URL}/api/gl-account/organization/${encodeURIComponent(currentOrganization)}`,
+        `${BASE_URL}/api/gl-accounts`
     ];
 
     for (const url of urls) {
         try {
-            const response = await fetch(url);
+            const data = await fetchJson(url);
+            const accounts = toArray(data);
 
-            if (!response.ok) {
-                continue;
-            }
-
-            const accounts = await response.json();
+            console.log("G/L accounts response from:", url, accounts);
 
             if (!Array.isArray(accounts) || accounts.length === 0) {
                 continue;
             }
 
             accounts.forEach(function (account) {
-                const code =
-                    account.glCode ||
-                    account.glAccountCode ||
-                    account.accountCode ||
-                    account.code ||
-                    account.valueCode ||
-                    "";
+                const organization = firstValue(account, [
+                    "organization",
+                    "organisation"
+                ]);
 
-                const name =
-                    account.glName ||
-                    account.glAccountName ||
-                    account.accountName ||
-                    account.name ||
-                    account.valueName ||
-                    "";
+                if (organization && organization !== currentOrganization && url.endsWith("/api/gl-accounts")) {
+                    return;
+                }
+
+                const code = firstValue(account, [
+                    "glCode",
+                    "glAccountCode",
+                    "accountCode",
+                    "gl_code",
+                    "gl_account_code",
+                    "account_code",
+                    "code",
+                    "valueCode",
+                    "value_code"
+                ]);
+
+                const name = firstValue(account, [
+                    "glName",
+                    "glAccountName",
+                    "accountName",
+                    "gl_name",
+                    "gl_account_name",
+                    "account_name",
+                    "name",
+                    "valueName",
+                    "value_name",
+                    "description"
+                ]);
 
                 if (!code) {
                     return;
                 }
 
                 addOption(select, code, name ? `${code} - ${name}` : code);
+                loaded = true;
             });
 
-            loaded = true;
-            break;
+            if (loaded) {
+                break;
+            }
 
         } catch (error) {
             console.warn("G/L account endpoint failed:", url, error);
@@ -372,9 +462,14 @@ async function loadGLAccounts() {
 
 function renderDynamicDimensions() {
     const container = findElement(
-        "dynamicDimensionsContainer",
-        "dimensionsContainer",
-        "dynamic_dimensions_container"
+        [
+            "dynamicDimensionsContainer",
+            "dimensionsContainer",
+            "dynamic_dimensions_container"
+        ],
+        [
+            "Dimensions"
+        ]
     );
 
     if (!container) {
@@ -428,8 +523,8 @@ function createDimensionField(dimension) {
     const values = Array.isArray(dimension.values) ? dimension.values : [];
 
     values.forEach(function (value) {
-        const valueCode = value.valueCode || "";
-        const valueName = value.valueName || "";
+        const valueCode = firstValue(value, ["valueCode", "value_code", "code"]);
+        const valueName = firstValue(value, ["valueName", "value_name", "name", "description"]);
 
         if (!valueCode) {
             return;
@@ -450,9 +545,14 @@ function createDimensionField(dimension) {
 
 function ensureAtLeastOneItem() {
     const container = findElement(
-        "itemsContainer",
-        "requestItemsContainer",
-        "itemsList"
+        [
+            "itemsContainer",
+            "requestItemsContainer",
+            "itemsList"
+        ],
+        [
+            "Items"
+        ]
     );
 
     if (!container) {
@@ -468,9 +568,14 @@ function ensureAtLeastOneItem() {
 
 function addItemRow() {
     const container = findElement(
-        "itemsContainer",
-        "requestItemsContainer",
-        "itemsList"
+        [
+            "itemsContainer",
+            "requestItemsContainer",
+            "itemsList"
+        ],
+        [
+            "Items"
+        ]
     );
 
     if (!container) {
@@ -518,9 +623,14 @@ function addItemRow() {
 
 function removeItemRow(button) {
     const container = findElement(
-        "itemsContainer",
-        "requestItemsContainer",
-        "itemsList"
+        [
+            "itemsContainer",
+            "requestItemsContainer",
+            "itemsList"
+        ],
+        [
+            "Items"
+        ]
     );
 
     const item = button.closest(".request-item");
@@ -565,22 +675,24 @@ async function submitNeedsRequest() {
             return;
         }
 
+        console.log("Submitting needs request payload:", payload);
+
         setSubmitLoading(true);
 
         const response = await fetch(`${BASE_URL}/api/needs-requests`, {
             method: "POST",
             headers: {
-                "Content-Type": "application/json"
+                "Content-Type": "application/json",
+                "Accept": "application/json"
             },
             body: JSON.stringify(payload)
         });
 
-        if (!response.ok) {
-            const errorText = await response.text();
-            throw new Error(`HTTP ${response.status} - ${errorText}`);
-        }
+        const text = await response.text();
 
-        await response.json();
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status} - ${text}`);
+        }
 
         showSuccess("Needs request submitted successfully.");
 
@@ -598,67 +710,71 @@ async function submitNeedsRequest() {
 
 function buildPayload() {
     const title = getValue(
-        "title",
-        "requestTitle",
-        "needTitle",
-        "needsTitle"
+        ["title", "requestTitle", "needTitle", "needsTitle"],
+        ["Title", "Request Title"]
     );
 
     const description = getValue(
-        "description",
-        "requestDescription",
-        "needDescription",
-        "needsDescription"
+        ["description", "requestDescription", "needDescription", "needsDescription"],
+        ["Description"]
     );
 
     const requestDate = getValue(
-        "requestDate",
-        "date",
-        "needDate",
-        "needsDate"
+        ["requestDate", "date", "needDate", "needsDate"],
+        ["Date", "Request Date"]
     );
 
     const priority = getValue(
-        "priority",
-        "requestPriority",
-        "needPriority",
-        "needsPriority"
+        ["priority", "requestPriority", "needPriority", "needsPriority"],
+        ["Priority"]
     );
 
     const budgetPlan = getValue(
-        "budgetPlan",
-        "budget_plan",
-        "budgetPlanCode"
+        ["budgetPlan", "budget_plan", "budgetPlanCode"],
+        ["Budget Plan"]
     );
 
     const fundCode = getValue(
-        "fundCode",
-        "fundSelect",
-        "fund_code",
-        "fund",
-        "funds",
-        "requestFund"
+        ["fundCode", "fundSelect", "fund_code", "fund", "funds", "requestFund"],
+        ["Fund", "Fonds"]
     );
 
     const currencyCode = getValue(
-        "currencyCode",
-        "curencyCode",
-        "currencySelect",
-        "currency_code",
-        "curency_code",
-        "currency",
-        "devise",
-        "deviseCode"
+        [
+            "currencyCode",
+            "curencyCode",
+            "currencySelect",
+            "currency_code",
+            "curency_code",
+            "currency",
+            "curency",
+            "devise",
+            "deviseCode"
+        ],
+        [
+            "Currency",
+            "Curency",
+            "Devise"
+        ]
     );
 
     const glAccountCode = getValue(
-        "glAccountCode",
-        "glAccountSelect",
-        "gl_account_code",
-        "glAccount",
-        "gl_account",
-        "accountCode",
-        "account_code"
+        [
+            "glAccountCode",
+            "glAccountSelect",
+            "gl_account_code",
+            "glAccount",
+            "gl_account",
+            "accountCode",
+            "account_code",
+            "glCode"
+        ],
+        [
+            "G/L Account",
+            "GL Account",
+            "G/L",
+            "Account"
+        ]
     );
 
     const dimensionObject = collectDynamicDimensions();
@@ -765,33 +881,46 @@ function collectItems() {
             remarks: remarks,
 
             fundCode: getValue(
-                "fundCode",
-                "fundSelect",
-                "fund_code",
-                "fund",
-                "funds",
-                "requestFund"
+                ["fundCode", "fundSelect", "fund_code", "fund", "funds", "requestFund"],
+                ["Fund", "Fonds"]
             ),
 
             currencyCode: getValue(
-                "currencyCode",
-                "curencyCode",
-                "currencySelect",
-                "currency_code",
-                "curency_code",
-                "currency",
-                "devise",
-                "deviseCode"
+                [
+                    "currencyCode",
+                    "curencyCode",
+                    "currencySelect",
+                    "currency_code",
+                    "curency_code",
+                    "currency",
+                    "curency",
+                    "devise",
+                    "deviseCode"
+                ],
+                [
+                    "Currency",
+                    "Curency",
+                    "Devise"
+                ]
             ),
 
             glAccountCode: getValue(
-                "glAccountCode",
-                "glAccountSelect",
-                "gl_account_code",
-                "glAccount",
-                "gl_account",
-                "accountCode",
-                "account_code"
+                [
+                    "glAccountCode",
+                    "glAccountSelect",
+                    "gl_account_code",
+                    "glAccount",
+                    "gl_account",
+                    "accountCode",
+                    "account_code",
+                    "glCode"
+                ],
+                [
+                    "G/L Account",
+                    "GL Account",
+                    "G/L",
+                    "Account"
+                ]
             ),
 
             dimensionValues: JSON.stringify(collectDynamicDimensions())
@@ -802,7 +931,7 @@ function collectItems() {
 }
 
 /* =========================================================
-   Dynamic dimension helpers
+   Dimension helpers
    ========================================================= */
 
 function collectDynamicDimensions() {
@@ -830,8 +959,7 @@ function validateRequiredDimensions() {
             continue;
         }
 
-        const code = dimension.dimensionCode || "";
-        const normalizedCode = normalizeDimensionCode(code);
+        const normalizedCode = normalizeDimensionCode(dimension.dimensionCode);
 
         const select = document.querySelector(
             `.dynamic-dimension-select[data-normalized-dimension-code="${normalizedCode}"]`
@@ -878,10 +1006,8 @@ function normalizeDimensionCode(code) {
 
 function setDefaultRequestDate() {
     const dateInput = findElement(
-        "requestDate",
-        "date",
-        "needDate",
-        "needsDate"
+        ["requestDate", "date", "needDate", "needsDate"],
+        ["Date", "Request Date"]
     );
 
     if (!dateInput) {
@@ -896,10 +1022,8 @@ function setDefaultRequestDate() {
 
 function setSubmitLoading(isLoading) {
     const submitBtn = findElement(
-        "submitBtn",
-        "btnSubmit",
-        "submitRequestBtn",
-        "saveBtn"
+        ["submitBtn", "btnSubmit", "submitRequestBtn", "saveBtn"],
+        ["Submit", "Save", "Send"]
     );
 
     if (!submitBtn) {
@@ -966,10 +1090,28 @@ function showSuccess(message) {
     alert(message);
 }
 
-function findElement() {
-    for (let i = 0; i < arguments.length; i++) {
-        const key = arguments[i];
+function findSelect(keys, labelTexts) {
+    const element = findElement(keys, labelTexts);
 
+    if (element && element.tagName && element.tagName.toLowerCase() === "select") {
+        return element;
+    }
+
+    if (element) {
+        const innerSelect = element.querySelector("select");
+        if (innerSelect) {
+            return innerSelect;
+        }
+    }
+
+    return null;
+}
+
+function findElement(keys, labelTexts) {
+    const keyList = Array.isArray(keys) ? keys : [];
+    const labelList = Array.isArray(labelTexts) ? labelTexts : [];
+
+    for (const key of keyList) {
         if (!key) {
             continue;
         }
@@ -979,23 +1121,102 @@ function findElement() {
             return byId;
         }
 
-        const byName = document.querySelector(`[name="${key}"]`);
+        const byName = document.querySelector(`[name="${cssEscape(key)}"]`);
         if (byName) {
             return byName;
+        }
+
+        const byDataField = document.querySelector(`[data-field="${cssEscape(key)}"]`);
+        if (byDataField) {
+            return byDataField;
+        }
+    }
+
+    for (const labelText of labelList) {
+        const found = findElementByLabelText(labelText);
+        if (found) {
+            return found;
         }
     }
 
     return null;
 }
 
-function getValue() {
-    const element = findElement.apply(null, arguments);
+function findElementByLabelText(labelText) {
+    if (!labelText) {
+        return null;
+    }
+
+    const labels = document.querySelectorAll("label");
+
+    for (const label of labels) {
+        const text = String(label.textContent || "").trim().toUpperCase();
+        const expected = String(labelText || "").trim().toUpperCase();
+
+        if (!text.includes(expected)) {
+            continue;
+        }
+
+        const forId = label.getAttribute("for");
+
+        if (forId) {
+            const element = document.getElementById(forId);
+            if (element) {
+                return element;
+            }
+        }
+
+        const parent = label.parentElement;
+        if (parent) {
+            const select = parent.querySelector("select");
+            if (select) {
+                return select;
+            }
+
+            const input = parent.querySelector("input, textarea");
+            if (input) {
+                return input;
+            }
+        }
+    }
+
+    return null;
+}
+
+function getValue(keys, labelTexts) {
+    const element = findElement(keys, labelTexts);
 
     if (!element) {
         return "";
     }
 
     return String(element.value || "").trim();
+}
+
+function firstValue(object, keys) {
+    if (!object || typeof object !== "object") {
+        return "";
+    }
+
+    for (const key of keys) {
+        if (Object.prototype.hasOwnProperty.call(object, key)) {
+            const value = object[key];
+
+            if (value !== null && value !== undefined && String(value).trim() !== "") {
+                return String(value).trim();
+            }
+        }
+    }
+
+    return "";
+}
+
+function cssEscape(value) {
+    if (window.CSS && typeof window.CSS.escape === "function") {
+        return window.CSS.escape(value);
+    }
+
+    return String(value).replace(/"/g, '\\"');
 }
 
 function escapeHtml(value) {
