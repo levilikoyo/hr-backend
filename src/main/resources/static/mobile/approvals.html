@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <!-- PWA -->
-    <link rel="manifest" href="/mobile/manifest.json?v=20260603-approval6">
+    <link rel="manifest" href="/mobile/manifest.json?v=20260603-dialog1">
     <meta name="theme-color" content="#ffffff">
 
     <link rel="apple-touch-icon" sizes="180x180" href="/mobile/icons/icon-180.png">
@@ -19,30 +19,41 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
 
     <!-- CSS -->
-    <link rel="stylesheet" href="css/mobile.css?v=20260603-approval6">
-    <link rel="stylesheet" href="css/dialog.css?v=20260603-approval6">
+    <link rel="stylesheet" href="css/mobile.css?v=20260603-dialog1">
+    <link rel="stylesheet" href="css/dialog.css?v=20260603-dialog1">
 </head>
 <body>
 
 <div class="app">
 
-    <!-- Header -->
+    <!-- Top Header -->
     <div class="top-header">
-        <button type="button" class="back-button" id="backBtn">
-            ←
-        </button>
+        <div class="top-header-left">
+            <a href="index.html" class="return-btn" aria-label="Back">
+                ←
+            </a>
 
-        <div class="page-title">
-            <h1>Approbations</h1>
-            <p>Demandes en attente</p>
+            <div class="app-title-box">
+                <h1>Approbations</h1>
+                <p>Demandes en attente</p>
+            </div>
         </div>
 
-        <div class="user-box">
-            <div>
-                <strong id="currentUserName" class="user-name">User</strong>
-                <span id="currentUserRole" class="user-role">ROLE</span>
+        <div class="top-header-right">
+            <div class="user-info-box" id="userInfoBox">
+                <div class="user-text">
+                    <strong id="currentUserName" class="user-name">User</strong>
+                    <span id="currentUserRole" class="user-role">ROLE</span>
+                </div>
+                <img src="images/user-avatar.png" alt="User" class="user-avatar">
             </div>
-            <img src="images/user-avatar.png" alt="User" class="user-avatar">
+
+            <div class="user-dropdown" id="userDropdown">
+                <strong id="dropdownUserName">User</strong>
+                <span id="dropdownUserEmail">user@email.com</span>
+                <small id="dropdownUserRole">ROLE</small>
+                <button type="button" onclick="logout()">Logout</button>
+            </div>
         </div>
     </div>
 
@@ -59,7 +70,7 @@
         </div>
 
         <div id="pendingRequestsContainer" class="approval-list">
-            <!-- Approval cards loaded by approvals.js -->
+            <!-- Approval cards are rendered by approvals.js -->
         </div>
 
     </div>
@@ -67,11 +78,11 @@
 </div>
 
 <!-- Scripts: order is important -->
-<script src="js/config.js?v=20260603-approval6"></script>
-<script src="js/mobile-dialog.js?v=20260603-approval6"></script>
-<script src="js/auth.js?v=20260603-approval6"></script>
-<script src="js/approvals.js?v=20260603-approval6"></script>
-<script src="js/pwa-register.js?v=20260603-approval6"></script>
+<script src="js/config.js?v=20260603-dialog1"></script>
+<script src="js/mobile-dialog.js?v=20260603-dialog1"></script>
+<script src="js/auth.js?v=20260603-dialog1"></script>
+<script src="js/approvals.js?v=20260603-dialog1"></script>
+<script src="js/pwa-register.js?v=20260603-dialog1"></script>
 
 </body>
 </html>

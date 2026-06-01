@@ -2,71 +2,70 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>Nouvelle expression de besoin</title>
+    <title>Expression de besoin</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <!-- PWA -->
-    <link rel="manifest" href="/mobile/manifest.json">
+    <link rel="manifest" href="/mobile/manifest.json?v=20260603-dialog1">
     <meta name="theme-color" content="#ffffff">
 
     <link rel="apple-touch-icon" sizes="180x180" href="/mobile/icons/icon-180.png">
     <link rel="icon" type="image/png" sizes="192x192" href="/mobile/icons/icon-192.png">
     <link rel="icon" type="image/png" sizes="512x512" href="/mobile/icons/icon-512.png">
 
+    <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-title" content="EMS-L Approval">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
 
-    <link rel="stylesheet" href="css/mobile.css">
-    <link rel="stylesheet" href="css/dialog.css">
+    <!-- CSS -->
+    <link rel="stylesheet" href="css/mobile.css?v=20260603-dialog1">
+    <link rel="stylesheet" href="css/dialog.css?v=20260603-dialog1">
 </head>
 <body>
 
 <div class="app">
 
+    <!-- Top Header -->
     <div class="top-header">
-
         <div class="top-header-left">
-            <a href="index.html" class="return-btn">←</a>
+            <a href="index.html" class="return-btn" aria-label="Back">
+                ←
+            </a>
 
             <div class="app-title-box">
-                <h1>Nouvelle demande</h1>
-                <p>Expression de besoin</p>
+                <h1>Expression de besoin</h1>
+                <p>Créer une nouvelle demande</p>
             </div>
         </div>
 
         <div class="top-header-right">
-
-            <div class="user-info-box" onclick="toggleUserMenu()">
+            <div class="user-info-box" id="userInfoBox">
                 <div class="user-text">
-                    <strong id="currentUserName">User</strong>
-                    <span id="currentUserRole">Role</span>
+                    <strong id="currentUserName" class="user-name">User</strong>
+                    <span id="currentUserRole" class="user-role">ROLE</span>
                 </div>
-
                 <img src="images/user-avatar.png" alt="User" class="user-avatar">
             </div>
 
             <div class="user-dropdown" id="userDropdown">
                 <strong id="dropdownUserName">User</strong>
-                <span id="dropdownUserEmail">email</span>
-                <small id="dropdownUserRole">Role</small>
-
-                <button type="button" onclick="logoutUser()">
-                    Logout
-                </button>
+                <span id="dropdownUserEmail">user@email.com</span>
+                <small id="dropdownUserRole">ROLE</small>
+                <button type="button" onclick="logout()">Logout</button>
             </div>
-
         </div>
-
     </div>
 
+    <!-- Form -->
     <form class="form-card" id="needsRequestForm">
 
         <div class="form-group">
-            <label for="title">Objet du besoin</label>
+            <label for="title">Objet du besoin *</label>
             <input
                     type="text"
                     id="title"
+                    name="title"
                     placeholder="Ex: Achat carburant terrain"
                     required>
         </div>
@@ -75,22 +74,27 @@
             <label for="description">Description générale</label>
             <textarea
                     id="description"
+                    name="description"
                     placeholder="Décrivez le besoin général..."></textarea>
         </div>
 
         <div class="row-2">
             <div class="form-group">
-                <label for="requiredDate">Date souhaitée</label>
-                <input type="date" id="requiredDate">
+                <label for="requestDate">Date souhaitée *</label>
+                <input
+                        type="date"
+                        id="requestDate"
+                        name="requestDate"
+                        required>
             </div>
 
             <div class="form-group">
                 <label for="priority">Priorité</label>
-                <select id="priority">
+                <select id="priority" name="priority">
                     <option value="NORMAL">NORMAL</option>
-                    <option value="URGENT">URGENT</option>
-                    <option value="HIGH">HIGH</option>
                     <option value="LOW">LOW</option>
+                    <option value="HIGH">HIGH</option>
+                    <option value="URGENT">URGENT</option>
                 </select>
             </div>
         </div>
@@ -99,48 +103,49 @@
             Items requested
         </div>
 
-        <div id="itemsContainer"></div>
+        <div id="itemsContainer">
+            <!-- Items are rendered by needs-request.js -->
+        </div>
 
-        <button type="button" class="btn-secondary" onclick="addItemRow()">
+        <button type="button" class="btn-secondary" id="addItemBtn">
             + Add item
         </button>
 
         <div class="total-box">
-            Total Estimated Amount:
-            <strong id="grandTotal">0.00</strong>
+            <strong>Total amount:</strong>
+            <span id="grandTotal">0.00</span>
         </div>
 
         <div class="section-title">
-            Accounting information
+            Budget and accounting information
         </div>
 
         <div class="form-group">
             <label for="budgetPlan">Budget Plan</label>
-            <select id="budgetPlan" required>
-                <option value="">Select budget plan</option>
-                <option value="SALARY">SALARY</option>
-                <option value="OPEX">OPEX</option>
-                <option value="CAPEX">CAPEX</option>
-            </select>
+            <input
+                    type="text"
+                    id="budgetPlan"
+                    name="budgetPlan"
+                    placeholder="Optional budget plan">
         </div>
 
         <div class="form-group">
-            <label for="fundCode">Fund</label>
-            <select id="fundCode" required>
+            <label for="fundCode">Fund *</label>
+            <select id="fundCode" name="fundCode" required>
                 <option value="">Loading funds...</option>
             </select>
         </div>
 
         <div class="form-group">
-            <label for="currencyCode">Devise</label>
-            <select id="currencyCode" required>
+            <label for="currencyCode">Currency *</label>
+            <select id="currencyCode" name="currencyCode" required>
                 <option value="">Loading currencies...</option>
             </select>
         </div>
 
         <div class="form-group">
-            <label for="glAccountNo">G/L Account</label>
-            <select id="glAccountNo" required>
+            <label for="glAccountCode">G/L Account *</label>
+            <select id="glAccountCode" name="glAccountCode" required>
                 <option value="">Loading G/L accounts...</option>
             </select>
         </div>
@@ -150,31 +155,27 @@
         </div>
 
         <div id="dynamicDimensionsContainer">
-            <div class="empty-state small-empty">
-                <div class="empty-icon">...</div>
-                <h3>Loading dimensions</h3>
-                <p>Please wait...</p>
-            </div>
+            <!-- Dynamic dimensions are rendered by needs-request.js -->
         </div>
 
-        <div class="form-group">
-            <label for="attachment">Pièce jointe</label>
-            <input type="file" id="attachment">
-        </div>
+        <button type="submit" class="btn-primary" id="submitBtn">
+            Submit Request
+        </button>
 
-        <button type="submit" class="btn-primary">
-            Soumettre la demande
+        <button type="button" class="btn-secondary" id="cancelBtn">
+            Cancel
         </button>
 
     </form>
 
 </div>
 
-<script src="js/config.js"></script>
-<script src="js/mobile-dialog.js"></script>
-<script src="js/auth.js"></script>
-<script src="js/needs-request.js"></script>
-<script src="js/pwa-register.js"></script>
+<!-- Scripts: order is important -->
+<script src="js/config.js?v=20260603-dialog1"></script>
+<script src="js/mobile-dialog.js?v=20260603-dialog1"></script>
+<script src="js/auth.js?v=20260603-dialog1"></script>
+<script src="js/needs-request.js?v=20260603-dialog1"></script>
+<script src="js/pwa-register.js?v=20260603-dialog1"></script>
 
 </body>
 </html>
