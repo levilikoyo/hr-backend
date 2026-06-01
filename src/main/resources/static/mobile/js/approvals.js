@@ -17,6 +17,8 @@
     let glAccounts = [];
     let groupedDimensions = [];
 
+    const autoSaveTimers = {};
+
     document.addEventListener("DOMContentLoaded", async function () {
         try {
             currentUser = requireLogin();
@@ -239,11 +241,7 @@
                 </div>
             </div>
 
-            <div class="approval-card-actions">
-                <button type="button" class="btn-secondary small-btn" onclick="ApprovalPage.saveChanges(${request.id})">
-                    Save
-                </button>
-
+            <div class="approval-card-actions approval-card-actions-two">
                 <button type="button" class="btn-approve small-btn" onclick="ApprovalPage.approve(${request.id})">
                     Approve
                 </button>
@@ -256,6 +254,7 @@
 
         setTimeout(function () {
             bindCardCalculation(card);
+            bindAutoSaveEvents(card, roleForEdition);
         }, 0);
 
         return card;
@@ -321,6 +320,10 @@
 
                 <div class="finance-dimensions" data-request-id="${request.id}">
                     ${renderDimensionFields(request.id, dimensionValues)}
+                </div>
+
+                <div class="auto-save-hint">
+                    Changes are saved automatically.
                 </div>
             </div>
         `;
@@ -414,6 +417,8 @@
                                 </span>
                               `
                     }
+
+                    <span class="auto-save-status" data-item-status="${item.id}"></span>
                 </div>
             </div>
         `;
@@ -554,29 +559,188 @@
         recalculateCardTotals(card);
     }
 
-    function recalculateCardTotals(card) {
-        let requestTotal = 0;
+    function bindAutoSaveEvents(card, roleForEdition) {
+        if (roleForEdition === "HOD" || roleForEdition === "DIRECTOR") {
+            const quantityInputs = card.querySelectorAll(".approval-quantity-input");
 
-        card.querySelectorAll(".approval-receipt-item").forEach(function (itemRow) {
-            const quantity = getItemQuantity(itemRow);
-            const unitPrice = getItemUnitPrice(itemRow);
-            const lineTotal = quantity * unitPrice;
+            quantityInputs.forEach(function (input) {
+                input.addEventListener("input", function () {
+                    scheduleQuantityAutoSave(input);
+                });
 
-            requestTotal += lineTotal;
+                input.addEventListener("change", function () {
+                    scheduleQuantityAutoSave(input);
+                });
+            });
+        }
 
-            const lineTotalElement = itemRow.querySelector(".approval-line-total");
+        if (roleForEdition === "FINANCE") {
+            const financeFields = card.querySelectorAll(
+                ".finance-budget-plan, .finance-fund-code, .finance-currency-code, .finance-gl-account, .finance-dimension-select"
+            );
 
-            if (lineTotalElement) {
-                lineTotalElement.textContent = formatAmount(lineTotal);
+            financeFields.forEach(function (field) {
+                field.addEventListener("input", function () {
+                    scheduleFinanceHeaderAutoSave(card);
+                });
+
+                field.addEventListener("change", function () {
+                    scheduleFinanceHeaderAutoSave(card);
+                });
+            });
+
+            const unitPriceInputs = card.querySelectorAll(".approval-unit-price-input");
+
+            unitPriceInputs.forEach(function (input) {
+                input.addEventListener("input", function () {
+                    scheduleUnitPriceAutoSave(input);
+                });
+
+                input.addEventListener("change", function () {
+                    scheduleUnitPriceAutoSave(input);
+                });
+            });
+        }
+    }
+
+    function scheduleQuantityAutoSave(input) {
+        const requestId = input.dataset.requestId;
+        const itemId = input.dataset.itemId;
+        const key = `qty-${requestId}-${itemId}`;
+
+        setItemAutoSaveStatus(itemId, "Saving...");
+
+        clearTimeout(autoSaveTimers[key]);
+
+        autoSaveTimers[key] = setTimeout(async function () {
+            try {
+                await updateQuantityDirectly(input);
+                setItemAutoSaveStatus(itemId, "Saved");
+
+            } catch (error) {
+                console.error("Quantity auto-save error:", error);
+                setItemAutoSaveStatus(itemId, "Error");
+                showError("Failed to save quantity: " + error.message);
+            }
+        }, 700);
+    }
+
+    function scheduleUnitPriceAutoSave(input) {
+        const requestId = input.dataset.requestId;
+        const itemId = input.dataset.itemId;
+        const key = `price-${requestId}-${itemId}`;
+
+        setItemAutoSaveStatus(itemId, "Saving...");
+
+        clearTimeout(autoSaveTimers[key]);
+
+        autoSaveTimers[key] = setTimeout(async function () {
+            try {
+                await updateItemFinanceDirectly(input);
+                setItemAutoSaveStatus(itemId, "Saved");
+
+            } catch (error) {
+                console.error("Unit price auto-save error:", error);
+                setItemAutoSaveStatus(itemId, "Error");
+                showError("Failed to save unit price: " + error.message);
+            }
+        }, 700);
+    }
+
+    function scheduleFinanceHeaderAutoSave(card) {
+        const requestId = card.dataset.requestId;
+        const key = `finance-header-${requestId}`;
+
+        setFinanceAutoSaveStatus(card, "Saving...");
+
+        clearTimeout(autoSaveTimers[key]);
+
+        autoSaveTimers[key] = setTimeout(async function () {
+            try {
+                await updateFinanceHeaderDirectly(card);
+                setFinanceAutoSaveStatus(card, "Saved automatically");
+
+            } catch (error) {
+                console.error("Finance header auto-save error:", error);
+                setFinanceAutoSaveStatus(card, "Error");
+                showError("Failed to save finance information: " + error.message);
+            }
+        }, 700);
+    }
+
+    async function updateQuantityDirectly(input) {
+        const requestId = input.dataset.requestId;
+        const itemId = input.dataset.itemId;
+        const quantity = input.value || "0";
+
+        const url =
+            `${BASE_URL}/api/needs-requests/${encodeURIComponent(requestId)}/items/${encodeURIComponent(itemId)}/quantity`
+            + `?quantity=${encodeURIComponent(quantity)}`
+            + `&updatedBy=${encodeURIComponent(getApproverName())}`
+            + `&role=${encodeURIComponent(currentRole)}`;
+
+        const response = await fetch(url, {
+            method: "PUT",
+            headers: {
+                "Accept": "application/json"
             }
         });
 
-        const requestId = card.dataset.requestId;
-        const totalElement = card.querySelector(`[data-request-total="${requestId}"]`);
+        const text = await response.text();
 
-        if (totalElement) {
-            totalElement.textContent = formatAmount(requestTotal);
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status} - ${text}`);
         }
+
+        updateLocalRequestFromResponse(requestId, text);
+    }
+
+    async function updateFinanceHeaderDirectly(card) {
+        const requestId = card.dataset.requestId;
+
+        const payload = buildFinancePayload(card);
+
+        const result = await putJson(
+            `${BASE_URL}/api/needs-requests/${encodeURIComponent(requestId)}/finance-fields`,
+            payload
+        );
+
+        updateLocalRequestObject(requestId, result);
+    }
+
+    async function updateItemFinanceDirectly(input) {
+        const requestId = input.dataset.requestId;
+        const itemId = input.dataset.itemId;
+
+        const card = getRequestCard(requestId);
+        const payload = buildFinancePayload(card);
+
+        payload.unitPrice = input.value || "0";
+
+        const result = await putJson(
+            `${BASE_URL}/api/needs-requests/${encodeURIComponent(requestId)}/items/${encodeURIComponent(itemId)}/finance-fields`,
+            payload
+        );
+
+        updateLocalRequestObject(requestId, result);
+    }
+
+    function buildFinancePayload(card) {
+        const dimensionValues = collectFinanceDimensions(card);
+
+        const glAccountNo = getCardValue(card, ".finance-gl-account");
+
+        return {
+            updatedBy: getApproverName(),
+            role: currentRole,
+            budgetPlan: getCardValue(card, ".finance-budget-plan"),
+            fundCode: getCardValue(card, ".finance-fund-code"),
+            currencyCode: getCardValue(card, ".finance-currency-code"),
+            glAccountNo: glAccountNo,
+            glAccountCode: glAccountNo,
+            dimensionValues: JSON.stringify(dimensionValues),
+            dimensions: dimensionValues
+        };
     }
 
     async function saveChanges(requestId) {
@@ -597,9 +761,6 @@
                 await saveFinanceChanges(requestId);
             }
 
-            showSuccess("Changes saved successfully.");
-            await loadPendingApprovals();
-
             return true;
 
         } catch (error) {
@@ -614,85 +775,30 @@
         const quantityInputs = card.querySelectorAll(".approval-quantity-input");
 
         for (const input of quantityInputs) {
-            const itemId = input.dataset.itemId;
-            const quantity = input.value || "0";
-
-            const url =
-                `${BASE_URL}/api/needs-requests/${encodeURIComponent(requestId)}/items/${encodeURIComponent(itemId)}/quantity`
-                + `?quantity=${encodeURIComponent(quantity)}`
-                + `&updatedBy=${encodeURIComponent(getApproverName())}`
-                + `&role=${encodeURIComponent(currentRole)}`;
-
-            const response = await fetch(url, {
-                method: "PUT",
-                headers: {
-                    "Accept": "application/json"
-                }
-            });
-
-            const text = await response.text();
-
-            if (!response.ok) {
-                throw new Error(`HTTP ${response.status} - ${text}`);
-            }
+            await updateQuantityDirectly(input);
         }
     }
 
     async function saveFinanceChanges(requestId) {
         const card = getRequestCard(requestId);
 
-        const budgetPlan = getCardValue(card, ".finance-budget-plan");
-        const fundCode = getCardValue(card, ".finance-fund-code");
-        const currencyCode = getCardValue(card, ".finance-currency-code");
-        const glAccountNo = getCardValue(card, ".finance-gl-account");
-        const dimensionValues = collectFinanceDimensions(card);
-
-        const headerPayload = {
-            updatedBy: getApproverName(),
-            role: currentRole,
-            budgetPlan: budgetPlan,
-            fundCode: fundCode,
-            currencyCode: currencyCode,
-            glAccountNo: glAccountNo,
-            glAccountCode: glAccountNo,
-            dimensionValues: JSON.stringify(dimensionValues),
-            dimensions: dimensionValues
-        };
-
-        await putJson(
-            `${BASE_URL}/api/needs-requests/${encodeURIComponent(requestId)}/finance-fields`,
-            headerPayload
-        );
+        await updateFinanceHeaderDirectly(card);
 
         const itemRows = card.querySelectorAll(".approval-receipt-item");
 
         for (const itemRow of itemRows) {
-            const itemId = itemRow.dataset.itemId;
-            const unitPrice = getItemUnitPrice(itemRow);
+            const input = itemRow.querySelector(".approval-unit-price-input");
 
-            const itemPayload = {
-                updatedBy: getApproverName(),
-                role: currentRole,
-                unitPrice: unitPrice,
-                budgetPlan: budgetPlan,
-                fundCode: fundCode,
-                glAccountNo: glAccountNo,
-                glAccountCode: glAccountNo,
-                dimensionValues: JSON.stringify(dimensionValues),
-                dimensions: dimensionValues
-            };
-
-            await putJson(
-                `${BASE_URL}/api/needs-requests/${encodeURIComponent(requestId)}/items/${encodeURIComponent(itemId)}/finance-fields`,
-                itemPayload
-            );
+            if (input) {
+                await updateItemFinanceDirectly(input);
+            }
         }
     }
 
     async function approve(requestId) {
         const confirmed = await confirmDialog(
             "Approve request",
-            "Do you want to save changes and approve this request?",
+            "Do you want to approve this request?",
             "Approve"
         );
 
@@ -800,6 +906,31 @@
         return text ? JSON.parse(text) : null;
     }
 
+    function recalculateCardTotals(card) {
+        let requestTotal = 0;
+
+        card.querySelectorAll(".approval-receipt-item").forEach(function (itemRow) {
+            const quantity = getItemQuantity(itemRow);
+            const unitPrice = getItemUnitPrice(itemRow);
+            const lineTotal = quantity * unitPrice;
+
+            requestTotal += lineTotal;
+
+            const lineTotalElement = itemRow.querySelector(".approval-line-total");
+
+            if (lineTotalElement) {
+                lineTotalElement.textContent = formatAmount(lineTotal);
+            }
+        });
+
+        const requestId = card.dataset.requestId;
+        const totalElement = card.querySelector(`[data-request-total="${requestId}"]`);
+
+        if (totalElement) {
+            totalElement.textContent = formatAmount(requestTotal);
+        }
+    }
+
     function collectFinanceDimensions(card) {
         const dimensions = {};
 
@@ -849,6 +980,65 @@
         }
 
         return 0;
+    }
+
+    function setItemAutoSaveStatus(itemId, message) {
+        const element = document.querySelector(`[data-item-status="${itemId}"]`);
+
+        if (!element) {
+            return;
+        }
+
+        element.textContent = message || "";
+
+        if (message === "Saved") {
+            setTimeout(function () {
+                element.textContent = "";
+            }, 1200);
+        }
+    }
+
+    function setFinanceAutoSaveStatus(card, message) {
+        let element = card.querySelector(".auto-save-hint");
+
+        if (!element) {
+            return;
+        }
+
+        element.textContent = message || "Changes are saved automatically.";
+
+        if (message === "Saved automatically") {
+            setTimeout(function () {
+                element.textContent = "Changes are saved automatically.";
+            }, 1300);
+        }
+    }
+
+    function updateLocalRequestFromResponse(requestId, text) {
+        if (!text) {
+            return;
+        }
+
+        try {
+            const data = JSON.parse(text);
+            updateLocalRequestObject(requestId, data);
+        } catch (error) {
+            console.warn("Could not parse update response:", error);
+        }
+    }
+
+    function updateLocalRequestObject(requestId, updatedRequest) {
+        if (!updatedRequest || !updatedRequest.id) {
+            return;
+        }
+
+        pendingRequests = pendingRequests.map(function (request) {
+            if (String(request.id) === String(requestId)) {
+                return updatedRequest;
+            }
+
+            return request;
+        });
     }
 
     function getRequestCard(requestId) {
@@ -1047,7 +1237,6 @@
     }
 
     window.ApprovalPage = {
-        saveChanges: saveChanges,
         approve: approve,
         reject: reject,
         reload: loadPendingApprovals

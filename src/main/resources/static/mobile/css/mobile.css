@@ -1695,4 +1695,19 @@ input[type="date"] {
     .approval-actions {
         grid-template-columns: 1fr;
     }
+    
+    .approval-card-actions-two {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    margin-top: 14px;
+}
+
+.auto-save-hint,
+.auto-save-status {
+    font-size: 11px;
+    font-weight: 800;
+    color: #16a34a;
+    margin-left: 6px;
+}
 }
