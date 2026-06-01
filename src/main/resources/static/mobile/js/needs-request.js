@@ -186,18 +186,8 @@ async function loadGroupedDimensions() {
 
 async function loadFunds() {
     const select = findSelect(
-        [
-            "fundCode",
-            "fundSelect",
-            "fund_code",
-            "fund",
-            "funds",
-            "requestFund"
-        ],
-        [
-            "Fund",
-            "Fonds"
-        ]
+        ["fundCode", "fundSelect", "fund_code", "fund", "funds", "requestFund"],
+        ["Fund", "Fonds"]
     );
 
     if (!select) {
@@ -286,11 +276,7 @@ async function loadCurrencies() {
             "devise",
             "deviseCode"
         ],
-        [
-            "Currency",
-            "Curency",
-            "Devise"
-        ]
+        ["Currency", "Curency", "Devise"]
     );
 
     if (!select) {
@@ -364,12 +350,7 @@ async function loadGLAccounts() {
             "glCode",
             "gLAccount"
         ],
-        [
-            "G/L Account",
-            "GL Account",
-            "G/L",
-            "Account"
-        ]
+        ["G/L Account", "GL Account", "G/L", "Account"]
     );
 
     if (!select) {
@@ -382,10 +363,7 @@ async function loadGLAccounts() {
     let loaded = false;
 
     const urls = [
-        `${BASE_URL}/api/gl-accounts/organization/${encodeURIComponent(currentOrganization)}`,
-        `${BASE_URL}/api/glaccounts/organization/${encodeURIComponent(currentOrganization)}`,
-        `${BASE_URL}/api/gl-account/organization/${encodeURIComponent(currentOrganization)}`,
-        `${BASE_URL}/api/gl-accounts`
+        `${BASE_URL}/api/gl-accounts/organization/${encodeURIComponent(currentOrganization)}`
     ];
 
     for (const url of urls) {
@@ -400,15 +378,6 @@ async function loadGLAccounts() {
             }
 
             accounts.forEach(function (account) {
-                const organization = firstValue(account, [
-                    "organization",
-                    "organisation"
-                ]);
-
-                if (organization && organization !== currentOrganization && url.endsWith("/api/gl-accounts")) {
-                    return;
-                }
-
                 const code = firstValue(account, [
                     "glCode",
                     "glAccountCode",
@@ -462,14 +431,8 @@ async function loadGLAccounts() {
 
 function renderDynamicDimensions() {
     const container = findElement(
-        [
-            "dynamicDimensionsContainer",
-            "dimensionsContainer",
-            "dynamic_dimensions_container"
-        ],
-        [
-            "Dimensions"
-        ]
+        ["dynamicDimensionsContainer", "dimensionsContainer", "dynamic_dimensions_container"],
+        ["Dimensions"]
     );
 
     if (!container) {
@@ -514,11 +477,7 @@ function createDimensionField(dimension) {
         select.required = true;
     }
 
-    addOption(
-        select,
-        "",
-        `Select ${dimension.dimensionName || dimension.dimensionCode || "dimension"}`
-    );
+    addOption(select, "", `Select ${dimension.dimensionName || dimension.dimensionCode || "dimension"}`);
 
     const values = Array.isArray(dimension.values) ? dimension.values : [];
 
@@ -545,14 +504,8 @@ function createDimensionField(dimension) {
 
 function ensureAtLeastOneItem() {
     const container = findElement(
-        [
-            "itemsContainer",
-            "requestItemsContainer",
-            "itemsList"
-        ],
-        [
-            "Items"
-        ]
+        ["itemsContainer", "requestItemsContainer", "itemsList"],
+        ["Items"]
     );
 
     if (!container) {
@@ -568,14 +521,8 @@ function ensureAtLeastOneItem() {
 
 function addItemRow() {
     const container = findElement(
-        [
-            "itemsContainer",
-            "requestItemsContainer",
-            "itemsList"
-        ],
-        [
-            "Items"
-        ]
+        ["itemsContainer", "requestItemsContainer", "itemsList"],
+        ["Items"]
     );
 
     if (!container) {
@@ -596,8 +543,13 @@ function addItemRow() {
         </div>
 
         <div class="form-group">
-            <label>Description *</label>
-            <input type="text" class="form-control item-description" placeholder="Item description" required>
+            <label>Item Name *</label>
+            <input type="text" class="form-control item-name" placeholder="Item name" required>
+        </div>
+
+        <div class="form-group">
+            <label>Description</label>
+            <input type="text" class="form-control item-description" placeholder="Item description">
         </div>
 
         <div class="form-row">
@@ -607,14 +559,19 @@ function addItemRow() {
             </div>
 
             <div class="form-group">
-                <label>Unit Cost</label>
-                <input type="number" class="form-control item-unit-cost" min="0" step="0.01" value="0">
+                <label>Unit Price</label>
+                <input type="number" class="form-control item-unit-price" min="0" step="0.01" value="0">
             </div>
         </div>
 
         <div class="form-group">
-            <label>Remarks</label>
-            <textarea class="form-control item-remarks" rows="2" placeholder="Optional remarks"></textarea>
+            <label>Unit of Measure</label>
+            <input type="text" class="form-control item-unit-measure" placeholder="PCS, Month, Day..." value="PCS">
+        </div>
+
+        <div class="form-group">
+            <label>Item Category</label>
+            <input type="text" class="form-control item-category" placeholder="Optional category">
         </div>
     `;
 
@@ -623,14 +580,8 @@ function addItemRow() {
 
 function removeItemRow(button) {
     const container = findElement(
-        [
-            "itemsContainer",
-            "requestItemsContainer",
-            "itemsList"
-        ],
-        [
-            "Items"
-        ]
+        ["itemsContainer", "requestItemsContainer", "itemsList"],
+        ["Items"]
     );
 
     const item = button.closest(".request-item");
@@ -709,72 +660,22 @@ async function submitNeedsRequest() {
 }
 
 function buildPayload() {
-    const title = getValue(
-        ["title", "requestTitle", "needTitle", "needsTitle"],
-        ["Title", "Request Title"]
-    );
+    const title = getValue(["title", "requestTitle", "needTitle", "needsTitle"], ["Title", "Request Title"]);
+    const description = getValue(["description", "requestDescription", "needDescription", "needsDescription"], ["Description"]);
+    const requestDate = getValue(["requestDate", "date", "needDate", "needsDate"], ["Date", "Request Date"]);
+    const priority = getValue(["priority", "requestPriority", "needPriority", "needsPriority"], ["Priority"]);
+    const budgetPlan = getValue(["budgetPlan", "budget_plan", "budgetPlanCode"], ["Budget Plan"]);
 
-    const description = getValue(
-        ["description", "requestDescription", "needDescription", "needsDescription"],
-        ["Description"]
-    );
-
-    const requestDate = getValue(
-        ["requestDate", "date", "needDate", "needsDate"],
-        ["Date", "Request Date"]
-    );
-
-    const priority = getValue(
-        ["priority", "requestPriority", "needPriority", "needsPriority"],
-        ["Priority"]
-    );
-
-    const budgetPlan = getValue(
-        ["budgetPlan", "budget_plan", "budgetPlanCode"],
-        ["Budget Plan"]
-    );
-
-    const fundCode = getValue(
-        ["fundCode", "fundSelect", "fund_code", "fund", "funds", "requestFund"],
-        ["Fund", "Fonds"]
-    );
+    const fundCode = getValue(["fundCode", "fundSelect", "fund_code", "fund", "funds", "requestFund"], ["Fund", "Fonds"]);
 
     const currencyCode = getValue(
-        [
-            "currencyCode",
-            "curencyCode",
-            "currencySelect",
-            "currency_code",
-            "curency_code",
-            "currency",
-            "curency",
-            "devise",
-            "deviseCode"
-        ],
-        [
-            "Currency",
-            "Curency",
-            "Devise"
-        ]
+        ["currencyCode", "curencyCode", "currencySelect", "currency_code", "curency_code", "currency", "curency", "devise", "deviseCode"],
+        ["Currency", "Curency", "Devise"]
     );
 
     const glAccountCode = getValue(
-        [
-            "glAccountCode",
-            "glAccountSelect",
-            "gl_account_code",
-            "glAccount",
-            "gl_account",
-            "accountCode",
-            "account_code",
-            "glCode"
-        ],
-        [
-            "G/L Account",
-            "GL Account",
-            "G/L",
-            "Account"
-        ]
+        ["glAccountCode", "glAccountSelect", "gl_account_code", "glAccount", "gl_account", "accountCode", "account_code", "glCode"],
+        ["G/L Account", "GL Account", "G/L", "Account"]
     );
 
     const dimensionObject = collectDynamicDimensions();
@@ -835,7 +736,7 @@ function buildPayload() {
         priority: priority || "NORMAL",
         budgetPlan: budgetPlan,
 
-        requesterId: currentUser.id || null,
+        requestedBy: requesterName,
         requesterName: requesterName,
         requesterEmail: currentUser.email || "",
         requesterRole: currentUser.role || "",
@@ -844,11 +745,15 @@ function buildPayload() {
 
         fundCode: fundCode,
         currencyCode: currencyCode,
+
+        glAccountNo: glAccountCode,
         glAccountCode: glAccountCode,
 
         dimensionValues: JSON.stringify(dimensionObject),
 
         status: "PENDING_HOD",
+        currentApprovalLevel: "HOD",
+
         items: items
     };
 }
@@ -858,72 +763,57 @@ function collectItems() {
     const items = [];
 
     rows.forEach(function (row) {
+        const itemNameInput = row.querySelector(".item-name");
         const descriptionInput = row.querySelector(".item-description");
         const quantityInput = row.querySelector(".item-quantity");
-        const unitCostInput = row.querySelector(".item-unit-cost");
-        const remarksInput = row.querySelector(".item-remarks");
+        const unitPriceInput = row.querySelector(".item-unit-price");
+        const unitMeasureInput = row.querySelector(".item-unit-measure");
+        const categoryInput = row.querySelector(".item-category");
 
+        const itemName = itemNameInput ? itemNameInput.value.trim() : "";
         const description = descriptionInput ? descriptionInput.value.trim() : "";
         const quantity = quantityInput ? Number(quantityInput.value || 0) : 0;
-        const unitCost = unitCostInput ? Number(unitCostInput.value || 0) : 0;
-        const remarks = remarksInput ? remarksInput.value.trim() : "";
+        const unitPrice = unitPriceInput ? Number(unitPriceInput.value || 0) : 0;
+        const unitOfMeasure = unitMeasureInput ? unitMeasureInput.value.trim() : "PCS";
+        const itemCategory = categoryInput ? categoryInput.value.trim() : "";
 
-        if (!description) {
+        if (!itemName) {
             return;
         }
 
+        const totalAmount = quantity * unitPrice;
+
+        const dimensionValues = JSON.stringify(collectDynamicDimensions());
+
+        const fundCode = getValue(["fundCode", "fundSelect", "fund_code", "fund", "funds", "requestFund"], ["Fund", "Fonds"]);
+
+        const glAccountCode = getValue(
+            ["glAccountCode", "glAccountSelect", "gl_account_code", "glAccount", "gl_account", "accountCode", "account_code", "glCode"],
+            ["G/L Account", "GL Account", "G/L", "Account"]
+        );
+
         items.push({
             organization: currentOrganization,
-            description: description,
+
+            itemName: itemName,
+            description: description || itemName,
+            itemCategory: itemCategory,
+
             quantity: quantity,
-            unitCost: unitCost,
-            totalCost: quantity * unitCost,
-            remarks: remarks,
+            unitPrice: unitPrice,
+            unitCost: unitPrice,
+            totalAmount: totalAmount,
+            totalCost: totalAmount,
 
-            fundCode: getValue(
-                ["fundCode", "fundSelect", "fund_code", "fund", "funds", "requestFund"],
-                ["Fund", "Fonds"]
-            ),
+            unitOfMeasure: unitOfMeasure,
 
-            currencyCode: getValue(
-                [
-                    "currencyCode",
-                    "curencyCode",
-                    "currencySelect",
-                    "currency_code",
-                    "curency_code",
-                    "currency",
-                    "curency",
-                    "devise",
-                    "deviseCode"
-                ],
-                [
-                    "Currency",
-                    "Curency",
-                    "Devise"
-                ]
-            ),
+            budgetPlan: getValue(["budgetPlan", "budget_plan", "budgetPlanCode"], ["Budget Plan"]),
+            fundCode: fundCode,
 
-            glAccountCode: getValue(
-                [
-                    "glAccountCode",
-                    "glAccountSelect",
-                    "gl_account_code",
-                    "glAccount",
-                    "gl_account",
-                    "accountCode",
-                    "account_code",
-                    "glCode"
-                ],
-                [
-                    "G/L Account",
-                    "GL Account",
-                    "G/L",
-                    "Account"
-                ]
-            ),
+            glAccountNo: glAccountCode,
+            glAccountCode: glAccountCode,
 
-            dimensionValues: JSON.stringify(collectDynamicDimensions())
+            dimensionValues: dimensionValues
         });
     });
 
@@ -1005,10 +895,7 @@ function normalizeDimensionCode(code) {
    ========================================================= */
 
 function setDefaultRequestDate() {
-    const dateInput = findElement(
-        ["requestDate", "date", "needDate", "needsDate"],
-        ["Date", "Request Date"]
-    );
+    const dateInput = findElement(["requestDate", "date", "needDate", "needsDate"], ["Date", "Request Date"]);
 
     if (!dateInput) {
         return;
@@ -1021,10 +908,7 @@ function setDefaultRequestDate() {
 }
 
 function setSubmitLoading(isLoading) {
-    const submitBtn = findElement(
-        ["submitBtn", "btnSubmit", "submitRequestBtn", "saveBtn"],
-        ["Submit", "Save", "Send"]
-    );
+    const submitBtn = findElement(["submitBtn", "btnSubmit", "submitRequestBtn", "saveBtn"], ["Submit", "Save", "Send"]);
 
     if (!submitBtn) {
         return;
@@ -1063,6 +947,11 @@ function createEmptyMessage(message) {
 }
 
 function showError(message) {
+    if (window.MobileDialog && typeof window.MobileDialog.error === "function") {
+        window.MobileDialog.error("Error", message);
+        return;
+    }
+
     if (window.Swal) {
         Swal.fire({
             icon: "error",
@@ -1076,6 +965,11 @@ function showError(message) {
 }
 
 function showSuccess(message) {
+    if (window.MobileDialog && typeof window.MobileDialog.success === "function") {
+        window.MobileDialog.success("Success", message);
+        return;
+    }
+
     if (window.Swal) {
         Swal.fire({
             icon: "success",
