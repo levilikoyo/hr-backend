@@ -9,7 +9,7 @@
 
     let approvalCurrentUser = null;
     let approvalOrganization = "";
-    let approvalRole = "";
+    let approvalUserRole = "";
     let pendingRequests = [];
 
     document.addEventListener("DOMContentLoaded", async function () {
@@ -22,11 +22,11 @@
             }
 
             approvalOrganization = getOrganizationSafe(approvalCurrentUser);
-            approvalRole = getRoleSafe(approvalCurrentUser);
+            approvalUserRole = getRoleSafe(approvalCurrentUser);
 
             console.log("Approval current user:", approvalCurrentUser);
             console.log("Approval organization:", approvalOrganization);
-            console.log("Approval role:", approvalRole);
+            console.log("Approval user role:", approvalUserRole);
 
             if (!approvalOrganization) {
                 alert("Organization not found. Please login again.");
@@ -34,7 +34,7 @@
                 return;
             }
 
-            if (!approvalRole) {
+            if (!approvalUserRole) {
                 alert("User role not found. Please login again.");
                 window.location.href = "login.html";
                 return;
@@ -87,7 +87,7 @@
         setLoading(true);
 
         try {
-            const role = normalizeRole(approvalRole);
+            const role = normalizeRole(approvalUserRole);
             let requests = [];
 
             try {
@@ -105,8 +105,8 @@
 
             /*
                ADMIN fallback:
-               If backend returns 0 for ADMIN, load all organization requests
-               and filter the pending ones.
+               If ADMIN receives no result from role endpoint,
+               load all organization requests and filter pending approval statuses.
             */
             if ((!requests || requests.length === 0) && role === "ADMIN") {
                 try {
@@ -190,6 +190,7 @@
         const requestNo = safeText(request.requestNo || request.request_no || `REQ-${requestId}`);
         const title = safeText(request.title || "Needs Request");
         const status = safeText(request.status || "");
+        const currentLevel = safeText(request.currentApprovalLevel || request.current_approval_level || "");
         const requester = safeText(
             request.requestedBy ||
             request.requested_by ||
@@ -259,6 +260,11 @@
                     </div>
 
                     <div>
+                        <span class="label">Approval Level</span>
+                        <strong>${currentLevel || "-"}</strong>
+                    </div>
+
+                    <div>
                         <span class="label">Priority</span>
                         <strong>${priority || "-"}</strong>
                     </div>
@@ -292,13 +298,13 @@
 
         if (rejectBtn) {
             rejectBtn.addEventListener("click", async function () {
-                await rejectRequest(requestId);
+                await rejectRequest(request);
             });
         }
 
         if (approveBtn) {
             approveBtn.addEventListener("click", async function () {
-                await approveRequest(requestId);
+                await approveRequest(request);
             });
         }
 
@@ -307,9 +313,14 @@
 
     /* =========================================================
        Approval actions
+       Backend expects:
+       PUT /api/needs-requests/{id}/approve?approvedBy=...&role=...
+       PUT /api/needs-requests/{id}/reject?rejectedBy=...&role=...&reason=...
        ========================================================= */
 
-    async function approveRequest(requestId) {
+    async function approveRequest(request) {
+        const requestId = request.id;
+
         if (!requestId) {
             showError("Invalid request.");
             return;
@@ -327,21 +338,21 @@
         setLoading(true);
 
         try {
-            const role = normalizeRole(approvalRole);
-            const approverName = getUserDisplayName();
+            const approvedBy = getUserDisplayName();
+            const approvalRole = getApprovalRoleForRequest(request);
 
-            const payload = {
-                organization: approvalOrganization,
-                approvedBy: approverName,
-                approverName: approverName,
-                approverEmail: approvalCurrentUser.email || "",
-                approverRole: role,
-                role: role
-            };
+            console.log("Approving request with role:", approvalRole);
 
-            const urls = getApproveUrls(requestId, role);
+            if (!approvalRole) {
+                throw new Error("Approval role not found for this request.");
+            }
 
-            await postWithFallback(urls, payload);
+            const url =
+                `${BASE_URL}/api/needs-requests/${encodeURIComponent(requestId)}/approve` +
+                `?approvedBy=${encodeURIComponent(approvedBy)}` +
+                `&role=${encodeURIComponent(approvalRole)}`;
+
+            await putRequest(url);
 
             showSuccess("Request approved successfully.");
 
@@ -355,7 +366,9 @@
         }
     }
 
-    async function rejectRequest(requestId) {
+    async function rejectRequest(request) {
+        const requestId = request.id;
+
         if (!requestId) {
             showError("Invalid request.");
             return;
@@ -375,23 +388,22 @@
         setLoading(true);
 
         try {
-            const role = normalizeRole(approvalRole);
             const rejectedBy = getUserDisplayName();
+            const approvalRole = getApprovalRoleForRequest(request);
 
-            const payload = {
-                organization: approvalOrganization,
-                rejectedBy: rejectedBy,
-                approverName: rejectedBy,
-                approverEmail: approvalCurrentUser.email || "",
-                approverRole: role,
-                role: role,
-                rejectionReason: reason,
-                reason: reason
-            };
+            console.log("Rejecting request with role:", approvalRole);
 
-            const urls = getRejectUrls(requestId);
+            if (!approvalRole) {
+                throw new Error("Approval role not found for this request.");
+            }
 
-            await postWithFallback(urls, payload);
+            const url =
+                `${BASE_URL}/api/needs-requests/${encodeURIComponent(requestId)}/reject` +
+                `?rejectedBy=${encodeURIComponent(rejectedBy)}` +
+                `&role=${encodeURIComponent(approvalRole)}` +
+                `&reason=${encodeURIComponent(reason)}`;
+
+            await putRequest(url);
 
             showSuccess("Request rejected successfully.");
 
@@ -405,92 +417,85 @@
         }
     }
 
-    function getApproveUrls(requestId, role) {
-        const id = encodeURIComponent(requestId);
+    async function putRequest(url) {
+        console.log("PUT:", url);
 
-        if (role === "HOD") {
-            return [
-                `${BASE_URL}/api/needs-requests/${id}/hod-approve`,
-                `${BASE_URL}/api/needs-requests/${id}/approve/hod`,
-                `${BASE_URL}/api/needs-requests/${id}/approve`
-            ];
-        }
-
-        if (role === "FINANCE") {
-            return [
-                `${BASE_URL}/api/needs-requests/${id}/finance-approve`,
-                `${BASE_URL}/api/needs-requests/${id}/approve/finance`,
-                `${BASE_URL}/api/needs-requests/${id}/approve`
-            ];
-        }
-
-        if (role === "DIRECTOR") {
-            return [
-                `${BASE_URL}/api/needs-requests/${id}/director-approve`,
-                `${BASE_URL}/api/needs-requests/${id}/approve/director`,
-                `${BASE_URL}/api/needs-requests/${id}/approve`
-            ];
-        }
-
-        return [
-            `${BASE_URL}/api/needs-requests/${id}/approve`,
-            `${BASE_URL}/api/needs-requests/${id}/hod-approve`,
-            `${BASE_URL}/api/needs-requests/${id}/finance-approve`,
-            `${BASE_URL}/api/needs-requests/${id}/director-approve`
-        ];
-    }
-
-    function getRejectUrls(requestId) {
-        const id = encodeURIComponent(requestId);
-
-        return [
-            `${BASE_URL}/api/needs-requests/${id}/reject`,
-            `${BASE_URL}/api/needs-requests/${id}/rejected`
-        ];
-    }
-
-    async function postWithFallback(urls, payload) {
-        let lastError = "";
-
-        for (const url of urls) {
-            try {
-                console.log("Posting:", url, payload);
-
-                const response = await fetch(url, {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        "Accept": "application/json"
-                    },
-                    body: JSON.stringify(payload)
-                });
-
-                const text = await response.text();
-
-                console.log("Post response:", url, response.status, text);
-
-                if (!response.ok) {
-                    lastError = `HTTP ${response.status} - ${text}`;
-                    continue;
-                }
-
-                if (!text) {
-                    return {};
-                }
-
-                try {
-                    return JSON.parse(text);
-                } catch (error) {
-                    return {};
-                }
-
-            } catch (error) {
-                console.warn("Post endpoint failed:", url, error);
-                lastError = error.message || String(error);
+        const response = await fetch(url, {
+            method: "PUT",
+            headers: {
+                "Accept": "application/json"
             }
+        });
+
+        const text = await response.text();
+
+        console.log("PUT response:", response.status, text);
+
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status} - ${text}`);
         }
 
-        throw new Error(lastError || "All approval endpoints failed.");
+        if (!text) {
+            return {};
+        }
+
+        try {
+            return JSON.parse(text);
+        } catch (error) {
+            return {};
+        }
+    }
+
+    function getApprovalRoleForRequest(request) {
+        const userRole = normalizeRole(approvalUserRole);
+
+        /*
+           Normal real workflow:
+           HOD approves HOD level,
+           FINANCE approves Finance level,
+           DIRECTOR approves Director level.
+        */
+        if (userRole === "HOD" || userRole === "FINANCE" || userRole === "DIRECTOR") {
+            return userRole;
+        }
+
+        /*
+           ADMIN testing mode:
+           Send the role expected by the current request level.
+        */
+        const currentLevel = normalizeRole(
+            request.currentApprovalLevel ||
+            request.current_approval_level ||
+            ""
+        );
+
+        if (currentLevel === "HOD") {
+            return "HOD";
+        }
+
+        if (currentLevel === "FINANCE") {
+            return "FINANCE";
+        }
+
+        if (currentLevel === "DIRECTOR") {
+            return "DIRECTOR";
+        }
+
+        const status = normalizeRole(request.status || "");
+
+        if (status.includes("HOD")) {
+            return "HOD";
+        }
+
+        if (status.includes("FINANCE")) {
+            return "FINANCE";
+        }
+
+        if (status.includes("DIRECTOR")) {
+            return "DIRECTOR";
+        }
+
+        return userRole;
     }
 
     /* =========================================================
@@ -566,10 +571,6 @@
             return window.getCurrentUser();
         }
 
-        if (typeof getCurrentUser === "function") {
-            return getCurrentUser();
-        }
-
         const keys = [
             "ems_mobile_user",
             "currentUser",
@@ -586,6 +587,7 @@
 
             try {
                 const user = JSON.parse(raw);
+
                 if (user && typeof user === "object") {
                     return user;
                 }
@@ -602,10 +604,6 @@
             return window.getCurrentOrganization();
         }
 
-        if (typeof getCurrentOrganization === "function") {
-            return getCurrentOrganization();
-        }
-
         return firstValue(user, [
             "organization",
             "organisation",
@@ -617,6 +615,10 @@
     }
 
     function getRoleSafe(user) {
+        if (typeof window.getCurrentUserRole === "function") {
+            return window.getCurrentUserRole();
+        }
+
         return normalizeRole(
             firstValue(user, [
                 "role",
@@ -748,7 +750,7 @@
 
     function displayUserInfo() {
         const name = getUserDisplayName();
-        const role = approvalRole || "";
+        const role = approvalUserRole || "";
 
         setTextIfExists("currentUserName", name);
         setTextIfExists("userName", name);
@@ -759,13 +761,13 @@
         setTextIfExists("mobileUserRole", role);
 
         const possibleNameElements = document.querySelectorAll(".user-name, .profile-name");
-        possibleNameElements.forEach(function (el) {
-            el.textContent = name;
+        possibleNameElements.forEach(function (element) {
+            element.textContent = name;
         });
 
         const possibleRoleElements = document.querySelectorAll(".user-role, .profile-role");
-        possibleRoleElements.forEach(function (el) {
-            el.textContent = role;
+        possibleRoleElements.forEach(function (element) {
+            element.textContent = role;
         });
     }
 
