@@ -1,43 +1,5 @@
 let currentUser = null;
 
-function parseNumber(value) {
-    if (value === null || value === undefined) {
-        return 0;
-    }
-
-    const cleanValue = String(value)
-        .replace(/\s/g, "")
-        .replace(/,/g, ".")
-        .replace(/[^0-9.-]/g, "");
-
-    const number = parseFloat(cleanValue);
-
-    return isNaN(number) ? 0 : number;
-}
-
-function formatAmount(amount) {
-    const number = parseNumber(amount);
-
-    return number
-        .toFixed(2)
-        .replace(/\B(?=(\d{3})+(?!\d))/g, " ");
-}
-
-function sanitizeDecimalInput(input) {
-    let value = input.value;
-
-    value = value.replace(/,/g, ".");
-    value = value.replace(/[^0-9.]/g, "");
-
-    const parts = value.split(".");
-
-    if (parts.length > 2) {
-        value = parts[0] + "." + parts.slice(1).join("");
-    }
-
-    input.value = value;
-}
-
 document.addEventListener("DOMContentLoaded", function () {
     currentUser = requireRole(["HOD", "FINANCE", "DIRECTOR", "ADMIN"]);
 
@@ -46,24 +8,26 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     displayCurrentUser();
-    loadApprovalRequests();
+    loadPendingApprovals();
 });
 
-async function loadApprovalRequests() {
+async function loadPendingApprovals() {
     const approvalList = document.getElementById("approvalList");
     const pendingCount = document.getElementById("pendingCount");
 
     approvalList.innerHTML = `
         <div class="empty-state">
             <div class="empty-icon">...</div>
-            <h3>Loading approvals</h3>
+            <h3>Loading pending requests</h3>
             <p>Please wait...</p>
         </div>
     `;
 
     try {
+        const organization = getCurrentOrganization();
+
         const response = await fetch(
-            `${BASE_URL}/api/needs-requests/pending-approval/${encodeURIComponent(ORGANIZATION)}/${encodeURIComponent(currentUser.role)}`
+            `${BASE_URL}/api/needs-requests/pending-approval/${encodeURIComponent(organization)}/${encodeURIComponent(currentUser.role)}`
         );
 
         if (!response.ok) {
@@ -71,85 +35,24 @@ async function loadApprovalRequests() {
             throw new Error("HTTP " + response.status + " - " + errorText);
         }
 
-        const pendingRequests = await response.json();
+        const requests = await response.json();
 
+        pendingCount.textContent = requests.length;
         approvalList.innerHTML = "";
-        pendingCount.textContent = pendingRequests.length;
 
-        if (pendingRequests.length === 0) {
+        if (!requests || requests.length === 0) {
             approvalList.innerHTML = `
                 <div class="empty-state">
                     <div class="empty-icon">✓</div>
-                    <h3>No pending approvals</h3>
-                    <p>No request is waiting for your approval level.</p>
+                    <h3>No pending request</h3>
+                    <p>You have no request waiting for approval.</p>
                 </div>
             `;
             return;
         }
 
-        pendingRequests.forEach(request => {
-            const card = document.createElement("div");
-            card.className = "approval-card";
-            card.setAttribute("data-request-id", request.id);
-
-            card.innerHTML = `
-                <div class="approval-card-header">
-                    <div>
-                        <div class="request-no">${escapeHtml(request.requestNo)}</div>
-                        <div class="request-title">${escapeHtml(request.title)}</div>
-                    </div>
-                    <span class="status-badge">${escapeHtml(request.currentApprovalLevel || request.status)}</span>
-                </div>
-
-                <div class="approval-info">
-                    <div>
-                        <span>Requester</span>
-                        <strong>${escapeHtml(request.requestedBy || "")}</strong>
-                    </div>
-
-                    <div>
-                        <span>Department</span>
-                        <strong>${escapeHtml(request.department || "")}</strong>
-                    </div>
-
-                    <div>
-                        <span>Budget Plan</span>
-                        <strong>${escapeHtml(request.budgetPlan || "")}</strong>
-                    </div>
-
-                    <div>
-                        <span>Total</span>
-                        <strong class="request-total">
-                            ${formatAmount(request.estimatedAmount)} ${escapeHtml(request.currencyCode || "")}
-                        </strong>
-                    </div>
-                </div>
-
-                <div class="workflow-box">
-                    <div class="workflow-title">Approval workflow</div>
-                    ${buildWorkflowHtml(request)}
-                </div>
-
-                <div class="approval-description">
-                    ${escapeHtml(request.description || "")}
-                </div>
-
-                <div class="approval-items">
-                    ${buildItemsHtml(request)}
-                </div>
-
-                <div class="approval-actions">
-                    <button type="button" class="btn-reject" onclick="rejectRequest(${request.id})">
-                        Reject
-                    </button>
-
-                    <button type="button" class="btn-approve" onclick="approveRequest(${request.id})">
-                        ${getApproveButtonText(request)}
-                    </button>
-                </div>
-            `;
-
-            approvalList.appendChild(card);
+        requests.forEach(request => {
+            approvalList.appendChild(buildApprovalCard(request));
         });
 
     } catch (error) {
@@ -160,191 +63,273 @@ async function loadApprovalRequests() {
         approvalList.innerHTML = `
             <div class="empty-state">
                 <div class="empty-icon">!</div>
-                <h3>Failed to load approvals</h3>
+                <h3>Failed to load requests</h3>
                 <p>${escapeHtml(error.message)}</p>
             </div>
         `;
     }
 }
 
-function buildWorkflowHtml(request) {
-    const level = request.currentApprovalLevel || "";
+function buildApprovalCard(request) {
+    const card = document.createElement("div");
+    card.className = "approval-card";
 
-    return `
-        <div class="workflow-steps">
-            <div class="${getWorkflowStepClass(level, "HOD", request.hodApprovedBy)}">
-                <span>1</span>
-                <strong>HOD</strong>
-                <small>${request.hodApprovedBy ? escapeHtml(request.hodApprovedBy) : "Waiting"}</small>
+    const itemsHtml = buildItemsHtml(request.items || [], request.id);
+
+    card.innerHTML = `
+        <div class="approval-card-header">
+            <div>
+                <div class="request-no">${escapeHtml(request.requestNo || "")}</div>
+                <div class="request-title">${escapeHtml(request.title || "")}</div>
             </div>
 
-            <div class="${getWorkflowStepClass(level, "FINANCE", request.financeReviewedBy)}">
-                <span>2</span>
-                <strong>Finance</strong>
-                <small>${request.financeReviewedBy ? escapeHtml(request.financeReviewedBy) : "Waiting"}</small>
+            <span class="status-badge">
+                ${escapeHtml(getReadableStatus(request.status))}
+            </span>
+        </div>
+
+        <div class="request-summary-box">
+            <div>
+                <span>Requester</span>
+                <strong>${escapeHtml(request.requestedBy || "")}</strong>
             </div>
 
-            <div class="${getWorkflowStepClass(level, "DIRECTOR", request.directorApprovedBy)}">
-                <span>3</span>
-                <strong>Director</strong>
-                <small>${request.directorApprovedBy ? escapeHtml(request.directorApprovedBy) : "Waiting"}</small>
+            <div>
+                <span>Department</span>
+                <strong>${escapeHtml(request.department || "")}</strong>
+            </div>
+
+            <div>
+                <span>Budget Plan</span>
+                <strong>${escapeHtml(request.budgetPlan || "")}</strong>
+            </div>
+
+            <div>
+                <span>Total</span>
+                <strong>${formatAmount(request.estimatedAmount)} ${escapeHtml(request.currencyCode || "")}</strong>
             </div>
         </div>
+
+        ${buildWorkflowHtml(request)}
+
+        <div class="request-description-clean">
+            ${escapeHtml(request.description || "No description")}
+        </div>
+
+        <div class="items-clean-list">
+            ${itemsHtml}
+        </div>
+
+        <div class="approval-actions">
+            <button type="button" class="btn-danger" onclick="rejectRequest(${request.id})">
+                Reject
+            </button>
+
+            <button type="button" class="btn-primary" onclick="approveRequest(${request.id})">
+                Approve
+            </button>
+        </div>
     `;
+
+    return card;
 }
 
-function getWorkflowStepClass(currentLevel, stepLevel, approvedBy) {
-    if (approvedBy) {
-        return "workflow-step completed";
-    }
-
-    if (currentLevel === stepLevel) {
-        return "workflow-step active";
-    }
-
-    return "workflow-step";
-}
-
-function getApproveButtonText(request) {
-    const level = request.currentApprovalLevel;
-
-    if (level === "HOD") {
-        return "Approve as HOD";
-    }
-
-    if (level === "FINANCE") {
-        return "Review as Finance";
-    }
-
-    if (level === "DIRECTOR") {
-        return "Approve as Director";
-    }
-
-    return "Approve";
-}
-
-function buildItemsHtml(request) {
-    const items = request.items;
-
+function buildItemsHtml(items, requestId) {
     if (!items || items.length === 0) {
         return `
-            <div class="approval-item-line">
+            <div class="clean-item-line">
                 <div>
                     <strong>No items</strong>
-                    <span>This request has no item line.</span>
+                    <span>No item found for this request.</span>
                 </div>
             </div>
         `;
     }
 
-    return items.map((item, index) => {
+    return items.map(item => {
         return `
-            <div 
-                class="approval-item-line editable-item-line" 
-                data-item-id="${item.id}"
-                data-item-index="${index}">
-                
-                <div class="approval-item-main">
-                    <strong>${index + 1}. ${escapeHtml(item.itemName)}</strong>
-
-                    <div class="qty-same-line">
-                        <span>Qty:</span>
-
+            <div class="clean-item-line">
+                <div>
+                    <strong>${escapeHtml(item.itemName || "")}</strong>
+                    <span>
+                        Qty:
                         <input
-                            type="text"
-                            class="approval-qty-input"
-                            value="${item.quantity}"
-                            inputmode="decimal"
-                            oninput="sanitizeDecimalInput(this); updateApprovalItemTotalOnScreen(this)"
-                            onchange="updateItemQuantity(${request.id}, ${item.id}, this)">
-
-                        <span>
-                            ${escapeHtml(item.unitOfMeasure || "")} × ${formatAmount(item.unitPrice)}
-                        </span>
-                    </div>
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            class="qty-input"
+                            value="${item.quantity || 0}"
+                            onchange="updateItemQuantity(${requestId}, ${item.id}, this.value)">
+                        × ${formatAmount(item.unitPrice)}
+                        = ${formatAmount(item.totalAmount)}
+                    </span>
+                    <small>${escapeHtml(item.description || "")}</small>
                 </div>
 
-                <div class="approval-line-right">
-                    <strong 
-                        class="approval-line-total"
-                        data-unit-price="${item.unitPrice}">
-                        ${formatAmount(item.totalAmount)}
-                    </strong>
-
-                    <button
-                        type="button"
-                        class="delete-line-btn"
-                        onclick="deleteApprovalItem(${request.id}, ${item.id})">
-                        Delete
-                    </button>
-                </div>
-
+                <button type="button" class="item-delete-btn" onclick="deleteItem(${requestId}, ${item.id})">
+                    Delete
+                </button>
             </div>
         `;
     }).join("");
 }
 
-function updateApprovalItemTotalOnScreen(input) {
-    const line = input.closest(".editable-item-line");
+function buildWorkflowHtml(request) {
+    const status = request.status || "";
+    const currentLevel = request.currentApprovalLevel || "";
 
-    if (!line) {
+    const hodClass = getWorkflowStepClass("HOD", status, currentLevel, request);
+    const financeClass = getWorkflowStepClass("FINANCE", status, currentLevel, request);
+    const directorClass = getWorkflowStepClass("DIRECTOR", status, currentLevel, request);
+
+    return `
+        <div class="workflow-box">
+            <div class="workflow-title">Approval workflow</div>
+
+            <div class="workflow-steps">
+                <div class="workflow-step ${hodClass}">
+                    <span>1</span>
+                    <strong>HOD</strong>
+                    <small>${escapeHtml(request.hodApprovedBy || "Pending")}</small>
+                </div>
+
+                <div class="workflow-step ${financeClass}">
+                    <span>2</span>
+                    <strong>Finance</strong>
+                    <small>${escapeHtml(request.financeReviewedBy || "Pending")}</small>
+                </div>
+
+                <div class="workflow-step ${directorClass}">
+                    <span>3</span>
+                    <strong>Director</strong>
+                    <small>${escapeHtml(request.directorApprovedBy || "Pending")}</small>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+function getWorkflowStepClass(level, status, currentLevel, request) {
+    if (status === "REJECTED") {
+        if (currentLevel === "REJECTED") {
+            return "rejected";
+        }
+    }
+
+    if (level === "HOD" && request.hodApprovedBy) {
+        return "completed";
+    }
+
+    if (level === "FINANCE" && request.financeReviewedBy) {
+        return "completed";
+    }
+
+    if (level === "DIRECTOR" && request.directorApprovedBy) {
+        return "completed";
+    }
+
+    if (currentLevel === level) {
+        return "active";
+    }
+
+    return "";
+}
+
+async function approveRequest(requestId) {
+    const confirmed = await showConfirmDialog(
+        "Approve request",
+        "Do you want to approve this request?",
+        "success",
+        "Approve"
+    );
+
+    if (!confirmed) {
         return;
     }
 
-    const qty = parseNumber(input.value);
-    const totalElement = line.querySelector(".approval-line-total");
+    try {
+        const approvedBy = currentUser.fullName || currentUser.email;
+        const role = currentUser.role || "";
+        const comment = "Approved from mobile";
 
-    if (!totalElement) {
-        return;
-    }
+        const response = await fetch(
+            `${BASE_URL}/api/needs-requests/${requestId}/approve?approvedBy=${encodeURIComponent(approvedBy)}&role=${encodeURIComponent(role)}&comment=${encodeURIComponent(comment)}`,
+            {
+                method: "PUT"
+            }
+        );
 
-    const unitPrice = parseNumber(totalElement.getAttribute("data-unit-price"));
-    const lineTotal = qty * unitPrice;
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(errorText || "Approval failed");
+        }
 
-    totalElement.textContent = formatAmount(lineTotal);
+        await showMessageDialog(
+            "Approved",
+            "The request has been approved successfully.",
+            "success"
+        );
 
-    const card = input.closest(".approval-card");
+        await loadPendingApprovals();
 
-    if (!card) {
-        return;
-    }
+    } catch (error) {
+        console.error(error);
 
-    let requestTotal = 0;
-
-    card.querySelectorAll(".editable-item-line").forEach(itemLine => {
-        const qtyInput = itemLine.querySelector(".approval-qty-input");
-        const totalEl = itemLine.querySelector(".approval-line-total");
-
-        const q = parseNumber(qtyInput.value);
-        const price = parseNumber(totalEl.getAttribute("data-unit-price"));
-
-        requestTotal += q * price;
-    });
-
-    const requestTotalElement = card.querySelector(".request-total");
-
-    if (requestTotalElement) {
-        const currentText = requestTotalElement.textContent.trim();
-        const parts = currentText.split(" ");
-        const currency = parts[parts.length - 1] || "";
-
-        requestTotalElement.textContent = `${formatAmount(requestTotal)} ${currency}`;
+        await showMessageDialog(
+            "Approval failed",
+            error.message,
+            "danger"
+        );
     }
 }
 
-async function updateItemQuantity(requestId, itemId, input) {
-    const quantity = parseNumber(input.value);
+async function rejectRequest(requestId) {
+    const reason = await showPromptDialog(
+        "Reject request",
+        "Please enter the rejection reason:",
+        "Reason"
+    );
 
-    if (quantity <= 0) {
-        await showMessageDialog(
-            "Invalid quantity",
-            "Quantity must be greater than zero.",
-            "warning"
-        );
-        input.focus();
+    if (!reason) {
         return;
     }
 
+    try {
+        const rejectedBy = currentUser.fullName || currentUser.email;
+        const role = currentUser.role || "";
+
+        const response = await fetch(
+            `${BASE_URL}/api/needs-requests/${requestId}/reject?rejectedBy=${encodeURIComponent(rejectedBy)}&role=${encodeURIComponent(role)}&reason=${encodeURIComponent(reason)}`,
+            {
+                method: "PUT"
+            }
+        );
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(errorText || "Rejection failed");
+        }
+
+        await showMessageDialog(
+            "Rejected",
+            "The request has been rejected.",
+            "success"
+        );
+
+        await loadPendingApprovals();
+
+    } catch (error) {
+        console.error(error);
+
+        await showMessageDialog(
+            "Rejection failed",
+            error.message,
+            "danger"
+        );
+    }
+}
+
+async function updateItemQuantity(requestId, itemId, quantity) {
     try {
         const response = await fetch(
             `${BASE_URL}/api/needs-requests/${requestId}/items/${itemId}/quantity?quantity=${encodeURIComponent(quantity)}`,
@@ -355,31 +340,27 @@ async function updateItemQuantity(requestId, itemId, input) {
 
         if (!response.ok) {
             const errorText = await response.text();
-            throw new Error("HTTP " + response.status + " - " + errorText);
+            throw new Error(errorText || "Quantity update failed");
         }
 
-        const updatedRequest = await response.json();
-
-        updateCardTotal(requestId, updatedRequest.estimatedAmount, updatedRequest.currencyCode);
+        await loadPendingApprovals();
 
     } catch (error) {
         console.error(error);
 
         await showMessageDialog(
             "Update failed",
-            "Failed to update quantity: " + error.message,
+            error.message,
             "danger"
         );
-
-        loadApprovalRequests();
     }
 }
 
-async function deleteApprovalItem(requestId, itemId) {
+async function deleteItem(requestId, itemId) {
     const confirmed = await showConfirmDialog(
-        "Delete item line",
-        "Do you want to delete this item line?",
-        "danger",
+        "Delete item",
+        "Do you want to delete this item?",
+        "warning",
         "Delete"
     );
 
@@ -397,167 +378,53 @@ async function deleteApprovalItem(requestId, itemId) {
 
         if (!response.ok) {
             const errorText = await response.text();
-            throw new Error("HTTP " + response.status + " - " + errorText);
+            throw new Error(errorText || "Delete failed");
         }
 
-        await response.json();
-
-        await showMessageDialog(
-            "Deleted",
-            "Item line deleted successfully.",
-            "success"
-        );
-
-        loadApprovalRequests();
+        await loadPendingApprovals();
 
     } catch (error) {
         console.error(error);
 
         await showMessageDialog(
             "Delete failed",
-            "Failed to delete item: " + error.message,
-            "danger"
-        );
-    }
-}
-
-async function approveRequest(id) {
-    const card = document.querySelector(`.approval-card[data-request-id="${id}"]`);
-
-    if (!card) {
-        await showMessageDialog("Not found", "Request not found.", "danger");
-        return;
-    }
-
-    const totalText = card.querySelector(".request-total")?.textContent || "";
-
-    const confirmed = await showConfirmDialog(
-        "Approve request",
-        "Confirm this approval level for total " + totalText.trim() + "?",
-        "success",
-        "Approve"
-    );
-
-    if (!confirmed) {
-        return;
-    }
-
-    try {
-        const response = await fetch(
-            `${BASE_URL}/api/needs-requests/${id}/approve?approvedBy=${encodeURIComponent(currentUser.fullName)}&role=${encodeURIComponent(currentUser.role)}&comment=${encodeURIComponent("Approved from mobile")}`,
-            {
-                method: "PUT"
-            }
-        );
-
-        if (!response.ok) {
-            const errorText = await response.text();
-            throw new Error("HTTP " + response.status + " - " + errorText);
-        }
-
-        const updatedRequest = await response.json();
-
-        await showMessageDialog(
-            "Approved",
-            buildApprovalSuccessMessage(updatedRequest),
-            "success"
-        );
-
-        loadApprovalRequests();
-
-    } catch (error) {
-        console.error(error);
-
-        await showMessageDialog(
-            "Approval failed",
             error.message,
             "danger"
         );
     }
 }
 
-function buildApprovalSuccessMessage(request) {
-    if (request.status === "APPROVED") {
-        return "Request fully approved.";
+function getReadableStatus(status) {
+    if (status === "PENDING_HOD_APPROVAL") {
+        return "Pending HOD";
     }
 
-    if (request.currentApprovalLevel === "FINANCE") {
-        return "HOD approval completed. Request moved to Finance review.";
+    if (status === "PENDING_FINANCE_REVIEW") {
+        return "Pending Finance";
     }
 
-    if (request.currentApprovalLevel === "DIRECTOR") {
-        return "Finance review completed. Request moved to Director approval.";
+    if (status === "PENDING_DIRECTOR_APPROVAL") {
+        return "Pending Director";
     }
 
-    return "Approval completed successfully.";
+    if (status === "APPROVED") {
+        return "Approved";
+    }
+
+    if (status === "REJECTED") {
+        return "Rejected";
+    }
+
+    return status || "";
 }
 
-async function rejectRequest(id) {
-    const reason = await showPromptDialog(
-        "Reject request",
-        "Enter rejection reason:",
-        "Write the reason here...",
-        "warning",
-        "Reject"
-    );
+function formatAmount(value) {
+    const number = Number(value || 0);
 
-    if (reason === null) {
-        return;
-    }
-
-    if (!reason.trim()) {
-        await showMessageDialog(
-            "Missing reason",
-            "Please enter a rejection reason.",
-            "warning"
-        );
-        return;
-    }
-
-    try {
-        const response = await fetch(
-            `${BASE_URL}/api/needs-requests/${id}/reject?rejectedBy=${encodeURIComponent(currentUser.fullName)}&role=${encodeURIComponent(currentUser.role)}&reason=${encodeURIComponent(reason)}`,
-            {
-                method: "PUT"
-            }
-        );
-
-        if (!response.ok) {
-            const errorText = await response.text();
-            throw new Error("HTTP " + response.status + " - " + errorText);
-        }
-
-        await showMessageDialog(
-            "Rejected",
-            "Request rejected successfully.",
-            "success"
-        );
-
-        loadApprovalRequests();
-
-    } catch (error) {
-        console.error(error);
-
-        await showMessageDialog(
-            "Reject failed",
-            error.message,
-            "danger"
-        );
-    }
-}
-
-function updateCardTotal(requestId, estimatedAmount, currencyCode) {
-    const card = document.querySelector(`.approval-card[data-request-id="${requestId}"]`);
-
-    if (!card) {
-        return;
-    }
-
-    const requestTotalElement = card.querySelector(".request-total");
-
-    if (requestTotalElement) {
-        requestTotalElement.textContent = `${formatAmount(estimatedAmount)} ${currencyCode || ""}`;
-    }
+    return number.toLocaleString("en-US", {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+    });
 }
 
 function escapeHtml(value) {
