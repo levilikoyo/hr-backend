@@ -1,464 +1,433 @@
-let currentUser = null;
+/* =========================================================
+   EMS-L Mobile - Needs Request
+   Full clean file
+   Path: src/main/resources/static/mobile/js/needs-request.js
+   ========================================================= */
 
-let itemIndex = 0;
-let fundsList = [];
-let currenciesList = [];
-let glAccountsList = [];
-let dimensionGroupsList = [];
+let currentUser = null;
+let currentOrganization = "";
+let dynamicDimensions = [];
+let allGroupedDimensions = [];
+
+/* =========================================================
+   Page initialization
+   ========================================================= */
 
 document.addEventListener("DOMContentLoaded", async function () {
-    currentUser = requireLogin();
+    try {
+        currentUser = requireLogin();
+        currentOrganization = getCurrentOrganization();
 
-    if (!currentUser) {
-        return;
-    }
+        if (!currentOrganization) {
+            showError("Organization not found. Please login again.");
+            return;
+        }
 
-    displayCurrentUser();
+        displayCurrentUser();
 
-    addItemRow();
+        setDefaultRequestDate();
+        bindEvents();
 
-    await loadPageData();
+        await loadGroupedDimensions();
+        await loadFunds();
+        await loadCurrencies();
+        await loadGLAccounts();
+        renderDynamicDimensions();
 
-    const form = document.getElementById("needsRequestForm");
+        ensureAtLeastOneItem();
 
-    if (form) {
-        form.addEventListener("submit", submitNeedsRequest);
+    } catch (error) {
+        console.error("Needs request initialization error:", error);
+        showError(error.message || "Failed to initialize needs request page.");
     }
 });
 
-async function loadPageData() {
-    await Promise.all([
-        loadFunds(),
-        loadCurrencies(),
-        loadGLAccounts(),
-        loadDynamicDimensions()
-    ]);
-}
+/* =========================================================
+   Events
+   ========================================================= */
 
-function addItemRow() {
-    itemIndex++;
+function bindEvents() {
+    const addItemBtn = findElement(
+        "addItemBtn",
+        "btnAddItem",
+        "add-item-btn",
+        "addItemButton"
+    );
 
-    const container = document.getElementById("itemsContainer");
-
-    const itemCard = document.createElement("div");
-    itemCard.className = "item-card";
-    itemCard.dataset.itemIndex = itemIndex;
-
-    itemCard.innerHTML = `
-        <div class="item-card-header">
-            <strong>Item ${itemIndex}</strong>
-
-            <button type="button" class="item-remove-btn" onclick="removeItemRow(this)">
-                ×
-            </button>
-        </div>
-
-        <div class="form-group">
-            <label>Item name</label>
-            <input
-                    type="text"
-                    class="item-name"
-                    placeholder="Ex: Fuel, laptop, printing service"
-                    required>
-        </div>
-
-        <div class="form-group">
-            <label>Description</label>
-            <textarea
-                    class="item-description"
-                    placeholder="Describe the item..."></textarea>
-        </div>
-
-        <div class="row-2">
-            <div class="form-group">
-                <label>Category</label>
-                <input
-                        type="text"
-                        class="item-category"
-                        placeholder="Ex: Supplies">
-            </div>
-
-            <div class="form-group">
-                <label>Unit</label>
-                <input
-                        type="text"
-                        class="item-unit"
-                        placeholder="Ex: Litre, Piece">
-            </div>
-        </div>
-
-        <div class="row-2">
-            <div class="form-group">
-                <label>Quantity</label>
-                <input
-                        type="number"
-                        min="0"
-                        step="0.01"
-                        class="item-quantity"
-                        value="1"
-                        oninput="calculateGrandTotal()"
-                        required>
-            </div>
-
-            <div class="form-group">
-                <label>Unit price</label>
-                <input
-                        type="number"
-                        min="0"
-                        step="0.01"
-                        class="item-unit-price"
-                        value="0"
-                        oninput="calculateGrandTotal()"
-                        required>
-            </div>
-        </div>
-
-        <div class="item-total-box">
-            Line Total:
-            <strong class="item-line-total">0.00</strong>
-        </div>
-    `;
-
-    container.appendChild(itemCard);
-
-    updateRemoveButtons();
-    calculateGrandTotal();
-}
-
-function removeItemRow(button) {
-    const itemCard = button.closest(".item-card");
-
-    if (!itemCard) {
-        return;
+    if (addItemBtn) {
+        addItemBtn.addEventListener("click", function (event) {
+            event.preventDefault();
+            addItemRow();
+        });
     }
 
-    const items = document.querySelectorAll(".item-card");
+    const form = findElement(
+        "needsRequestForm",
+        "requestForm",
+        "needRequestForm",
+        "needsForm"
+    );
 
-    if (items.length <= 1) {
-        showMessageDialog(
-            "Item required",
-            "You must keep at least one item.",
-            "warning"
-        );
-        return;
+    if (form) {
+        form.addEventListener("submit", async function (event) {
+            event.preventDefault();
+            await submitNeedsRequest();
+        });
     }
 
-    itemCard.remove();
+    const cancelBtn = findElement("cancelBtn", "btnCancel", "cancelButton");
 
-    updateRemoveButtons();
-    renumberItems();
-    calculateGrandTotal();
-}
-
-function updateRemoveButtons() {
-    const items = document.querySelectorAll(".item-card");
-
-    items.forEach(item => {
-        const button = item.querySelector(".item-remove-btn");
-
-        if (button) {
-            button.style.display = items.length <= 1 ? "none" : "inline-flex";
-        }
-    });
-}
-
-function renumberItems() {
-    const items = document.querySelectorAll(".item-card");
-
-    items.forEach((item, index) => {
-        const title = item.querySelector(".item-card-header strong");
-
-        if (title) {
-            title.textContent = `Item ${index + 1}`;
-        }
-    });
-}
-
-function calculateGrandTotal() {
-    let grandTotal = 0;
-
-    document.querySelectorAll(".item-card").forEach(item => {
-        const quantity = parseNumber(item.querySelector(".item-quantity")?.value);
-        const unitPrice = parseNumber(item.querySelector(".item-unit-price")?.value);
-        const lineTotal = quantity * unitPrice;
-
-        const lineTotalLabel = item.querySelector(".item-line-total");
-
-        if (lineTotalLabel) {
-            lineTotalLabel.textContent = formatAmount(lineTotal);
-        }
-
-        grandTotal += lineTotal;
-    });
-
-    const grandTotalLabel = document.getElementById("grandTotal");
-
-    if (grandTotalLabel) {
-        grandTotalLabel.textContent = formatAmount(grandTotal);
+    if (cancelBtn) {
+        cancelBtn.addEventListener("click", function () {
+            window.location.href = "index.html";
+        });
     }
-
-    return grandTotal;
 }
 
-async function loadFunds() {
-    const fundSelect = document.getElementById("fundCode");
-    const organization = getCurrentOrganization();
+/* =========================================================
+   Grouped dimensions
+   ========================================================= */
 
-    fundSelect.innerHTML = `<option value="">Loading funds...</option>`;
-
+async function loadGroupedDimensions() {
     try {
         const response = await fetch(
-            `${BASE_URL}/api/funds/organization/${encodeURIComponent(organization)}`
+            `${BASE_URL}/api/dimension-setups/organization/${encodeURIComponent(currentOrganization)}/grouped`
         );
 
         if (!response.ok) {
             const errorText = await response.text();
-            throw new Error("HTTP " + response.status + " - " + errorText);
+            throw new Error(`HTTP ${response.status} - ${errorText}`);
         }
 
-        fundsList = await response.json();
+        const data = await response.json();
 
-        fundSelect.innerHTML = `<option value="">Select fund</option>`;
+        if (!Array.isArray(data)) {
+            allGroupedDimensions = [];
+            dynamicDimensions = [];
+            return;
+        }
 
-        fundsList.forEach(fund => {
-            const fundCode = fund.fundCode || "";
-            const fundName = fund.fundName || "";
+        allGroupedDimensions = data;
 
-            if (!fundCode) {
-                return;
-            }
+        dynamicDimensions = data.filter(function (dimension) {
+            const normalizedCode = normalizeDimensionCode(dimension.dimensionCode);
 
-            const option = document.createElement("option");
-
-            option.value = fundCode;
-            option.textContent = fundName
-                ? `${fundCode} - ${fundName}`
-                : fundCode;
-
-            fundSelect.appendChild(option);
+            /*
+               FUND is already fixed on the form.
+               If the funds table is empty, we use this FUND dimension as fallback
+               inside loadFunds().
+            */
+            return normalizedCode !== "FUND";
         });
 
     } catch (error) {
-        console.error(error);
+        console.error("Grouped dimensions loading error:", error);
+        showError(`Failed to load dimensions: ${error.message}`);
+        allGroupedDimensions = [];
+        dynamicDimensions = [];
+    }
+}
 
-        fundSelect.innerHTML = `<option value="">Failed to load funds</option>`;
+/* =========================================================
+   Fixed dropdowns
+   ========================================================= */
 
-        await showMessageDialog(
-            "Funds error",
-            "Failed to load funds: " + error.message,
-            "danger"
+async function loadFunds() {
+    const select = findElement(
+        "fundCode",
+        "fundSelect",
+        "fund_code",
+        "fund",
+        "funds",
+        "requestFund"
+    );
+
+    if (!select) {
+        console.warn("Fund dropdown not found in HTML.");
+        return;
+    }
+
+    clearSelect(select, "Select fund");
+
+    let loaded = false;
+
+    try {
+        const response = await fetch(
+            `${BASE_URL}/api/funds/organization/${encodeURIComponent(currentOrganization)}`
         );
+
+        if (response.ok) {
+            const funds = await response.json();
+
+            if (Array.isArray(funds) && funds.length > 0) {
+                funds.forEach(function (fund) {
+                    const code =
+                        fund.fundCode ||
+                        fund.code ||
+                        fund.valueCode ||
+                        "";
+
+                    const name =
+                        fund.fundName ||
+                        fund.name ||
+                        fund.valueName ||
+                        "";
+
+                    if (!code) {
+                        return;
+                    }
+
+                    addOption(select, code, name ? `${code} - ${name}` : code);
+                });
+
+                loaded = true;
+            }
+        } else {
+            console.warn("Funds endpoint failed:", response.status, await response.text());
+        }
+
+    } catch (error) {
+        console.warn("Funds endpoint error:", error);
+    }
+
+    /*
+       Fallback: use FUND dimension values if funds table has no data.
+       Your grouped dimensions already contain:
+       dimensionCode: FUND
+       values: CONTROL, LRF26, etc.
+    */
+    if (!loaded) {
+        const fundDimension = findDimensionByCode("FUND");
+
+        if (fundDimension && Array.isArray(fundDimension.values)) {
+            fundDimension.values.forEach(function (value) {
+                const code = value.valueCode || "";
+                const name = value.valueName || "";
+
+                if (!code) {
+                    return;
+                }
+
+                addOption(select, code, name ? `${code} - ${name}` : code);
+            });
+
+            loaded = fundDimension.values.length > 0;
+        }
+    }
+
+    if (!loaded) {
+        addDisabledOption(select, "No fund found");
     }
 }
 
 async function loadCurrencies() {
-    const currencySelect = document.getElementById("currencyCode");
-    const organization = getCurrentOrganization();
+    const select = findElement(
+        "currencyCode",
+        "curencyCode",
+        "currencySelect",
+        "currency_code",
+        "curency_code",
+        "currency",
+        "devise",
+        "deviseCode"
+    );
 
-    currencySelect.innerHTML = `<option value="">Loading currencies...</option>`;
+    if (!select) {
+        console.warn("Currency dropdown not found in HTML.");
+        return;
+    }
+
+    clearSelect(select, "Select currency");
+
+    let loaded = false;
 
     try {
         const response = await fetch(
-            `${BASE_URL}/api/currencies/organization/${encodeURIComponent(organization)}`
+            `${BASE_URL}/api/currencies/organization/${encodeURIComponent(currentOrganization)}`
         );
 
         if (!response.ok) {
             const errorText = await response.text();
-            throw new Error("HTTP " + response.status + " - " + errorText);
+            throw new Error(`HTTP ${response.status} - ${errorText}`);
         }
 
-        currenciesList = await response.json();
+        const currencies = await response.json();
 
-        currencySelect.innerHTML = `<option value="">Select currency</option>`;
+        if (Array.isArray(currencies) && currencies.length > 0) {
+            currencies.forEach(function (currency) {
+                const code =
+                    currency.curencyCode ||
+                    currency.currencyCode ||
+                    currency.code ||
+                    currency.valueCode ||
+                    "";
 
-        currenciesList.forEach(currency => {
-            const currencyCode =
-                currency.curencyCode ||
-                currency.currencyCode ||
-                currency.code ||
-                "";
+                const name =
+                    currency.curencyName ||
+                    currency.currencyName ||
+                    currency.name ||
+                    currency.valueName ||
+                    "";
 
-            const currencyName =
-                currency.curencyName ||
-                currency.currencyName ||
-                currency.name ||
-                "";
+                if (!code) {
+                    return;
+                }
 
-            if (!currencyCode) {
-                return;
-            }
+                addOption(select, code, name ? `${code} - ${name}` : code);
+            });
 
-            const option = document.createElement("option");
-
-            option.value = currencyCode;
-            option.textContent = currencyName
-                ? `${currencyCode} - ${currencyName}`
-                : currencyCode;
-
-            currencySelect.appendChild(option);
-        });
+            loaded = true;
+        }
 
     } catch (error) {
-        console.error(error);
+        console.error("Currencies loading error:", error);
+        showError(`Failed to load currencies: ${error.message}`);
+    }
 
-        currencySelect.innerHTML = `<option value="">Failed to load currencies</option>`;
-
-        await showMessageDialog(
-            "Currency error",
-            "Failed to load currencies: " + error.message,
-            "danger"
-        );
+    if (!loaded) {
+        addDisabledOption(select, "No currency found");
     }
 }
 
 async function loadGLAccounts() {
-    const glSelect = document.getElementById("glAccountNo");
-    const organization = getCurrentOrganization();
+    const select = findElement(
+        "glAccountCode",
+        "glAccountSelect",
+        "gl_account_code",
+        "glAccount",
+        "gl_account",
+        "accountCode",
+        "account_code"
+    );
 
-    glSelect.innerHTML = `<option value="">Loading G/L accounts...</option>`;
+    if (!select) {
+        console.warn("G/L account dropdown not found in HTML.");
+        return;
+    }
 
-    try {
-        const response = await fetch(
-            `${BASE_URL}/api/gl-accounts/organization/${encodeURIComponent(organization)}`
-        );
+    clearSelect(select, "Select G/L account");
 
-        if (!response.ok) {
-            const errorText = await response.text();
-            throw new Error("HTTP " + response.status + " - " + errorText);
-        }
+    let loaded = false;
 
-        glAccountsList = await response.json();
+    const urls = [
+        `${BASE_URL}/api/gl-accounts/organization/${encodeURIComponent(currentOrganization)}`,
+        `${BASE_URL}/api/glaccounts/organization/${encodeURIComponent(currentOrganization)}`,
+        `${BASE_URL}/api/gl-account/organization/${encodeURIComponent(currentOrganization)}`
+    ];
 
-        glSelect.innerHTML = `<option value="">Select G/L account</option>`;
+    for (const url of urls) {
+        try {
+            const response = await fetch(url);
 
-        glAccountsList.forEach(account => {
-            const glCode =
-                account.glCode ||
-                account.accountNo ||
-                account.code ||
-                "";
-
-            const glName =
-                account.glName ||
-                account.accountName ||
-                account.name ||
-                "";
-
-            if (!glCode) {
-                return;
+            if (!response.ok) {
+                continue;
             }
 
-            const option = document.createElement("option");
+            const accounts = await response.json();
 
-            option.value = glCode;
-            option.textContent = glName
-                ? `${glCode} - ${glName}`
-                : glCode;
+            if (!Array.isArray(accounts) || accounts.length === 0) {
+                continue;
+            }
 
-            glSelect.appendChild(option);
-        });
+            accounts.forEach(function (account) {
+                const code =
+                    account.glCode ||
+                    account.glAccountCode ||
+                    account.accountCode ||
+                    account.code ||
+                    account.valueCode ||
+                    "";
 
-    } catch (error) {
-        console.error(error);
+                const name =
+                    account.glName ||
+                    account.glAccountName ||
+                    account.accountName ||
+                    account.name ||
+                    account.valueName ||
+                    "";
 
-        glSelect.innerHTML = `<option value="">Failed to load G/L accounts</option>`;
+                if (!code) {
+                    return;
+                }
 
-        await showMessageDialog(
-            "G/L Account error",
-            "Failed to load G/L accounts: " + error.message,
-            "danger"
-        );
+                addOption(select, code, name ? `${code} - ${name}` : code);
+            });
+
+            loaded = true;
+            break;
+
+        } catch (error) {
+            console.warn("G/L account endpoint failed:", url, error);
+        }
+    }
+
+    if (!loaded) {
+        addDisabledOption(select, "No G/L account found");
     }
 }
 
-async function loadDynamicDimensions() {
-    const container = document.getElementById("dynamicDimensionsContainer");
-    const organization = getCurrentOrganization();
+/* =========================================================
+   Render dynamic dimensions
+   ========================================================= */
 
-    container.innerHTML = `
-        <div class="empty-state small-empty">
-            <div class="empty-icon">...</div>
-            <h3>Loading dimensions</h3>
-            <p>Please wait...</p>
-        </div>
-    `;
+function renderDynamicDimensions() {
+    const container = findElement(
+        "dynamicDimensionsContainer",
+        "dimensionsContainer",
+        "dynamic_dimensions_container"
+    );
 
-    try {
-        const response = await fetch(
-            `${BASE_URL}/api/dimensions/organization/${encodeURIComponent(organization)}/grouped`
-        );
-
-        if (!response.ok) {
-            const errorText = await response.text();
-            throw new Error("HTTP " + response.status + " - " + errorText);
-        }
-
-        dimensionGroupsList = await response.json();
-
-        container.innerHTML = "";
-
-        if (!dimensionGroupsList || dimensionGroupsList.length === 0) {
-            container.innerHTML = `
-                <div class="empty-state small-empty">
-                    <div class="empty-icon">i</div>
-                    <h3>No dimensions</h3>
-                    <p>No active dimensions found for this organization.</p>
-                </div>
-            `;
-            return;
-        }
-
-        dimensionGroupsList.forEach(group => {
-            container.appendChild(buildDimensionSelect(group));
-        });
-
-    } catch (error) {
-        console.error(error);
-
-        container.innerHTML = `
-            <div class="empty-state small-empty">
-                <div class="empty-icon">!</div>
-                <h3>Failed to load dimensions</h3>
-                <p>${escapeHtml(error.message)}</p>
-            </div>
-        `;
-
-        await showMessageDialog(
-            "Dimensions error",
-            "Failed to load dimensions: " + error.message,
-            "danger"
-        );
+    if (!container) {
+        console.warn("Dynamic dimensions container not found in HTML.");
+        return;
     }
+
+    container.innerHTML = "";
+
+    if (!Array.isArray(dynamicDimensions) || dynamicDimensions.length === 0) {
+        container.innerHTML = createEmptyMessage("No dimensions configured for this organization.");
+        return;
+    }
+
+    dynamicDimensions.forEach(function (dimension) {
+        container.appendChild(createDimensionField(dimension));
+    });
 }
 
-function buildDimensionSelect(group) {
+function createDimensionField(dimension) {
     const wrapper = document.createElement("div");
     wrapper.className = "form-group dynamic-dimension-group";
 
-    const dimensionCode = group.dimensionCode || "";
-    const dimensionName = group.dimensionName || dimensionCode;
-    const required = group.required === true;
-
     const label = document.createElement("label");
-    label.textContent = required ? `${dimensionName} *` : dimensionName;
+    label.textContent = dimension.dimensionName || dimension.dimensionCode || "Dimension";
+
+    const normalizedCode = normalizeDimensionCode(dimension.dimensionCode);
+
+    if (dimension.required === true) {
+        const requiredMark = document.createElement("span");
+        requiredMark.textContent = " *";
+        requiredMark.className = "required-mark";
+        label.appendChild(requiredMark);
+    }
 
     const select = document.createElement("select");
-    select.className = "dynamic-dimension-select";
-    select.dataset.dimensionCode = dimensionCode;
+    select.className = "form-control dynamic-dimension-select";
+    select.dataset.dimensionCode = dimension.dimensionCode || "";
+    select.dataset.normalizedDimensionCode = normalizedCode;
 
-    if (required) {
+    if (dimension.required === true) {
         select.required = true;
     }
 
-    const firstOption = document.createElement("option");
-    firstOption.value = "";
-    firstOption.textContent = `Select ${dimensionName}`;
+    addOption(
+        select,
+        "",
+        `Select ${dimension.dimensionName || dimension.dimensionCode || "dimension"}`
+    );
 
-    select.appendChild(firstOption);
+    const values = Array.isArray(dimension.values) ? dimension.values : [];
 
-    const values = group.values || [];
-
-    values.forEach(value => {
+    values.forEach(function (value) {
         const valueCode = value.valueCode || "";
         const valueName = value.valueName || "";
 
@@ -466,14 +435,7 @@ function buildDimensionSelect(group) {
             return;
         }
 
-        const option = document.createElement("option");
-
-        option.value = valueCode;
-        option.textContent = valueName
-            ? `${valueCode} - ${valueName}`
-            : valueCode;
-
-        select.appendChild(option);
+        addOption(select, valueCode, valueName ? `${valueCode} - ${valueName}` : valueCode);
     });
 
     wrapper.appendChild(label);
@@ -482,292 +444,565 @@ function buildDimensionSelect(group) {
     return wrapper;
 }
 
-function collectDynamicDimensions() {
-    const dimensionValues = {};
+/* =========================================================
+   Items management
+   ========================================================= */
 
-    document.querySelectorAll(".dynamic-dimension-select").forEach(select => {
-        const dimensionCode = select.dataset.dimensionCode;
+function ensureAtLeastOneItem() {
+    const container = findElement(
+        "itemsContainer",
+        "requestItemsContainer",
+        "itemsList"
+    );
 
-        if (!dimensionCode) {
+    if (!container) {
+        return;
+    }
+
+    const existingItems = container.querySelectorAll(".request-item");
+
+    if (existingItems.length === 0) {
+        addItemRow();
+    }
+}
+
+function addItemRow() {
+    const container = findElement(
+        "itemsContainer",
+        "requestItemsContainer",
+        "itemsList"
+    );
+
+    if (!container) {
+        console.warn("Items container not found in HTML.");
+        return;
+    }
+
+    const index = container.querySelectorAll(".request-item").length + 1;
+
+    const item = document.createElement("div");
+    item.className = "request-item";
+    item.dataset.index = String(index);
+
+    item.innerHTML = `
+        <div class="item-header">
+            <strong>Item ${index}</strong>
+            <button type="button" class="btn-remove-item" onclick="removeItemRow(this)">Remove</button>
+        </div>
+
+        <div class="form-group">
+            <label>Description *</label>
+            <input type="text" class="form-control item-description" placeholder="Item description" required>
+        </div>
+
+        <div class="form-row">
+            <div class="form-group">
+                <label>Quantity *</label>
+                <input type="number" class="form-control item-quantity" min="1" step="1" value="1" required>
+            </div>
+
+            <div class="form-group">
+                <label>Unit Cost</label>
+                <input type="number" class="form-control item-unit-cost" min="0" step="0.01" value="0">
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label>Remarks</label>
+            <textarea class="form-control item-remarks" rows="2" placeholder="Optional remarks"></textarea>
+        </div>
+    `;
+
+    container.appendChild(item);
+}
+
+function removeItemRow(button) {
+    const container = findElement(
+        "itemsContainer",
+        "requestItemsContainer",
+        "itemsList"
+    );
+
+    const item = button.closest(".request-item");
+
+    if (!container || !item) {
+        return;
+    }
+
+    const totalItems = container.querySelectorAll(".request-item").length;
+
+    if (totalItems <= 1) {
+        showError("At least one item is required.");
+        return;
+    }
+
+    item.remove();
+    renumberItems();
+}
+
+function renumberItems() {
+    const items = document.querySelectorAll(".request-item");
+
+    items.forEach(function (item, index) {
+        item.dataset.index = String(index + 1);
+
+        const header = item.querySelector(".item-header strong");
+        if (header) {
+            header.textContent = `Item ${index + 1}`;
+        }
+    });
+}
+
+/* =========================================================
+   Submit request
+   ========================================================= */
+
+async function submitNeedsRequest() {
+    try {
+        const payload = buildPayload();
+
+        if (!payload) {
             return;
         }
 
-        dimensionValues[dimensionCode] = select.value || "";
-    });
+        setSubmitLoading(true);
 
-    return dimensionValues;
+        const response = await fetch(`${BASE_URL}/api/needs-requests`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(payload)
+        });
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`HTTP ${response.status} - ${errorText}`);
+        }
+
+        await response.json();
+
+        showSuccess("Needs request submitted successfully.");
+
+        setTimeout(function () {
+            window.location.href = "my-requests.html";
+        }, 800);
+
+    } catch (error) {
+        console.error("Submit needs request error:", error);
+        showError(`Failed to submit request: ${error.message}`);
+    } finally {
+        setSubmitLoading(false);
+    }
 }
 
-function getDepartmentFromDimensions(dimensionValues) {
-    if (!dimensionValues) {
-        return "";
+function buildPayload() {
+    const title = getValue(
+        "title",
+        "requestTitle",
+        "needTitle",
+        "needsTitle"
+    );
+
+    const description = getValue(
+        "description",
+        "requestDescription",
+        "needDescription",
+        "needsDescription"
+    );
+
+    const requestDate = getValue(
+        "requestDate",
+        "date",
+        "needDate",
+        "needsDate"
+    );
+
+    const priority = getValue(
+        "priority",
+        "requestPriority",
+        "needPriority",
+        "needsPriority"
+    );
+
+    const budgetPlan = getValue(
+        "budgetPlan",
+        "budget_plan",
+        "budgetPlanCode"
+    );
+
+    const fundCode = getValue(
+        "fundCode",
+        "fundSelect",
+        "fund_code",
+        "fund",
+        "funds",
+        "requestFund"
+    );
+
+    const currencyCode = getValue(
+        "currencyCode",
+        "curencyCode",
+        "currencySelect",
+        "currency_code",
+        "curency_code",
+        "currency",
+        "devise",
+        "deviseCode"
+    );
+
+    const glAccountCode = getValue(
+        "glAccountCode",
+        "glAccountSelect",
+        "gl_account_code",
+        "glAccount",
+        "gl_account",
+        "accountCode",
+        "account_code"
+    );
+
+    const dimensionObject = collectDynamicDimensions();
+    const department = deriveDepartmentFromDimensions(dimensionObject);
+
+    if (!title) {
+        showError("Please enter request title.");
+        return null;
     }
 
-    return dimensionValues.DEPARTMENT ||
-            dimensionValues.DEPARTEMENTS ||
-            dimensionValues.COST_CENTER ||
-            dimensionValues.COST_CENTRE ||
-            "";
+    if (!requestDate) {
+        showError("Please select request date.");
+        return null;
+    }
+
+    if (!fundCode) {
+        showError("Please select fund.");
+        return null;
+    }
+
+    if (!currencyCode) {
+        showError("Please select currency.");
+        return null;
+    }
+
+    if (!glAccountCode) {
+        showError("Please select G/L account.");
+        return null;
+    }
+
+    const missingRequiredDimension = validateRequiredDimensions();
+
+    if (missingRequiredDimension) {
+        showError(`Please select ${missingRequiredDimension}.`);
+        return null;
+    }
+
+    const items = collectItems();
+
+    if (items.length === 0) {
+        showError("Please add at least one item.");
+        return null;
+    }
+
+    const requesterName =
+        currentUser.fullName ||
+        currentUser.name ||
+        currentUser.username ||
+        currentUser.email ||
+        "";
+
+    return {
+        organization: currentOrganization,
+
+        title: title,
+        description: description,
+        requestDate: requestDate,
+        priority: priority || "NORMAL",
+        budgetPlan: budgetPlan,
+
+        requesterId: currentUser.id || null,
+        requesterName: requesterName,
+        requesterEmail: currentUser.email || "",
+        requesterRole: currentUser.role || "",
+
+        department: department,
+
+        fundCode: fundCode,
+        currencyCode: currencyCode,
+        glAccountCode: glAccountCode,
+
+        dimensionValues: JSON.stringify(dimensionObject),
+
+        status: "PENDING_HOD",
+        items: items
+    };
 }
 
-function collectItems(headerValues) {
+function collectItems() {
+    const rows = document.querySelectorAll(".request-item");
     const items = [];
 
-    document.querySelectorAll(".item-card").forEach(item => {
-        const quantity = parseNumber(item.querySelector(".item-quantity")?.value);
-        const unitPrice = parseNumber(item.querySelector(".item-unit-price")?.value);
-        const totalAmount = quantity * unitPrice;
+    rows.forEach(function (row) {
+        const descriptionInput = row.querySelector(".item-description");
+        const quantityInput = row.querySelector(".item-quantity");
+        const unitCostInput = row.querySelector(".item-unit-cost");
+        const remarksInput = row.querySelector(".item-remarks");
+
+        const description = descriptionInput ? descriptionInput.value.trim() : "";
+        const quantity = quantityInput ? Number(quantityInput.value || 0) : 0;
+        const unitCost = unitCostInput ? Number(unitCostInput.value || 0) : 0;
+        const remarks = remarksInput ? remarksInput.value.trim() : "";
+
+        if (!description) {
+            return;
+        }
 
         items.push({
-            organization: headerValues.organization,
-            itemName: item.querySelector(".item-name")?.value.trim() || "",
-            description: item.querySelector(".item-description")?.value.trim() || "",
-            itemCategory: item.querySelector(".item-category")?.value.trim() || "",
-            unitOfMeasure: item.querySelector(".item-unit")?.value.trim() || "",
+            organization: currentOrganization,
+            description: description,
             quantity: quantity,
-            unitPrice: unitPrice,
-            totalAmount: totalAmount,
-            budgetPlan: headerValues.budgetPlan,
-            glAccountNo: headerValues.glAccountNo,
-            fundCode: headerValues.fundCode,
-            dimensionValues: headerValues.dimensionValues
+            unitCost: unitCost,
+            totalCost: quantity * unitCost,
+            remarks: remarks,
+
+            fundCode: getValue(
+                "fundCode",
+                "fundSelect",
+                "fund_code",
+                "fund",
+                "funds",
+                "requestFund"
+            ),
+
+            currencyCode: getValue(
+                "currencyCode",
+                "curencyCode",
+                "currencySelect",
+                "currency_code",
+                "curency_code",
+                "currency",
+                "devise",
+                "deviseCode"
+            ),
+
+            glAccountCode: getValue(
+                "glAccountCode",
+                "glAccountSelect",
+                "gl_account_code",
+                "glAccount",
+                "gl_account",
+                "accountCode",
+                "account_code"
+            ),
+
+            dimensionValues: JSON.stringify(collectDynamicDimensions())
         });
     });
 
     return items;
 }
 
-async function submitNeedsRequest(event) {
-    event.preventDefault();
+/* =========================================================
+   Dynamic dimension helpers
+   ========================================================= */
 
-    const organization = getCurrentOrganization();
+function collectDynamicDimensions() {
+    const dimensionValues = {};
 
-    if (!organization) {
-        await showMessageDialog(
-            "Organization missing",
-            "Your login session has no organization. Please login again.",
-            "danger"
-        );
-        logoutUser();
-        return;
-    }
+    document.querySelectorAll(".dynamic-dimension-select").forEach(function (select) {
+        const originalCode = select.dataset.dimensionCode || "";
+        const normalizedCode = select.dataset.normalizedDimensionCode || normalizeDimensionCode(originalCode);
+        const value = select.value || "";
 
-    const dimensionObject = collectDynamicDimensions();
-    const dimensionValues = JSON.stringify(dimensionObject);
-    const department = getDepartmentFromDimensions(dimensionObject);
-
-    const attachmentInput = document.getElementById("attachment");
-    const attachmentName =
-        attachmentInput && attachmentInput.files && attachmentInput.files.length > 0
-            ? attachmentInput.files[0].name
-            : "";
-
-    const headerValues = {
-        organization: organization,
-        budgetPlan: document.getElementById("budgetPlan").value,
-        fundCode: document.getElementById("fundCode").value,
-        currencyCode: document.getElementById("currencyCode").value,
-        glAccountNo: document.getElementById("glAccountNo").value,
-        dimensionValues: dimensionValues
-    };
-
-    const requestBody = {
-        organization: organization,
-
-        requestDate: getTodayDate(),
-        requiredDate: document.getElementById("requiredDate").value || null,
-
-        requestedBy: currentUser.fullName || currentUser.email,
-        requesterEmail: currentUser.email,
-
-        department: department,
-
-        title: document.getElementById("title").value.trim(),
-        description: document.getElementById("description").value.trim(),
-        priority: document.getElementById("priority").value,
-
-        budgetPlan: headerValues.budgetPlan,
-        currencyCode: headerValues.currencyCode,
-        glAccountNo: headerValues.glAccountNo,
-        fundCode: headerValues.fundCode,
-        dimensionValues: headerValues.dimensionValues,
-
-        attachmentName: attachmentName,
-
-        createdBy: currentUser.fullName || currentUser.email,
-
-        items: collectItems(headerValues)
-    };
-
-    if (!validateRequest(requestBody)) {
-        return;
-    }
-
-    try {
-        const response = await fetch(`${BASE_URL}/api/needs-requests`, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify(requestBody)
-        });
-
-        if (!response.ok) {
-            const errorText = await response.text();
-            throw new Error(errorText || "Request submission failed");
+        if (!originalCode) {
+            return;
         }
 
-        const saved = await response.json();
+        dimensionValues[originalCode] = value;
+        dimensionValues[normalizedCode] = value;
+    });
 
-        await showMessageDialog(
-            "Request submitted",
-            `Your request ${saved.requestNo || ""} has been submitted successfully.`,
-            "success"
-        );
-
-        window.location.href = "my-requests.html";
-
-    } catch (error) {
-        console.error(error);
-
-        await showMessageDialog(
-            "Submission failed",
-            error.message,
-            "danger"
-        );
-    }
+    return dimensionValues;
 }
 
-function validateRequest(requestBody) {
-    if (!requestBody.title) {
-        showMessageDialog(
-            "Missing title",
-            "Please enter the request title.",
-            "warning"
-        );
-        return false;
-    }
-
-    if (!requestBody.budgetPlan) {
-        showMessageDialog(
-            "Missing budget plan",
-            "Please select the budget plan.",
-            "warning"
-        );
-        return false;
-    }
-
-    if (!requestBody.fundCode) {
-        showMessageDialog(
-            "Missing fund",
-            "Please select the fund.",
-            "warning"
-        );
-        return false;
-    }
-
-    if (!requestBody.currencyCode) {
-        showMessageDialog(
-            "Missing currency",
-            "Please select the currency.",
-            "warning"
-        );
-        return false;
-    }
-
-    if (!requestBody.glAccountNo) {
-        showMessageDialog(
-            "Missing G/L account",
-            "Please select the G/L account.",
-            "warning"
-        );
-        return false;
-    }
-
-    for (const item of requestBody.items) {
-        if (!item.itemName) {
-            showMessageDialog(
-                "Missing item name",
-                "Please enter the item name for all items.",
-                "warning"
-            );
-            return false;
+function validateRequiredDimensions() {
+    for (const dimension of dynamicDimensions) {
+        if (dimension.required !== true) {
+            continue;
         }
 
-        if (item.quantity <= 0) {
-            showMessageDialog(
-                "Invalid quantity",
-                "Quantity must be greater than zero.",
-                "warning"
-            );
-            return false;
-        }
-    }
+        const code = dimension.dimensionCode || "";
+        const normalizedCode = normalizeDimensionCode(code);
 
-    const invalidRequiredDimension = findMissingRequiredDimension();
-
-    if (invalidRequiredDimension) {
-        showMessageDialog(
-            "Missing dimension",
-            `Please select ${invalidRequiredDimension}.`,
-            "warning"
+        const select = document.querySelector(
+            `.dynamic-dimension-select[data-normalized-dimension-code="${normalizedCode}"]`
         );
-        return false;
-    }
 
-    return true;
-}
-
-function findMissingRequiredDimension() {
-    const selects = document.querySelectorAll(".dynamic-dimension-select");
-
-    for (const select of selects) {
-        if (select.required && !select.value) {
-            const label = select.closest(".form-group")?.querySelector("label");
-            return label ? label.textContent.replace("*", "").trim() : "required dimension";
+        if (select && !select.value) {
+            return dimension.dimensionName || dimension.dimensionCode || "required dimension";
         }
     }
 
     return "";
 }
 
-function parseNumber(value) {
-    const number = Number(value);
-
-    if (Number.isNaN(number)) {
-        return 0;
-    }
-
-    return number;
+function deriveDepartmentFromDimensions(dimensionObject) {
+    return (
+        dimensionObject["COST CENTER"] ||
+        dimensionObject["COST_CENTER"] ||
+        dimensionObject["DEPARTMENT"] ||
+        dimensionObject["DEPARTMENTS"] ||
+        dimensionObject["DEPARTEMENTS"] ||
+        ""
+    );
 }
 
-function formatAmount(value) {
-    const number = Number(value || 0);
+function findDimensionByCode(code) {
+    const normalizedTarget = normalizeDimensionCode(code);
 
-    return number.toLocaleString("en-US", {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2
+    return allGroupedDimensions.find(function (dimension) {
+        return normalizeDimensionCode(dimension.dimensionCode) === normalizedTarget;
     });
 }
 
-function getTodayDate() {
-    const today = new Date();
-
-    const year = today.getFullYear();
-    const month = String(today.getMonth() + 1).padStart(2, "0");
-    const day = String(today.getDate()).padStart(2, "0");
-
-    return `${year}-${month}-${day}`;
+function normalizeDimensionCode(code) {
+    return String(code || "")
+        .trim()
+        .toUpperCase()
+        .replace(/\s+/g, "_")
+        .replace(/-/g, "_");
 }
 
-function escapeHtml(value) {
-    if (value === null || value === undefined) {
+/* =========================================================
+   UI helpers
+   ========================================================= */
+
+function setDefaultRequestDate() {
+    const dateInput = findElement(
+        "requestDate",
+        "date",
+        "needDate",
+        "needsDate"
+    );
+
+    if (!dateInput) {
+        return;
+    }
+
+    if (!dateInput.value) {
+        const today = new Date();
+        dateInput.value = today.toISOString().split("T")[0];
+    }
+}
+
+function setSubmitLoading(isLoading) {
+    const submitBtn = findElement(
+        "submitBtn",
+        "btnSubmit",
+        "submitRequestBtn",
+        "saveBtn"
+    );
+
+    if (!submitBtn) {
+        return;
+    }
+
+    submitBtn.disabled = isLoading;
+    submitBtn.textContent = isLoading ? "Submitting..." : "Submit Request";
+}
+
+function clearSelect(select, placeholder) {
+    select.innerHTML = "";
+    addOption(select, "", placeholder || "Select");
+}
+
+function addOption(select, value, text) {
+    const option = document.createElement("option");
+    option.value = value;
+    option.textContent = text;
+    select.appendChild(option);
+}
+
+function addDisabledOption(select, text) {
+    const option = document.createElement("option");
+    option.value = "";
+    option.textContent = text;
+    option.disabled = true;
+    select.appendChild(option);
+}
+
+function createEmptyMessage(message) {
+    return `
+        <div class="empty-message">
+            ${escapeHtml(message)}
+        </div>
+    `;
+}
+
+function showError(message) {
+    if (window.Swal) {
+        Swal.fire({
+            icon: "error",
+            title: "Error",
+            text: message
+        });
+        return;
+    }
+
+    alert(message);
+}
+
+function showSuccess(message) {
+    if (window.Swal) {
+        Swal.fire({
+            icon: "success",
+            title: "Success",
+            text: message,
+            timer: 1500,
+            showConfirmButton: false
+        });
+        return;
+    }
+
+    alert(message);
+}
+
+function findElement() {
+    for (let i = 0; i < arguments.length; i++) {
+        const key = arguments[i];
+
+        if (!key) {
+            continue;
+        }
+
+        const byId = document.getElementById(key);
+        if (byId) {
+            return byId;
+        }
+
+        const byName = document.querySelector(`[name="${key}"]`);
+        if (byName) {
+            return byName;
+        }
+    }
+
+    return null;
+}
+
+function getValue() {
+    const element = findElement.apply(null, arguments);
+
+    if (!element) {
         return "";
     }
 
-    return String(value)
-            .replace(/&/g, "&amp;")
-            .replace(/</g, "&lt;")
-            .replace(/>/g, "&gt;")
-            .replace(/"/g, "&quot;");
+    return String(element.value || "").trim();
+}
+
+function escapeHtml(value) {
+    return String(value || "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
 }
