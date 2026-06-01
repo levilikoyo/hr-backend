@@ -29,7 +29,7 @@
     });
 
     /* =========================================================
-       Current user
+       CURRENT USER
        ========================================================= */
 
     function getCurrentUser() {
@@ -222,7 +222,7 @@
     }
 
     /* =========================================================
-       Display current user
+       DISPLAY USER
        ========================================================= */
 
     function displayCurrentUser() {
@@ -244,16 +244,20 @@
             user.userRole ||
             "USER";
 
+        const email =
+            user.email ||
+            "";
+
         setText("currentUserName", name);
         setText("currentUserRole", role);
 
         setText("dropdownUserName", name);
-        setText("dropdownUserEmail", user.email || "");
+        setText("dropdownUserEmail", email);
         setText("dropdownUserRole", role);
 
         setText("userName", name);
         setText("userRole", role);
-        setText("userEmail", user.email || "");
+        setText("userEmail", email);
     }
 
     function setText(id, value) {
@@ -265,7 +269,7 @@
     }
 
     /* =========================================================
-       User dropdown
+       USER DROPDOWN LOGOUT
        ========================================================= */
 
     function bindUserDropdown() {
@@ -276,8 +280,12 @@
             return;
         }
 
+        userInfoBox.style.cursor = "pointer";
+
         userInfoBox.addEventListener("click", function (event) {
+            event.preventDefault();
             event.stopPropagation();
+
             userDropdown.classList.toggle("show");
         });
 
@@ -288,10 +296,16 @@
         document.addEventListener("click", function () {
             userDropdown.classList.remove("show");
         });
+
+        document.addEventListener("keydown", function (event) {
+            if (event.key === "Escape") {
+                userDropdown.classList.remove("show");
+            }
+        });
     }
 
     /* =========================================================
-       Logout
+       LOGOUT
        ========================================================= */
 
     function logout() {
@@ -303,7 +317,7 @@
 
         setTimeout(function () {
             window.location.href = "login.html";
-        }, 300);
+        }, 250);
     }
 
     function clearAuth() {
@@ -347,7 +361,7 @@
     }
 
     /* =========================================================
-       Auth fetch
+       AUTH FETCH
        ========================================================= */
 
     async function authFetch(url, options) {
@@ -368,7 +382,7 @@
     }
 
     /* =========================================================
-       Helpers
+       HELPERS
        ========================================================= */
 
     function normalizeRole(role) {
@@ -408,7 +422,7 @@
     }
 
     /* =========================================================
-       Expose globally
+       EXPOSE GLOBALLY
        ========================================================= */
 
     window.saveCurrentUser = saveCurrentUser;
