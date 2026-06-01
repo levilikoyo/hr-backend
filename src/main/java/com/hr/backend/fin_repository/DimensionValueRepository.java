@@ -9,24 +9,24 @@ package com.hr.backend.fin_repository;
  * @author apple
  */
 
+
+
 import com.hr.backend.fin_model.DimensionValueModel;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 
-public interface DimensionValueRepository
-        extends JpaRepository<DimensionValueModel, Long> {
+public interface DimensionValueRepository extends JpaRepository<DimensionValueModel, Long> {
 
-    List<DimensionValueModel> findByOrganization(String organization);
+    /*
+     * Existing / Swing-safe methods
+     * Do not remove these because they may already be used by your Java Swing app.
+     */
 
-    List<DimensionValueModel> findByOrganizationAndDimensionCode(
+    boolean existsByOrganizationAndDimensionCodeAndValueCode(
             String organization,
-            String dimensionCode
-    );
-
-    List<DimensionValueModel> findByOrganizationAndDimensionCodeAndBlockedFalse(
-            String organization,
-            String dimensionCode
+            String dimensionCode,
+            String valueCode
     );
 
     Optional<DimensionValueModel> findByOrganizationAndDimensionCodeAndValueCode(
@@ -35,9 +35,52 @@ public interface DimensionValueRepository
             String valueCode
     );
 
-    boolean existsByOrganizationAndDimensionCodeAndValueCode(
+    List<DimensionValueModel> findByOrganization(
+            String organization
+    );
+
+    List<DimensionValueModel> findByOrganizationAndDimensionCode(
+            String organization,
+            String dimensionCode
+    );
+
+    List<DimensionValueModel> findByOrganizationAndBlockedFalse(
+            String organization
+    );
+
+    List<DimensionValueModel> findByOrganizationAndDimensionCodeAndBlockedFalse(
+            String organization,
+            String dimensionCode
+    );
+
+    List<DimensionValueModel> findByOrganizationAndStatusIgnoreCase(
+            String organization,
+            String status
+    );
+
+    List<DimensionValueModel> findByOrganizationAndDimensionCodeAndStatusIgnoreCase(
             String organization,
             String dimensionCode,
-            String valueCode
+            String status
+    );
+
+    /*
+     * Mobile / ordered methods
+     */
+
+    List<DimensionValueModel> findByOrganizationAndDimensionCodeOrderByValueCodeAsc(
+            String organization,
+            String dimensionCode
+    );
+
+    List<DimensionValueModel> findByOrganizationAndDimensionCodeAndBlockedFalseOrderByValueCodeAsc(
+            String organization,
+            String dimensionCode
+    );
+
+    List<DimensionValueModel> findByOrganizationAndDimensionCodeAndBlockedFalseAndStatusIgnoreCaseOrderByValueCodeAsc(
+            String organization,
+            String dimensionCode,
+            String status
     );
 }

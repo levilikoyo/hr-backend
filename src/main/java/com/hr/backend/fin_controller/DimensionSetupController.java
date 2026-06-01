@@ -9,9 +9,13 @@ package com.hr.backend.fin_controller;
  * @author apple
  */
 
+
 import com.hr.backend.fin_model.DimensionSetupModel;
+import com.hr.backend.fin_model.DimensionValueModel;
 import com.hr.backend.fin_repository.DimensionSetupRepository;
+import com.hr.backend.fin_repository.DimensionValueRepository;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,6 +30,14 @@ public class DimensionSetupController {
 
     @Autowired
     private DimensionSetupRepository dimensionRepository;
+
+    @Autowired
+    private DimensionValueRepository dimensionValueRepository;
+
+    @GetMapping("/test")
+    public String test() {
+        return "Dimension Setup API is working";
+    }
 
     @PostMapping
     public ResponseEntity<?> saveDimension(@RequestBody DimensionSetupModel dimension) {
@@ -166,9 +178,85 @@ public class DimensionSetupController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    @GetMapping("/test")
-    public String test() {
-        return "Dimension Setup API is working";
+    /*
+     * NEW MOBILE ENDPOINT
+     * This endpoint is used by the mobile Needs Request form.
+     * It returns each active dimension with its active values.
+     *
+     * Example:
+     * /api/dimension-setups/organization/APN/grouped
+     */
+    @GetMapping("/organization/{organization}/grouped")
+    public List<DimensionGroupResponse> getGroupedDimensions(
+            @PathVariable String organization) {
+
+        List<DimensionSetupModel> setups =
+                dimensionRepository.findByOrganizationOrderByDisplayOrderAscDimensionCodeAsc(
+                        organization
+                );
+
+        List<DimensionGroupResponse> result = new ArrayList<>();
+
+        for (DimensionSetupModel setup : setups) {
+
+            if (!isActiveSetup(setup)) {
+                continue;
+            }
+
+            List<DimensionValueModel> values =
+                    dimensionValueRepository
+                            .findByOrganizationAndDimensionCodeAndBlockedFalseAndStatusIgnoreCaseOrderByValueCodeAsc(
+                                    organization,
+                                    setup.getDimensionCode(),
+                                    "Active"
+                            );
+
+            List<DimensionValueResponse> valueResponses = new ArrayList<>();
+
+            for (DimensionValueModel value : values) {
+                DimensionValueResponse valueResponse = new DimensionValueResponse();
+
+                valueResponse.setId(value.getId());
+                valueResponse.setValueCode(value.getValueCode());
+                valueResponse.setValueName(value.getValueName());
+                valueResponse.setDescription(value.getDescription());
+
+                valueResponses.add(valueResponse);
+            }
+
+            DimensionGroupResponse group = new DimensionGroupResponse();
+
+            group.setId(setup.getId());
+            group.setOrganization(setup.getOrganization());
+            group.setDimensionCode(setup.getDimensionCode());
+            group.setDimensionName(setup.getDimensionName());
+            group.setDescription(setup.getDescription());
+            group.setRequired(Boolean.TRUE.equals(setup.getRequired()));
+            group.setDisplayOrder(setup.getDisplayOrder());
+            group.setValues(valueResponses);
+
+            result.add(group);
+        }
+
+        return result;
+    }
+
+    private boolean isActiveSetup(DimensionSetupModel setup) {
+        if (setup == null) {
+            return false;
+        }
+
+        if (Boolean.TRUE.equals(setup.getBlocked())) {
+            return false;
+        }
+
+        if (Boolean.FALSE.equals(setup.getShowInActual())) {
+            return false;
+        }
+
+        String status = setup.getStatus();
+
+        return status == null || status.trim().equalsIgnoreCase("Active");
     }
 
     private boolean isEmpty(String value) {
@@ -178,5 +266,120 @@ public class DimensionSetupController {
     private String todayDate() {
         return new SimpleDateFormat("yyyy-MM-dd").format(new Date());
     }
- 
+
+    public static class DimensionGroupResponse {
+
+        private Long id;
+        private String organization;
+        private String dimensionCode;
+        private String dimensionName;
+        private String description;
+        private Boolean required;
+        private Integer displayOrder;
+        private List<DimensionValueResponse> values;
+
+        public Long getId() {
+            return id;
+        }
+
+        public String getOrganization() {
+            return organization;
+        }
+
+        public String getDimensionCode() {
+            return dimensionCode;
+        }
+
+        public String getDimensionName() {
+            return dimensionName;
+        }
+
+        public String getDescription() {
+            return description;
+        }
+
+        public Boolean getRequired() {
+            return required;
+        }
+
+        public Integer getDisplayOrder() {
+            return displayOrder;
+        }
+
+        public List<DimensionValueResponse> getValues() {
+            return values;
+        }
+
+        public void setId(Long id) {
+            this.id = id;
+        }
+
+        public void setOrganization(String organization) {
+            this.organization = organization;
+        }
+
+        public void setDimensionCode(String dimensionCode) {
+            this.dimensionCode = dimensionCode;
+        }
+
+        public void setDimensionName(String dimensionName) {
+            this.dimensionName = dimensionName;
+        }
+
+        public void setDescription(String description) {
+            this.description = description;
+        }
+
+        public void setRequired(Boolean required) {
+            this.required = required;
+        }
+
+        public void setDisplayOrder(Integer displayOrder) {
+            this.displayOrder = displayOrder;
+        }
+
+        public void setValues(List<DimensionValueResponse> values) {
+            this.values = values;
+        }
+    }
+
+    public static class DimensionValueResponse {
+
+        private Long id;
+        private String valueCode;
+        private String valueName;
+        private String description;
+
+        public Long getId() {
+            return id;
+        }
+
+        public String getValueCode() {
+            return valueCode;
+        }
+
+        public String getValueName() {
+            return valueName;
+        }
+
+        public String getDescription() {
+            return description;
+        }
+
+        public void setId(Long id) {
+            this.id = id;
+        }
+
+        public void setValueCode(String valueCode) {
+            this.valueCode = valueCode;
+        }
+
+        public void setValueName(String valueName) {
+            this.valueName = valueName;
+        }
+
+        public void setDescription(String description) {
+            this.description = description;
+        }
+    }
 }

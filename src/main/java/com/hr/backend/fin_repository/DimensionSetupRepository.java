@@ -9,20 +9,17 @@ package com.hr.backend.fin_repository;
  * @author apple
  */
 
+
 import com.hr.backend.fin_model.DimensionSetupModel;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 
-public interface DimensionSetupRepository
-        extends JpaRepository<DimensionSetupModel, Long> {
+public interface DimensionSetupRepository extends JpaRepository<DimensionSetupModel, Long> {
 
-    List<DimensionSetupModel> findByOrganization(String organization);
-
-    List<DimensionSetupModel> findByOrganizationAndBlockedFalse(String organization);
-
-    List<DimensionSetupModel> findByOrganizationAndBlockedFalseAndShowInActualTrueOrderByDisplayOrderAsc(
-            String organization
+    boolean existsByOrganizationAndDimensionCode(
+            String organization,
+            String dimensionCode
     );
 
     Optional<DimensionSetupModel> findByOrganizationAndDimensionCode(
@@ -30,8 +27,24 @@ public interface DimensionSetupRepository
             String dimensionCode
     );
 
-    boolean existsByOrganizationAndDimensionCode(
+    List<DimensionSetupModel> findByOrganization(
+            String organization
+    );
+
+    List<DimensionSetupModel> findByOrganizationAndBlockedFalse(
+            String organization
+    );
+
+    List<DimensionSetupModel> findByOrganizationAndBlockedFalseAndShowInActualTrueOrderByDisplayOrderAsc(
+            String organization
+    );
+
+    List<DimensionSetupModel> findByOrganizationOrderByDisplayOrderAscDimensionCodeAsc(
+            String organization
+    );
+
+    List<DimensionSetupModel> findByOrganizationAndBlockedFalseAndStatusIgnoreCaseOrderByDisplayOrderAscDimensionCodeAsc(
             String organization,
-            String dimensionCode
+            String status
     );
 }
