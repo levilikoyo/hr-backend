@@ -9,6 +9,7 @@ package com.hr.backend.fin_model;
  * @author apple
  */
 
+
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 import java.math.BigDecimal;
@@ -25,7 +26,7 @@ public class NeedsRequestItemModel {
     private String organization;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "needs_request_id")
+    @JoinColumn(name = "needs_request_id", nullable = false)
     @JsonBackReference
     private NeedsRequestModel needsRequest;
 
@@ -41,13 +42,13 @@ public class NeedsRequestItemModel {
     @Column(name = "unit_of_measure")
     private String unitOfMeasure;
 
-    private BigDecimal quantity;
+    private BigDecimal quantity = BigDecimal.ZERO;
 
     @Column(name = "unit_price")
-    private BigDecimal unitPrice;
+    private BigDecimal unitPrice = BigDecimal.ZERO;
 
     @Column(name = "total_amount")
-    private BigDecimal totalAmount;
+    private BigDecimal totalAmount = BigDecimal.ZERO;
 
     @Column(name = "budget_plan")
     private String budgetPlan;
@@ -58,11 +59,17 @@ public class NeedsRequestItemModel {
     @Column(name = "fund_code")
     private String fundCode;
 
+    @Column(name = "dimension_values", columnDefinition = "JSON")
+    private String dimensionValues;
+
     @Column(name = "created_at", insertable = false, updatable = false)
     private LocalDateTime createdAt;
 
     @Column(name = "updated_at", insertable = false, updatable = false)
     private LocalDateTime updatedAt;
+
+    public NeedsRequestItemModel() {
+    }
 
     public Long getId() {
         return id;
@@ -72,96 +79,52 @@ public class NeedsRequestItemModel {
         return organization;
     }
 
-    public void setOrganization(String organization) {
-        this.organization = organization;
-    }
-
     public NeedsRequestModel getNeedsRequest() {
         return needsRequest;
-    }
-
-    public void setNeedsRequest(NeedsRequestModel needsRequest) {
-        this.needsRequest = needsRequest;
     }
 
     public String getItemName() {
         return itemName;
     }
 
-    public void setItemName(String itemName) {
-        this.itemName = itemName;
-    }
-
     public String getDescription() {
         return description;
-    }
-
-    public void setDescription(String description) {
-        this.description = description;
     }
 
     public String getItemCategory() {
         return itemCategory;
     }
 
-    public void setItemCategory(String itemCategory) {
-        this.itemCategory = itemCategory;
-    }
-
     public String getUnitOfMeasure() {
         return unitOfMeasure;
-    }
-
-    public void setUnitOfMeasure(String unitOfMeasure) {
-        this.unitOfMeasure = unitOfMeasure;
     }
 
     public BigDecimal getQuantity() {
         return quantity;
     }
 
-    public void setQuantity(BigDecimal quantity) {
-        this.quantity = quantity;
-    }
-
     public BigDecimal getUnitPrice() {
         return unitPrice;
-    }
-
-    public void setUnitPrice(BigDecimal unitPrice) {
-        this.unitPrice = unitPrice;
     }
 
     public BigDecimal getTotalAmount() {
         return totalAmount;
     }
 
-    public void setTotalAmount(BigDecimal totalAmount) {
-        this.totalAmount = totalAmount;
-    }
-
     public String getBudgetPlan() {
         return budgetPlan;
-    }
-
-    public void setBudgetPlan(String budgetPlan) {
-        this.budgetPlan = budgetPlan;
     }
 
     public String getGlAccountNo() {
         return glAccountNo;
     }
 
-    public void setGlAccountNo(String glAccountNo) {
-        this.glAccountNo = glAccountNo;
-    }
-
     public String getFundCode() {
         return fundCode;
     }
 
-    public void setFundCode(String fundCode) {
-        this.fundCode = fundCode;
+    public String getDimensionValues() {
+        return dimensionValues;
     }
 
     public LocalDateTime getCreatedAt() {
@@ -170,5 +133,61 @@ public class NeedsRequestItemModel {
 
     public LocalDateTime getUpdatedAt() {
         return updatedAt;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public void setOrganization(String organization) {
+        this.organization = organization;
+    }
+
+    public void setNeedsRequest(NeedsRequestModel needsRequest) {
+        this.needsRequest = needsRequest;
+    }
+
+    public void setItemName(String itemName) {
+        this.itemName = itemName;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public void setItemCategory(String itemCategory) {
+        this.itemCategory = itemCategory;
+    }
+
+    public void setUnitOfMeasure(String unitOfMeasure) {
+        this.unitOfMeasure = unitOfMeasure;
+    }
+
+    public void setQuantity(BigDecimal quantity) {
+        this.quantity = quantity;
+    }
+
+    public void setUnitPrice(BigDecimal unitPrice) {
+        this.unitPrice = unitPrice;
+    }
+
+    public void setTotalAmount(BigDecimal totalAmount) {
+        this.totalAmount = totalAmount;
+    }
+
+    public void setBudgetPlan(String budgetPlan) {
+        this.budgetPlan = budgetPlan;
+    }
+
+    public void setGlAccountNo(String glAccountNo) {
+        this.glAccountNo = glAccountNo;
+    }
+
+    public void setFundCode(String fundCode) {
+        this.fundCode = fundCode;
+    }
+
+    public void setDimensionValues(String dimensionValues) {
+        this.dimensionValues = dimensionValues;
     }
 }

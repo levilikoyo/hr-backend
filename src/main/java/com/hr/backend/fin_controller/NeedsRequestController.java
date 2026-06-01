@@ -1,3 +1,5 @@
+
+
 package com.hr.backend.fin_controller;
 
 import com.hr.backend.fin_model.NeedsRequestApprovalHistoryModel;
@@ -41,6 +43,10 @@ public class NeedsRequestController {
     @PostMapping
     public NeedsRequestModel create(@RequestBody NeedsRequestModel request) {
 
+        if (isBlank(request.getOrganization())) {
+            throw new RuntimeException("Organization is required");
+        }
+
         if (isBlank(request.getRequestNo())) {
             request.setRequestNo(generateRequestNo(request.getOrganization()));
         }
@@ -70,6 +76,10 @@ public class NeedsRequestController {
 
                 if (isBlank(item.getFundCode())) {
                     item.setFundCode(request.getFundCode());
+                }
+
+                if (isBlank(item.getDimensionValues())) {
+                    item.setDimensionValues(request.getDimensionValues());
                 }
 
                 BigDecimal quantity = safeBigDecimal(item.getQuantity());
@@ -184,7 +194,7 @@ public class NeedsRequestController {
         if (!canApproveCurrentLevel(request, approverRole)) {
             return ResponseEntity.status(403).body(
                     "You are not allowed to approve this level: "
-                    + request.getCurrentApprovalLevel()
+                            + request.getCurrentApprovalLevel()
             );
         }
 
@@ -309,7 +319,7 @@ public class NeedsRequestController {
         if (!canApproveCurrentLevel(request, approverRole)) {
             return ResponseEntity.status(403).body(
                     "You are not allowed to reject this level: "
-                    + request.getCurrentApprovalLevel()
+                            + request.getCurrentApprovalLevel()
             );
         }
 
@@ -372,9 +382,12 @@ public class NeedsRequestController {
 
         needsRequestItemRepository.save(item);
 
-        recalculateRequestTotal(request);
+        NeedsRequestModel updatedRequest = needsRequestRepository.findById(requestId)
+                .orElseThrow(() -> new RuntimeException("Request not found"));
 
-        NeedsRequestModel saved = needsRequestRepository.save(request);
+        recalculateRequestTotal(updatedRequest);
+
+        NeedsRequestModel saved = needsRequestRepository.save(updatedRequest);
 
         return ResponseEntity.ok(saved);
     }
@@ -513,13 +526,14 @@ public class NeedsRequestController {
 
     private String generateRequestNo(String organization) {
 
+        String safeOrganization = safe(organization);
         String year = String.valueOf(LocalDate.now().getYear());
 
         long count = needsRequestRepository
-                .findByOrganizationOrderByIdDesc(organization)
+                .findByOrganizationOrderByIdDesc(safeOrganization)
                 .size() + 1L;
 
-        return "EB-" + year + "-" + String.format("%04d", count);
+        return safeOrganization + "-EB-" + year + "-" + String.format("%04d", count);
     }
 
     private boolean isBlank(String value) {

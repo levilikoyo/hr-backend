@@ -19,7 +19,15 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Entity
-@Table(name = "needs_requests")
+@Table(
+        name = "needs_requests",
+        uniqueConstraints = {
+                @UniqueConstraint(
+                        name = "uk_needs_request_org_no",
+                        columnNames = {"organization", "request_no"}
+                )
+        }
+)
 public class NeedsRequestModel {
 
     @Id
@@ -44,6 +52,7 @@ public class NeedsRequestModel {
     private String requesterEmail;
 
     private String department;
+
     private String title;
 
     @Column(columnDefinition = "TEXT")
@@ -55,7 +64,7 @@ public class NeedsRequestModel {
     private String budgetPlan;
 
     @Column(name = "estimated_amount")
-    private BigDecimal estimatedAmount;
+    private BigDecimal estimatedAmount = BigDecimal.ZERO;
 
     @Column(name = "currency_code")
     private String currencyCode;
@@ -68,6 +77,9 @@ public class NeedsRequestModel {
 
     @Column(name = "fund_code")
     private String fundCode;
+
+    @Column(name = "dimension_values", columnDefinition = "JSON")
+    private String dimensionValues;
 
     @Column(name = "attachment_name")
     private String attachmentName;
@@ -122,10 +134,14 @@ public class NeedsRequestModel {
     @OneToMany(
             mappedBy = "needsRequest",
             cascade = CascadeType.ALL,
-            orphanRemoval = true
+            orphanRemoval = true,
+            fetch = FetchType.LAZY
     )
     @JsonManagedReference
     private List<NeedsRequestItemModel> items = new ArrayList<>();
+
+    public NeedsRequestModel() {
+    }
 
     public Long getId() {
         return id;
@@ -135,248 +151,128 @@ public class NeedsRequestModel {
         return organization;
     }
 
-    public void setOrganization(String organization) {
-        this.organization = organization;
-    }
-
     public String getRequestNo() {
         return requestNo;
-    }
-
-    public void setRequestNo(String requestNo) {
-        this.requestNo = requestNo;
     }
 
     public LocalDate getRequestDate() {
         return requestDate;
     }
 
-    public void setRequestDate(LocalDate requestDate) {
-        this.requestDate = requestDate;
-    }
-
     public LocalDate getRequiredDate() {
         return requiredDate;
-    }
-
-    public void setRequiredDate(LocalDate requiredDate) {
-        this.requiredDate = requiredDate;
     }
 
     public String getRequestedBy() {
         return requestedBy;
     }
 
-    public void setRequestedBy(String requestedBy) {
-        this.requestedBy = requestedBy;
-    }
-
     public String getRequesterEmail() {
         return requesterEmail;
-    }
-
-    public void setRequesterEmail(String requesterEmail) {
-        this.requesterEmail = requesterEmail;
     }
 
     public String getDepartment() {
         return department;
     }
 
-    public void setDepartment(String department) {
-        this.department = department;
-    }
-
     public String getTitle() {
         return title;
-    }
-
-    public void setTitle(String title) {
-        this.title = title;
     }
 
     public String getDescription() {
         return description;
     }
 
-    public void setDescription(String description) {
-        this.description = description;
-    }
-
     public String getPriority() {
         return priority;
-    }
-
-    public void setPriority(String priority) {
-        this.priority = priority;
     }
 
     public String getBudgetPlan() {
         return budgetPlan;
     }
 
-    public void setBudgetPlan(String budgetPlan) {
-        this.budgetPlan = budgetPlan;
-    }
-
     public BigDecimal getEstimatedAmount() {
         return estimatedAmount;
-    }
-
-    public void setEstimatedAmount(BigDecimal estimatedAmount) {
-        this.estimatedAmount = estimatedAmount;
     }
 
     public String getCurrencyCode() {
         return currencyCode;
     }
 
-    public void setCurrencyCode(String currencyCode) {
-        this.currencyCode = currencyCode;
-    }
-
     public String getFrameworkCode() {
         return frameworkCode;
-    }
-
-    public void setFrameworkCode(String frameworkCode) {
-        this.frameworkCode = frameworkCode;
     }
 
     public String getGlAccountNo() {
         return glAccountNo;
     }
 
-    public void setGlAccountNo(String glAccountNo) {
-        this.glAccountNo = glAccountNo;
-    }
-
     public String getFundCode() {
         return fundCode;
     }
 
-    public void setFundCode(String fundCode) {
-        this.fundCode = fundCode;
+    public String getDimensionValues() {
+        return dimensionValues;
     }
 
     public String getAttachmentName() {
         return attachmentName;
     }
 
-    public void setAttachmentName(String attachmentName) {
-        this.attachmentName = attachmentName;
-    }
-
     public String getStatus() {
         return status;
-    }
-
-    public void setStatus(String status) {
-        this.status = status;
     }
 
     public String getCurrentApprovalLevel() {
         return currentApprovalLevel;
     }
 
-    public void setCurrentApprovalLevel(String currentApprovalLevel) {
-        this.currentApprovalLevel = currentApprovalLevel;
-    }
-
     public String getHodApprovedBy() {
         return hodApprovedBy;
-    }
-
-    public void setHodApprovedBy(String hodApprovedBy) {
-        this.hodApprovedBy = hodApprovedBy;
     }
 
     public LocalDateTime getHodApprovedAt() {
         return hodApprovedAt;
     }
 
-    public void setHodApprovedAt(LocalDateTime hodApprovedAt) {
-        this.hodApprovedAt = hodApprovedAt;
-    }
-
     public String getFinanceReviewedBy() {
         return financeReviewedBy;
-    }
-
-    public void setFinanceReviewedBy(String financeReviewedBy) {
-        this.financeReviewedBy = financeReviewedBy;
     }
 
     public LocalDateTime getFinanceReviewedAt() {
         return financeReviewedAt;
     }
 
-    public void setFinanceReviewedAt(LocalDateTime financeReviewedAt) {
-        this.financeReviewedAt = financeReviewedAt;
-    }
-
     public String getDirectorApprovedBy() {
         return directorApprovedBy;
-    }
-
-    public void setDirectorApprovedBy(String directorApprovedBy) {
-        this.directorApprovedBy = directorApprovedBy;
     }
 
     public LocalDateTime getDirectorApprovedAt() {
         return directorApprovedAt;
     }
 
-    public void setDirectorApprovedAt(LocalDateTime directorApprovedAt) {
-        this.directorApprovedAt = directorApprovedAt;
-    }
-
     public String getApprovedBy() {
         return approvedBy;
-    }
-
-    public void setApprovedBy(String approvedBy) {
-        this.approvedBy = approvedBy;
     }
 
     public LocalDateTime getApprovedAt() {
         return approvedAt;
     }
 
-    public void setApprovedAt(LocalDateTime approvedAt) {
-        this.approvedAt = approvedAt;
-    }
-
     public String getRejectedBy() {
         return rejectedBy;
-    }
-
-    public void setRejectedBy(String rejectedBy) {
-        this.rejectedBy = rejectedBy;
     }
 
     public LocalDateTime getRejectedAt() {
         return rejectedAt;
     }
 
-    public void setRejectedAt(LocalDateTime rejectedAt) {
-        this.rejectedAt = rejectedAt;
-    }
-
     public String getRejectionReason() {
         return rejectionReason;
     }
 
-    public void setRejectionReason(String rejectionReason) {
-        this.rejectionReason = rejectionReason;
-    }
-
     public String getCreatedBy() {
         return createdBy;
-    }
-
-    public void setCreatedBy(String createdBy) {
-        this.createdBy = createdBy;
     }
 
     public LocalDateTime getCreatedAt() {
@@ -391,19 +287,139 @@ public class NeedsRequestModel {
         return items;
     }
 
-    public void setItems(List<NeedsRequestItemModel> items) {
-        this.items.clear();
-
-        if (items != null) {
-            for (NeedsRequestItemModel item : items) {
-                addItem(item);
-            }
-        }
+    public void setId(Long id) {
+        this.id = id;
     }
 
-    public void addItem(NeedsRequestItemModel item) {
-        item.setNeedsRequest(this);
-        item.setOrganization(this.organization);
-        this.items.add(item);
+    public void setOrganization(String organization) {
+        this.organization = organization;
+    }
+
+    public void setRequestNo(String requestNo) {
+        this.requestNo = requestNo;
+    }
+
+    public void setRequestDate(LocalDate requestDate) {
+        this.requestDate = requestDate;
+    }
+
+    public void setRequiredDate(LocalDate requiredDate) {
+        this.requiredDate = requiredDate;
+    }
+
+    public void setRequestedBy(String requestedBy) {
+        this.requestedBy = requestedBy;
+    }
+
+    public void setRequesterEmail(String requesterEmail) {
+        this.requesterEmail = requesterEmail;
+    }
+
+    public void setDepartment(String department) {
+        this.department = department;
+    }
+
+    public void setTitle(String title) {
+        this.title = title;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public void setPriority(String priority) {
+        this.priority = priority;
+    }
+
+    public void setBudgetPlan(String budgetPlan) {
+        this.budgetPlan = budgetPlan;
+    }
+
+    public void setEstimatedAmount(BigDecimal estimatedAmount) {
+        this.estimatedAmount = estimatedAmount;
+    }
+
+    public void setCurrencyCode(String currencyCode) {
+        this.currencyCode = currencyCode;
+    }
+
+    public void setFrameworkCode(String frameworkCode) {
+        this.frameworkCode = frameworkCode;
+    }
+
+    public void setGlAccountNo(String glAccountNo) {
+        this.glAccountNo = glAccountNo;
+    }
+
+    public void setFundCode(String fundCode) {
+        this.fundCode = fundCode;
+    }
+
+    public void setDimensionValues(String dimensionValues) {
+        this.dimensionValues = dimensionValues;
+    }
+
+    public void setAttachmentName(String attachmentName) {
+        this.attachmentName = attachmentName;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
+    }
+
+    public void setCurrentApprovalLevel(String currentApprovalLevel) {
+        this.currentApprovalLevel = currentApprovalLevel;
+    }
+
+    public void setHodApprovedBy(String hodApprovedBy) {
+        this.hodApprovedBy = hodApprovedBy;
+    }
+
+    public void setHodApprovedAt(LocalDateTime hodApprovedAt) {
+        this.hodApprovedAt = hodApprovedAt;
+    }
+
+    public void setFinanceReviewedBy(String financeReviewedBy) {
+        this.financeReviewedBy = financeReviewedBy;
+    }
+
+    public void setFinanceReviewedAt(LocalDateTime financeReviewedAt) {
+        this.financeReviewedAt = financeReviewedAt;
+    }
+
+    public void setDirectorApprovedBy(String directorApprovedBy) {
+        this.directorApprovedBy = directorApprovedBy;
+    }
+
+    public void setDirectorApprovedAt(LocalDateTime directorApprovedAt) {
+        this.directorApprovedAt = directorApprovedAt;
+    }
+
+    public void setApprovedBy(String approvedBy) {
+        this.approvedBy = approvedBy;
+    }
+
+    public void setApprovedAt(LocalDateTime approvedAt) {
+        this.approvedAt = approvedAt;
+    }
+
+    public void setRejectedBy(String rejectedBy) {
+        this.rejectedBy = rejectedBy;
+    }
+
+    public void setRejectedAt(LocalDateTime rejectedAt) {
+        this.rejectedAt = rejectedAt;
+    }
+
+    public void setRejectionReason(String rejectionReason) {
+        this.rejectionReason = rejectionReason;
+    }
+
+    public void setCreatedBy(String createdBy) {
+        this.createdBy = createdBy;
+    }
+
+    public void setItems(List<NeedsRequestItemModel> items) {
+        this.items = items;
     }
 }
