@@ -1545,4 +1545,38 @@ input[type="date"] {
     .approval-actions {
         grid-template-columns: 1fr;
     }
+    /* =========================================================
+   COLLAPSIBLE NEEDS REQUEST ITEM CARD
+   ========================================================= */
+
+.item-card.collapsed .item-body {
+    display: none;
+}
+
+.item-card.collapsed {
+    padding-bottom: 0;
+}
+
+.item-card.collapsed .item-header {
+    margin-bottom: 0;
+}
+
+.item-card.collapsed .collapse-icon {
+    transform: rotate(180deg);
+}
+
+.item-header {
+    cursor: pointer;
+}
+
+.collapse-icon {
+    transition: transform 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.remove-item {
+    cursor: pointer;
+}
 }
