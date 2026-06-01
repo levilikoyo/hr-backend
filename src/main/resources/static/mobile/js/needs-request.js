@@ -38,6 +38,7 @@ document.addEventListener("DOMContentLoaded", async function () {
 
         renderDynamicDimensions();
         ensureAtLeastOneItem();
+        updateGrandTotal();
 
     } catch (error) {
         console.error("Needs request initialization error:", error);
@@ -242,8 +243,6 @@ async function loadFunds() {
         const fundDimension = findDimensionByCode("FUND");
 
         if (fundDimension && Array.isArray(fundDimension.values)) {
-            console.log("Using FUND dimension fallback:", fundDimension.values);
-
             fundDimension.values.forEach(function (value) {
                 const code = firstValue(value, ["valueCode", "value_code", "code"]);
                 const name = firstValue(value, ["valueName", "value_name", "name", "description"]);
@@ -362,62 +361,51 @@ async function loadGLAccounts() {
 
     let loaded = false;
 
-    const urls = [
-        `${BASE_URL}/api/gl-accounts/organization/${encodeURIComponent(currentOrganization)}`
-    ];
+    try {
+        const url =
+            `${BASE_URL}/api/gl-accounts/organization/${encodeURIComponent(currentOrganization)}`;
 
-    for (const url of urls) {
-        try {
-            const data = await fetchJson(url);
-            const accounts = toArray(data);
+        const data = await fetchJson(url);
+        const accounts = toArray(data);
 
-            console.log("G/L accounts response from:", url, accounts);
+        console.log("G/L accounts response:", accounts);
 
-            if (!Array.isArray(accounts) || accounts.length === 0) {
-                continue;
+        accounts.forEach(function (account) {
+            const code = firstValue(account, [
+                "glCode",
+                "glAccountCode",
+                "accountCode",
+                "gl_code",
+                "gl_account_code",
+                "account_code",
+                "code",
+                "valueCode",
+                "value_code"
+            ]);
+
+            const name = firstValue(account, [
+                "glName",
+                "glAccountName",
+                "accountName",
+                "gl_name",
+                "gl_account_name",
+                "account_name",
+                "name",
+                "valueName",
+                "value_name",
+                "description"
+            ]);
+
+            if (!code) {
+                return;
             }
 
-            accounts.forEach(function (account) {
-                const code = firstValue(account, [
-                    "glCode",
-                    "glAccountCode",
-                    "accountCode",
-                    "gl_code",
-                    "gl_account_code",
-                    "account_code",
-                    "code",
-                    "valueCode",
-                    "value_code"
-                ]);
+            addOption(select, code, name ? `${code} - ${name}` : code);
+            loaded = true;
+        });
 
-                const name = firstValue(account, [
-                    "glName",
-                    "glAccountName",
-                    "accountName",
-                    "gl_name",
-                    "gl_account_name",
-                    "account_name",
-                    "name",
-                    "valueName",
-                    "value_name",
-                    "description"
-                ]);
-
-                if (!code) {
-                    return;
-                }
-
-                addOption(select, code, name ? `${code} - ${name}` : code);
-                loaded = true;
-            });
-
-            if (loaded) {
-                break;
-            }
-
-        } catch (error) {
-            console.warn("G/L account endpoint failed:", url, error);
-        }
+    } catch (error) {
+        console.warn("G/L account endpoint failed:", error);
     }
 
     if (!loaded) {
@@ -499,7 +487,7 @@ function createDimensionField(dimension) {
 }
 
 /* =========================================================
-   Items management
+   Items management - restored design
    ========================================================= */
 
 function ensureAtLeastOneItem() {
@@ -512,7 +500,7 @@ function ensureAtLeastOneItem() {
         return;
     }
 
-    const existingItems = container.querySelectorAll(".request-item");
+    const existingItems = container.querySelectorAll(".item-card");
 
     if (existingItems.length === 0) {
         addItemRow();
@@ -530,67 +518,141 @@ function addItemRow() {
         return;
     }
 
-    const index = container.querySelectorAll(".request-item").length + 1;
+    const index = container.querySelectorAll(".item-card").length + 1;
 
     const item = document.createElement("div");
-    item.className = "request-item";
+    item.className = "item-card";
     item.dataset.index = String(index);
 
     item.innerHTML = `
-        <div class="item-header">
-            <strong>Item ${index}</strong>
-            <button type="button" class="btn-remove-item" onclick="removeItemRow(this)">Remove</button>
-        </div>
-
-        <div class="form-group">
-            <label>Item Name *</label>
-            <input type="text" class="form-control item-name" placeholder="Item name" required>
-        </div>
-
-        <div class="form-group">
-            <label>Description</label>
-            <input type="text" class="form-control item-description" placeholder="Item description">
-        </div>
-
-        <div class="form-row">
-            <div class="form-group">
-                <label>Quantity *</label>
-                <input type="number" class="form-control item-quantity" min="1" step="1" value="1" required>
+        <div class="item-header" onclick="toggleItemCard(this)">
+            <div class="item-header-left">
+                <div class="item-title">Item ${index}</div>
+                <div class="item-summary">
+                    New item • Qty: 1 PCS • Total: 0.00
+                </div>
             </div>
 
-            <div class="form-group">
-                <label>Unit Price</label>
-                <input type="number" class="form-control item-unit-price" min="0" step="0.01" value="0">
+            <div class="item-actions">
+                <span class="collapse-icon">⌃</span>
+                <button type="button" class="remove-item" onclick="removeItemRow(event, this)">×</button>
             </div>
         </div>
 
-        <div class="form-group">
-            <label>Unit of Measure</label>
-            <input type="text" class="form-control item-unit-measure" placeholder="PCS, Month, Day..." value="PCS">
-        </div>
+        <div class="item-body">
 
-        <div class="form-group">
-            <label>Item Category</label>
-            <input type="text" class="form-control item-category" placeholder="Optional category">
+            <div class="form-group">
+                <label>Item name *</label>
+                <input type="text" class="item-name" placeholder="Ex: Carburant" required>
+            </div>
+
+            <div class="form-group">
+                <label>Description</label>
+                <textarea class="item-description" placeholder="Détail de l'article..."></textarea>
+            </div>
+
+            <div class="row-2">
+                <div class="form-group">
+                    <label>Category</label>
+                    <select class="item-category">
+                        <option value="">Select</option>
+                        <option value="GOODS">Goods</option>
+                        <option value="SERVICE">Service</option>
+                        <option value="WORKS">Works</option>
+                        <option value="OTHER">Other</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Unit</label>
+                    <select class="item-unit-measure">
+                        <option value="PCS">PCS</option>
+                        <option value="LITRE">Litre</option>
+                        <option value="KG">KG</option>
+                        <option value="BOX">Box</option>
+                        <option value="DAY">Day</option>
+                        <option value="MONTH">Month</option>
+                        <option value="SERVICE">Service</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="row-2">
+                <div class="form-group">
+                    <label>Quantity *</label>
+                    <input type="number" class="item-quantity" min="1" step="1" value="1" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Unit Price</label>
+                    <input type="number" class="item-unit-price" min="0" step="0.01" value="0">
+                </div>
+            </div>
+
+            <div class="item-total-box">
+                <span>Line total</span>
+                <strong class="item-line-total">0.00</strong>
+            </div>
+
         </div>
     `;
 
     container.appendChild(item);
+    bindItemEvents(item);
+    updateItemSummary(item);
+    updateGrandTotal();
 }
 
-function removeItemRow(button) {
+function bindItemEvents(item) {
+    const inputs = item.querySelectorAll("input, select, textarea");
+
+    inputs.forEach(function (input) {
+        input.addEventListener("input", function () {
+            updateItemSummary(item);
+            updateGrandTotal();
+        });
+
+        input.addEventListener("change", function () {
+            updateItemSummary(item);
+            updateGrandTotal();
+        });
+    });
+}
+
+function toggleItemCard(header) {
+    const card = header.closest(".item-card");
+
+    if (!card) {
+        return;
+    }
+
+    card.classList.toggle("collapsed");
+
+    const icon = card.querySelector(".collapse-icon");
+
+    if (icon) {
+        icon.textContent = card.classList.contains("collapsed") ? "⌄" : "⌃";
+    }
+}
+
+function removeItemRow(event, button) {
+    if (event) {
+        event.stopPropagation();
+        event.preventDefault();
+    }
+
     const container = findElement(
         ["itemsContainer", "requestItemsContainer", "itemsList"],
         ["Items"]
     );
 
-    const item = button.closest(".request-item");
+    const item = button.closest(".item-card");
 
     if (!container || !item) {
         return;
     }
 
-    const totalItems = container.querySelectorAll(".request-item").length;
+    const totalItems = container.querySelectorAll(".item-card").length;
 
     if (totalItems <= 1) {
         showError("At least one item is required.");
@@ -599,17 +661,66 @@ function removeItemRow(button) {
 
     item.remove();
     renumberItems();
+    updateGrandTotal();
 }
 
 function renumberItems() {
-    const items = document.querySelectorAll(".request-item");
+    const items = document.querySelectorAll(".item-card");
 
     items.forEach(function (item, index) {
         item.dataset.index = String(index + 1);
 
-        const header = item.querySelector(".item-header strong");
-        if (header) {
-            header.textContent = `Item ${index + 1}`;
+        const title = item.querySelector(".item-title");
+
+        if (title) {
+            title.textContent = `Item ${index + 1}`;
+        }
+
+        updateItemSummary(item);
+    });
+}
+
+function updateItemSummary(item) {
+    if (!item) {
+        return;
+    }
+
+    const itemName = getInputValue(item, ".item-name") || "New item";
+    const quantity = Number(getInputValue(item, ".item-quantity") || 0);
+    const unitPrice = Number(getInputValue(item, ".item-unit-price") || 0);
+    const unit = getInputValue(item, ".item-unit-measure") || "PCS";
+    const total = quantity * unitPrice;
+
+    const summary = item.querySelector(".item-summary");
+    const lineTotal = item.querySelector(".item-line-total");
+
+    if (summary) {
+        summary.textContent = `${itemName} • Qty: ${quantity || 0} ${unit} • Total: ${formatAmount(total)}`;
+    }
+
+    if (lineTotal) {
+        lineTotal.textContent = formatAmount(total);
+    }
+}
+
+function updateGrandTotal() {
+    let total = 0;
+
+    document.querySelectorAll(".item-card").forEach(function (item) {
+        const quantity = Number(getInputValue(item, ".item-quantity") || 0);
+        const unitPrice = Number(getInputValue(item, ".item-unit-price") || 0);
+        total += quantity * unitPrice;
+    });
+
+    const totalElements = [
+        document.getElementById("grandTotal"),
+        document.getElementById("totalAmount"),
+        document.getElementById("requestTotal")
+    ];
+
+    totalElements.forEach(function (element) {
+        if (element) {
+            element.textContent = formatAmount(total);
         }
     });
 }
@@ -660,10 +771,10 @@ async function submitNeedsRequest() {
 }
 
 function buildPayload() {
-    const title = getValue(["title", "requestTitle", "needTitle", "needsTitle"], ["Title", "Request Title"]);
+    const title = getValue(["title", "requestTitle", "needTitle", "needsTitle"], ["Title", "Request Title", "Objet"]);
     const description = getValue(["description", "requestDescription", "needDescription", "needsDescription"], ["Description"]);
-    const requestDate = getValue(["requestDate", "date", "needDate", "needsDate"], ["Date", "Request Date"]);
-    const priority = getValue(["priority", "requestPriority", "needPriority", "needsPriority"], ["Priority"]);
+    const requestDate = getValue(["requestDate", "date", "needDate", "needsDate"], ["Date", "Request Date", "Date souhaitée"]);
+    const priority = getValue(["priority", "requestPriority", "needPriority", "needsPriority"], ["Priority", "Priorité"]);
     const budgetPlan = getValue(["budgetPlan", "budget_plan", "budgetPlanCode"], ["Budget Plan"]);
 
     const fundCode = getValue(["fundCode", "fundSelect", "fund_code", "fund", "funds", "requestFund"], ["Fund", "Fonds"]);
@@ -680,6 +791,8 @@ function buildPayload() {
 
     const dimensionObject = collectDynamicDimensions();
     const department = deriveDepartmentFromDimensions(dimensionObject);
+    const items = collectItems();
+    const estimatedAmount = calculateTotalAmount(items);
 
     if (!title) {
         showError("Please enter request title.");
@@ -712,8 +825,6 @@ function buildPayload() {
         showError(`Please select ${missingRequiredDimension}.`);
         return null;
     }
-
-    const items = collectItems();
 
     if (items.length === 0) {
         showError("Please add at least one item.");
@@ -749,6 +860,7 @@ function buildPayload() {
         glAccountNo: glAccountCode,
         glAccountCode: glAccountCode,
 
+        estimatedAmount: estimatedAmount,
         dimensionValues: JSON.stringify(dimensionObject),
 
         status: "PENDING_HOD",
@@ -759,30 +871,22 @@ function buildPayload() {
 }
 
 function collectItems() {
-    const rows = document.querySelectorAll(".request-item");
+    const rows = document.querySelectorAll(".item-card");
     const items = [];
 
     rows.forEach(function (row) {
-        const itemNameInput = row.querySelector(".item-name");
-        const descriptionInput = row.querySelector(".item-description");
-        const quantityInput = row.querySelector(".item-quantity");
-        const unitPriceInput = row.querySelector(".item-unit-price");
-        const unitMeasureInput = row.querySelector(".item-unit-measure");
-        const categoryInput = row.querySelector(".item-category");
-
-        const itemName = itemNameInput ? itemNameInput.value.trim() : "";
-        const description = descriptionInput ? descriptionInput.value.trim() : "";
-        const quantity = quantityInput ? Number(quantityInput.value || 0) : 0;
-        const unitPrice = unitPriceInput ? Number(unitPriceInput.value || 0) : 0;
-        const unitOfMeasure = unitMeasureInput ? unitMeasureInput.value.trim() : "PCS";
-        const itemCategory = categoryInput ? categoryInput.value.trim() : "";
+        const itemName = getInputValue(row, ".item-name");
+        const description = getInputValue(row, ".item-description");
+        const quantity = Number(getInputValue(row, ".item-quantity") || 0);
+        const unitPrice = Number(getInputValue(row, ".item-unit-price") || 0);
+        const unitOfMeasure = getInputValue(row, ".item-unit-measure") || "PCS";
+        const itemCategory = getInputValue(row, ".item-category");
 
         if (!itemName) {
             return;
         }
 
         const totalAmount = quantity * unitPrice;
-
         const dimensionValues = JSON.stringify(collectDynamicDimensions());
 
         const fundCode = getValue(["fundCode", "fundSelect", "fund_code", "fund", "funds", "requestFund"], ["Fund", "Fonds"]);
@@ -818,6 +922,12 @@ function collectItems() {
     });
 
     return items;
+}
+
+function calculateTotalAmount(items) {
+    return items.reduce(function (sum, item) {
+        return sum + Number(item.totalAmount || 0);
+    }, 0);
 }
 
 /* =========================================================
@@ -895,7 +1005,7 @@ function normalizeDimensionCode(code) {
    ========================================================= */
 
 function setDefaultRequestDate() {
-    const dateInput = findElement(["requestDate", "date", "needDate", "needsDate"], ["Date", "Request Date"]);
+    const dateInput = findElement(["requestDate", "date", "needDate", "needsDate"], ["Date", "Request Date", "Date souhaitée"]);
 
     if (!dateInput) {
         return;
@@ -952,32 +1062,12 @@ function showError(message) {
         return;
     }
 
-    if (window.Swal) {
-        Swal.fire({
-            icon: "error",
-            title: "Error",
-            text: message
-        });
-        return;
-    }
-
     alert(message);
 }
 
 function showSuccess(message) {
     if (window.MobileDialog && typeof window.MobileDialog.success === "function") {
         window.MobileDialog.success("Success", message);
-        return;
-    }
-
-    if (window.Swal) {
-        Swal.fire({
-            icon: "success",
-            title: "Success",
-            text: message,
-            timer: 1500,
-            showConfirmButton: false
-        });
         return;
     }
 
@@ -1011,16 +1101,19 @@ function findElement(keys, labelTexts) {
         }
 
         const byId = document.getElementById(key);
+
         if (byId) {
             return byId;
         }
 
         const byName = document.querySelector(`[name="${cssEscape(key)}"]`);
+
         if (byName) {
             return byName;
         }
 
         const byDataField = document.querySelector(`[data-field="${cssEscape(key)}"]`);
+
         if (byDataField) {
             return byDataField;
         }
@@ -1028,6 +1121,7 @@ function findElement(keys, labelTexts) {
 
     for (const labelText of labelList) {
         const found = findElementByLabelText(labelText);
+
         if (found) {
             return found;
         }
@@ -1055,12 +1149,14 @@ function findElementByLabelText(labelText) {
 
         if (forId) {
             const element = document.getElementById(forId);
+
             if (element) {
                 return element;
             }
         }
 
         const parent = label.parentElement;
+
         if (parent) {
             const select = parent.querySelector("select");
             if (select) {
@@ -1087,6 +1183,16 @@ function getValue(keys, labelTexts) {
     return String(element.value || "").trim();
 }
 
+function getInputValue(parent, selector) {
+    const element = parent.querySelector(selector);
+
+    if (!element) {
+        return "";
+    }
+
+    return String(element.value || "").trim();
+}
+
 function firstValue(object, keys) {
     if (!object || typeof object !== "object") {
         return "";
@@ -1105,6 +1211,15 @@ function firstValue(object, keys) {
     return "";
 }
 
+function formatAmount(value) {
+    const number = Number(value || 0);
+
+    return number.toLocaleString(undefined, {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+    });
+}
+
 function cssEscape(value) {
     if (window.CSS && typeof window.CSS.escape === "function") {
         return window.CSS.escape(value);
@@ -1121,3 +1236,7 @@ function escapeHtml(value) {
         .replace(/"/g, "&quot;")
         .replace(/'/g, "&#039;");
 }
+
+/* Expose item functions for inline onclick */
+window.toggleItemCard = toggleItemCard;
+window.removeItemRow = removeItemRow;
