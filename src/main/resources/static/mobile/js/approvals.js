@@ -234,7 +234,7 @@
 
                 <div class="approval-items-title">Items</div>
 
-                <div class="approval-items">
+                <div class="approval-items receipt-items-list">
                     ${renderItems(request, roleForEdition)}
                 </div>
             </div>
@@ -351,71 +351,70 @@
         const total = quantity * unitPrice;
         const unit = item.unitOfMeasure || item.unit || "PCS";
 
-        const showEditControls = canEditQuantity || canEditUnitPrice;
-
         return `
-            <div class="approval-edit-item approval-receipt-item"
+            <div class="approval-receipt-item"
                  data-request-id="${request.id}"
-                 data-item-id="${item.id}"
-                 style="background: transparent; border: none; border-radius: 0; padding: 0; margin: 0;">
+                 data-item-id="${item.id}">
 
-                <div class="approval-item-line">
-                    <div class="approval-item-main">
+                <div class="approval-receipt-main-row">
+                    <div class="approval-receipt-name">
                         <strong>${index + 1}. ${escapeHtml(item.itemName || "Item")}</strong>
-
-                        <span class="approval-item-formula">
-                            Qty:
-                            <span class="approval-formula-qty" data-item-id="${item.id}">
-                                ${formatPlainNumber(quantity)}
-                            </span>
-                            <span class="approval-formula-unit" data-item-id="${item.id}">
-                                ${escapeHtml(unit)}
-                            </span>
-                            ×
-                            <span class="approval-formula-unit-price" data-item-id="${item.id}">
-                                ${formatAmount(unitPrice)}
-                            </span>
-                        </span>
                     </div>
 
-                    <div class="approval-line-right">
+                    <div class="approval-receipt-total">
                         <strong class="approval-line-total" data-request-id="${request.id}" data-item-id="${item.id}">
                             ${formatAmount(total)}
                         </strong>
                     </div>
                 </div>
 
-                ${showEditControls ? `
-                    <div class="approval-edit-controls" style="padding: 8px 0 12px;">
-                        <div class="row-2">
-                            <div class="form-group">
-                                <label>Quantity</label>
-                                <input
-                                    type="number"
-                                    class="approval-quantity-input"
-                                    data-request-id="${request.id}"
-                                    data-item-id="${item.id}"
-                                    min="0"
-                                    step="0.01"
-                                    value="${quantity}"
-                                    ${canEditQuantity ? "" : "readonly"}>
-                            </div>
+                <div class="approval-receipt-formula">
+                    <span>Qty:</span>
 
-                            <div class="form-group">
-                                <label>Unit Price</label>
+                    ${
+                        canEditQuantity
+                            ? `
                                 <input
                                     type="number"
-                                    class="approval-unit-price-input"
+                                    class="approval-inline-input approval-quantity-input"
                                     data-request-id="${request.id}"
                                     data-item-id="${item.id}"
                                     min="0"
                                     step="0.01"
-                                    value="${unitPrice}"
-                                    ${canEditUnitPrice ? "" : "readonly"}>
-                            </div>
-                        </div>
-                    </div>
-                ` : ""}
+                                    value="${quantity}">
+                              `
+                            : `
+                                <span class="approval-static-value approval-formula-qty" data-item-id="${item.id}">
+                                    ${formatPlainNumber(quantity)}
+                                </span>
+                              `
+                    }
+
+                    <span class="approval-formula-unit" data-item-id="${item.id}">
+                        ${escapeHtml(unit)}
+                    </span>
+
+                    <span>×</span>
+
+                    ${
+                        canEditUnitPrice
+                            ? `
+                                <input
+                                    type="number"
+                                    class="approval-inline-input approval-unit-price-input"
+                                    data-request-id="${request.id}"
+                                    data-item-id="${item.id}"
+                                    min="0"
+                                    step="0.01"
+                                    value="${unitPrice}">
+                              `
+                            : `
+                                <span class="approval-static-value approval-formula-unit-price" data-item-id="${item.id}">
+                                    ${formatAmount(unitPrice)}
+                                </span>
+                              `
+                    }
+                </div>
             </div>
         `;
     }
@@ -558,27 +557,14 @@
     function recalculateCardTotals(card) {
         let requestTotal = 0;
 
-        card.querySelectorAll(".approval-edit-item").forEach(function (itemRow) {
-            const quantityInput = itemRow.querySelector(".approval-quantity-input");
-            const unitPriceInput = itemRow.querySelector(".approval-unit-price-input");
-            const lineTotalElement = itemRow.querySelector(".approval-line-total");
-
-            const quantity = numberValue(quantityInput ? quantityInput.value : getFormulaQuantity(itemRow));
-            const unitPrice = numberValue(unitPriceInput ? unitPriceInput.value : getFormulaUnitPrice(itemRow));
+        card.querySelectorAll(".approval-receipt-item").forEach(function (itemRow) {
+            const quantity = getItemQuantity(itemRow);
+            const unitPrice = getItemUnitPrice(itemRow);
             const lineTotal = quantity * unitPrice;
 
             requestTotal += lineTotal;
 
-            const qtyElement = itemRow.querySelector(".approval-formula-qty");
-            const unitPriceElement = itemRow.querySelector(".approval-formula-unit-price");
-
-            if (qtyElement) {
-                qtyElement.textContent = formatPlainNumber(quantity);
-            }
-
-            if (unitPriceElement) {
-                unitPriceElement.textContent = formatAmount(unitPrice);
-            }
+            const lineTotalElement = itemRow.querySelector(".approval-line-total");
 
             if (lineTotalElement) {
                 lineTotalElement.textContent = formatAmount(lineTotal);
@@ -678,12 +664,11 @@
             headerPayload
         );
 
-        const itemRows = card.querySelectorAll(".approval-edit-item");
+        const itemRows = card.querySelectorAll(".approval-receipt-item");
 
         for (const itemRow of itemRows) {
             const itemId = itemRow.dataset.itemId;
-            const unitPriceInput = itemRow.querySelector(".approval-unit-price-input");
-            const unitPrice = unitPriceInput ? unitPriceInput.value : getFormulaUnitPrice(itemRow);
+            const unitPrice = getItemUnitPrice(itemRow);
 
             const itemPayload = {
                 updatedBy: getApproverName(),
@@ -834,6 +819,38 @@
         return dimensions;
     }
 
+    function getItemQuantity(itemRow) {
+        const input = itemRow.querySelector(".approval-quantity-input");
+
+        if (input) {
+            return numberValue(input.value);
+        }
+
+        const staticQty = itemRow.querySelector(".approval-formula-qty");
+
+        if (staticQty) {
+            return numberValue(staticQty.textContent);
+        }
+
+        return 0;
+    }
+
+    function getItemUnitPrice(itemRow) {
+        const input = itemRow.querySelector(".approval-unit-price-input");
+
+        if (input) {
+            return numberValue(input.value);
+        }
+
+        const staticPrice = itemRow.querySelector(".approval-formula-unit-price");
+
+        if (staticPrice) {
+            return numberValue(String(staticPrice.textContent || "").replace(/,/g, ""));
+        }
+
+        return 0;
+    }
+
     function getRequestCard(requestId) {
         const card = document.querySelector(`.approval-card[data-request-id="${requestId}"]`);
 
@@ -874,26 +891,6 @@
         } catch (error) {
             return {};
         }
-    }
-
-    function getFormulaQuantity(itemRow) {
-        const element = itemRow.querySelector(".approval-formula-qty");
-
-        if (!element) {
-            return 0;
-        }
-
-        return numberValue(element.textContent);
-    }
-
-    function getFormulaUnitPrice(itemRow) {
-        const element = itemRow.querySelector(".approval-formula-unit-price");
-
-        if (!element) {
-            return 0;
-        }
-
-        return numberValue(String(element.textContent || "").replace(/,/g, ""));
     }
 
     function setLoading(isLoading) {
