@@ -5,8 +5,7 @@
     <title>Expression de besoin</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <!-- PWA -->
-    <link rel="manifest" href="/mobile/manifest.json?v=20260603-dialog1">
+    <link rel="manifest" href="/mobile/manifest.json?v=dept1">
     <meta name="theme-color" content="#ffffff">
 
     <link rel="apple-touch-icon" sizes="180x180" href="/mobile/icons/icon-180.png">
@@ -18,20 +17,16 @@
     <meta name="apple-mobile-web-app-title" content="EMS-L Approval">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
 
-    <!-- CSS -->
-    <link rel="stylesheet" href="css/mobile.css?v=20260603-dialog1">
-    <link rel="stylesheet" href="css/dialog.css?v=20260603-dialog1">
+    <link rel="stylesheet" href="css/mobile.css?v=dept1">
+    <link rel="stylesheet" href="css/dialog.css?v=dept1">
 </head>
 <body>
 
 <div class="app">
 
-    <!-- Top Header -->
     <div class="top-header">
         <div class="top-header-left">
-            <a href="index.html" class="return-btn" aria-label="Back">
-                ←
-            </a>
+            <a href="index.html" class="return-btn" aria-label="Back">←</a>
 
             <div class="app-title-box">
                 <h1>Expression de besoin</h1>
@@ -57,7 +52,6 @@
         </div>
     </div>
 
-    <!-- Form -->
     <form class="form-card" id="needsRequestForm">
 
         <div class="form-group">
@@ -97,6 +91,17 @@
                     <option value="URGENT">URGENT</option>
                 </select>
             </div>
+        </div>
+
+        <div class="section-title">
+            Department approval
+        </div>
+
+        <div class="form-group">
+            <label for="addressedDepartment">Addressed Department *</label>
+            <select id="addressedDepartment" name="addressedDepartment" required>
+                <option value="">Loading departments...</option>
+            </select>
         </div>
 
         <div class="section-title">
@@ -170,12 +175,11 @@
 
 </div>
 
-<!-- Scripts: order is important -->
-<script src="js/config.js?v=20260603-dialog1"></script>
-<script src="js/mobile-dialog.js?v=20260603-dialog1"></script>
-<script src="js/auth.js?v=20260603-dialog1"></script>
-<script src="js/needs-request.js?v=20260603-dialog1"></script>
-<script src="js/pwa-register.js?v=20260603-dialog1"></script>
+<script src="js/config.js?v=dept1"></script>
+<script src="js/mobile-dialog.js?v=dept1"></script>
+<script src="js/auth.js?v=dept1"></script>
+<script src="js/needs-request.js?v=dept1"></script>
+<script src="js/pwa-register.js?v=dept1"></script>
 
 </body>
 </html>

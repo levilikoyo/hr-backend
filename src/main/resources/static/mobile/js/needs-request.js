@@ -8,18 +8,12 @@ let currentUser = null;
 let currentOrganization = "";
 let allGroupedDimensions = [];
 let dynamicDimensions = [];
-
-/* =========================================================
-   Page initialization
-   ========================================================= */
+let departmentDimension = null;
 
 document.addEventListener("DOMContentLoaded", async function () {
     try {
         currentUser = requireLogin();
         currentOrganization = getCurrentOrganization();
-
-        console.log("Current user:", currentUser);
-        console.log("Current organization:", currentOrganization);
 
         if (!currentOrganization) {
             showError("Organization not found. Please login again.");
@@ -32,6 +26,7 @@ document.addEventListener("DOMContentLoaded", async function () {
         bindEvents();
 
         await loadGroupedDimensions();
+        loadAddressedDepartments();
         await loadFunds();
         await loadCurrencies();
         await loadGLAccounts();
@@ -45,10 +40,6 @@ document.addEventListener("DOMContentLoaded", async function () {
         showError(error.message || "Failed to initialize needs request page.");
     }
 });
-
-/* =========================================================
-   Events
-   ========================================================= */
 
 function bindEvents() {
     const addItemBtn = findElement(
@@ -87,13 +78,7 @@ function bindEvents() {
     }
 }
 
-/* =========================================================
-   API helpers
-   ========================================================= */
-
 async function fetchJson(url) {
-    console.log("Fetching:", url);
-
     const response = await fetch(url, {
         method: "GET",
         headers: {
@@ -152,10 +137,6 @@ function toArray(data) {
     return [];
 }
 
-/* =========================================================
-   Grouped dimensions
-   ========================================================= */
-
 async function loadGroupedDimensions() {
     try {
         const url =
@@ -164,26 +145,70 @@ async function loadGroupedDimensions() {
         const data = await fetchJson(url);
         const dimensions = toArray(data);
 
-        console.log("Grouped dimensions:", dimensions);
-
         allGroupedDimensions = dimensions;
+
+        departmentDimension = dimensions.find(function (dimension) {
+            return isDepartmentDimension(dimension.dimensionCode);
+        }) || null;
 
         dynamicDimensions = dimensions.filter(function (dimension) {
             const normalizedCode = normalizeDimensionCode(dimension.dimensionCode);
-            return normalizedCode !== "FUND";
+
+            if (normalizedCode === "FUND") {
+                return false;
+            }
+
+            if (isDepartmentDimension(dimension.dimensionCode)) {
+                return false;
+            }
+
+            return true;
         });
 
     } catch (error) {
         console.error("Grouped dimensions loading error:", error);
         allGroupedDimensions = [];
         dynamicDimensions = [];
+        departmentDimension = null;
         showError(`Failed to load dimensions: ${error.message}`);
     }
 }
 
-/* =========================================================
-   Fixed dropdowns
-   ========================================================= */
+function loadAddressedDepartments() {
+    const select = findSelect(
+        ["addressedDepartment", "department", "addressed_department"],
+        ["Addressed Department", "Department"]
+    );
+
+    if (!select) {
+        return;
+    }
+
+    clearSelect(select, "Select addressed department");
+
+    if (!departmentDimension || !Array.isArray(departmentDimension.values)) {
+        addDisabledOption(select, "No department configured");
+        return;
+    }
+
+    let loaded = false;
+
+    departmentDimension.values.forEach(function (value) {
+        const code = firstValue(value, ["valueCode", "value_code", "code"]);
+        const name = firstValue(value, ["valueName", "value_name", "name", "description"]);
+
+        if (!code) {
+            return;
+        }
+
+        addOption(select, code, name ? `${code} - ${name}` : code);
+        loaded = true;
+    });
+
+    if (!loaded) {
+        addDisabledOption(select, "No department found");
+    }
+}
 
 async function loadFunds() {
     const select = findSelect(
@@ -192,7 +217,6 @@ async function loadFunds() {
     );
 
     if (!select) {
-        console.warn("Fund dropdown not found in HTML.");
         return;
     }
 
@@ -206,8 +230,6 @@ async function loadFunds() {
 
         const data = await fetchJson(url);
         const funds = toArray(data);
-
-        console.log("Funds response:", funds);
 
         funds.forEach(function (fund) {
             const code = firstValue(fund, [
@@ -279,7 +301,6 @@ async function loadCurrencies() {
     );
 
     if (!select) {
-        console.warn("Currency dropdown not found in HTML.");
         return;
     }
 
@@ -293,8 +314,6 @@ async function loadCurrencies() {
 
         const data = await fetchJson(url);
         const currencies = toArray(data);
-
-        console.log("Currencies response:", currencies);
 
         currencies.forEach(function (currency) {
             const code = firstValue(currency, [
@@ -353,7 +372,6 @@ async function loadGLAccounts() {
     );
 
     if (!select) {
-        console.warn("G/L account dropdown not found in HTML.");
         return;
     }
 
@@ -367,8 +385,6 @@ async function loadGLAccounts() {
 
         const data = await fetchJson(url);
         const accounts = toArray(data);
-
-        console.log("G/L accounts response:", accounts);
 
         accounts.forEach(function (account) {
             const code = firstValue(account, [
@@ -413,10 +429,6 @@ async function loadGLAccounts() {
     }
 }
 
-/* =========================================================
-   Render dynamic dimensions
-   ========================================================= */
-
 function renderDynamicDimensions() {
     const container = findElement(
         ["dynamicDimensionsContainer", "dimensionsContainer", "dynamic_dimensions_container"],
@@ -424,14 +436,13 @@ function renderDynamicDimensions() {
     );
 
     if (!container) {
-        console.warn("Dynamic dimensions container not found in HTML.");
         return;
     }
 
     container.innerHTML = "";
 
     if (!Array.isArray(dynamicDimensions) || dynamicDimensions.length === 0) {
-        container.innerHTML = createEmptyMessage("No dimensions configured for this organization.");
+        container.innerHTML = createEmptyMessage("No additional dimensions configured for this organization.");
         return;
     }
 
@@ -486,10 +497,6 @@ function createDimensionField(dimension) {
     return wrapper;
 }
 
-/* =========================================================
-   Items management - Collapsible card design
-   ========================================================= */
-
 function ensureAtLeastOneItem() {
     const container = findElement(
         ["itemsContainer", "requestItemsContainer", "itemsList"],
@@ -514,7 +521,6 @@ function addItemRow() {
     );
 
     if (!container) {
-        console.warn("Items container not found in HTML.");
         return;
     }
 
@@ -725,10 +731,6 @@ function updateGrandTotal() {
     });
 }
 
-/* =========================================================
-   Submit request
-   ========================================================= */
-
 async function submitNeedsRequest() {
     try {
         const payload = buildPayload();
@@ -736,8 +738,6 @@ async function submitNeedsRequest() {
         if (!payload) {
             return;
         }
-
-        console.log("Submitting needs request payload:", payload);
 
         setSubmitLoading(true);
 
@@ -777,6 +777,13 @@ function buildPayload() {
     const priority = getValue(["priority", "requestPriority", "needPriority", "needsPriority"], ["Priority", "Priorité"]);
     const budgetPlan = getValue(["budgetPlan", "budget_plan", "budgetPlanCode"], ["Budget Plan"]);
 
+    const addressedDepartment = getValue(
+        ["addressedDepartment", "department", "addressed_department"],
+        ["Addressed Department", "Department"]
+    );
+
+    const requesterDepartment = getCurrentUserDepartment();
+
     const fundCode = getValue(["fundCode", "fundSelect", "fund_code", "fund", "funds", "requestFund"], ["Fund", "Fonds"]);
 
     const currencyCode = getValue(
@@ -790,7 +797,6 @@ function buildPayload() {
     );
 
     const dimensionObject = collectDynamicDimensions();
-    const department = deriveDepartmentFromDimensions(dimensionObject);
     const items = collectItems();
     const estimatedAmount = calculateTotalAmount(items);
 
@@ -801,6 +807,11 @@ function buildPayload() {
 
     if (!requestDate) {
         showError("Please select request date.");
+        return null;
+    }
+
+    if (!addressedDepartment) {
+        showError("Please select addressed department.");
         return null;
     }
 
@@ -838,6 +849,9 @@ function buildPayload() {
         currentUser.email ||
         "";
 
+    dimensionObject["ADDRESSED_DEPARTMENT"] = addressedDepartment;
+    dimensionObject["REQUESTER_DEPARTMENT"] = requesterDepartment;
+
     return {
         organization: currentOrganization,
 
@@ -852,7 +866,9 @@ function buildPayload() {
         requesterEmail: currentUser.email || "",
         requesterRole: currentUser.role || "",
 
-        department: department,
+        requesterDepartment: requesterDepartment,
+        addressedDepartment: addressedDepartment,
+        department: addressedDepartment,
 
         fundCode: fundCode,
         currencyCode: currencyCode,
@@ -863,7 +879,7 @@ function buildPayload() {
         estimatedAmount: estimatedAmount,
         dimensionValues: JSON.stringify(dimensionObject),
 
-        status: "PENDING_HOD",
+        status: "PENDING_HOD_APPROVAL",
         currentApprovalLevel: "HOD",
 
         items: items
@@ -930,10 +946,6 @@ function calculateTotalAmount(items) {
     }, 0);
 }
 
-/* =========================================================
-   Dimension helpers
-   ========================================================= */
-
 function collectDynamicDimensions() {
     const dimensionValues = {};
 
@@ -973,13 +985,12 @@ function validateRequiredDimensions() {
     return "";
 }
 
-function deriveDepartmentFromDimensions(dimensionObject) {
+function getCurrentUserDepartment() {
     return (
-        dimensionObject["COST CENTER"] ||
-        dimensionObject["COST_CENTER"] ||
-        dimensionObject["DEPARTMENT"] ||
-        dimensionObject["DEPARTMENTS"] ||
-        dimensionObject["DEPARTEMENTS"] ||
+        currentUser.department ||
+        currentUser.departement ||
+        currentUser.costCenter ||
+        currentUser.cost_center ||
         ""
     );
 }
@@ -992,6 +1003,20 @@ function findDimensionByCode(code) {
     });
 }
 
+function isDepartmentDimension(code) {
+    const normalizedCode = normalizeDimensionCode(code);
+
+    return (
+        normalizedCode === "DEPARTMENT" ||
+        normalizedCode === "DEPARTMENTS" ||
+        normalizedCode === "DEPARTEMENT" ||
+        normalizedCode === "DEPARTEMENTS" ||
+        normalizedCode === "COST_CENTER" ||
+        normalizedCode === "COSTCENTRE" ||
+        normalizedCode === "COST_CENTRE"
+    );
+}
+
 function normalizeDimensionCode(code) {
     return String(code || "")
         .trim()
@@ -999,10 +1024,6 @@ function normalizeDimensionCode(code) {
         .replace(/\s+/g, "_")
         .replace(/-/g, "_");
 }
-
-/* =========================================================
-   UI helpers
-   ========================================================= */
 
 function setDefaultRequestDate() {
     const dateInput = findElement(["requestDate", "date", "needDate", "needsDate"], ["Date", "Request Date", "Date souhaitée"]);
@@ -1237,6 +1258,5 @@ function escapeHtml(value) {
         .replace(/'/g, "&#039;");
 }
 
-/* Expose item functions for inline onclick */
 window.toggleItemCard = toggleItemCard;
 window.removeItemRow = removeItemRow;

@@ -45,4 +45,10 @@ public interface NeedsRequestRepository extends JpaRepository<NeedsRequestModel,
             String organization,
             String requesterEmail
     );
+
+    List<NeedsRequestModel> findByOrganizationAndStatusAndAddressedDepartmentOrderByIdDesc(
+            String organization,
+            String status,
+            String addressedDepartment
+    );
 }
