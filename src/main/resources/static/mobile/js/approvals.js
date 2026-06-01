@@ -337,65 +337,85 @@
             `;
         }
 
-        return items.map(function (item) {
-            return renderItemLine(request, item, roleForEdition);
+        return items.map(function (item, index) {
+            return renderItemLine(request, item, roleForEdition, index);
         }).join("");
     }
 
-    function renderItemLine(request, item, roleForEdition) {
+    function renderItemLine(request, item, roleForEdition, index) {
         const canEditQuantity = roleForEdition === "HOD" || roleForEdition === "DIRECTOR";
         const canEditUnitPrice = roleForEdition === "FINANCE";
 
         const quantity = numberValue(item.quantity);
         const unitPrice = numberValue(item.unitPrice);
         const total = quantity * unitPrice;
+        const unit = item.unitOfMeasure || item.unit || "PCS";
+
+        const showEditControls = canEditQuantity || canEditUnitPrice;
 
         return `
-            <div class="approval-edit-item"
+            <div class="approval-edit-item approval-receipt-item"
                  data-request-id="${request.id}"
-                 data-item-id="${item.id}">
+                 data-item-id="${item.id}"
+                 style="background: transparent; border: none; border-radius: 0; padding: 0; margin: 0;">
 
-                <div class="approval-edit-item-header">
-                    <div>
-                        <strong>${escapeHtml(item.itemName || "Item")}</strong>
-                        <small>${escapeHtml(item.description || "")}</small>
+                <div class="approval-item-line">
+                    <div class="approval-item-main">
+                        <strong>${index + 1}. ${escapeHtml(item.itemName || "Item")}</strong>
+
+                        <span class="approval-item-formula">
+                            Qty:
+                            <span class="approval-formula-qty" data-item-id="${item.id}">
+                                ${formatPlainNumber(quantity)}
+                            </span>
+                            <span class="approval-formula-unit" data-item-id="${item.id}">
+                                ${escapeHtml(unit)}
+                            </span>
+                            ×
+                            <span class="approval-formula-unit-price" data-item-id="${item.id}">
+                                ${formatAmount(unitPrice)}
+                            </span>
+                        </span>
+                    </div>
+
+                    <div class="approval-line-right">
+                        <strong class="approval-line-total" data-request-id="${request.id}" data-item-id="${item.id}">
+                            ${formatAmount(total)}
+                        </strong>
                     </div>
                 </div>
 
-                <div class="row-2">
-                    <div class="form-group">
-                        <label>Quantity</label>
-                        <input
-                            type="number"
-                            class="approval-quantity-input"
-                            data-request-id="${request.id}"
-                            data-item-id="${item.id}"
-                            min="0"
-                            step="0.01"
-                            value="${quantity}"
-                            ${canEditQuantity ? "" : "readonly"}>
-                    </div>
+                ${showEditControls ? `
+                    <div class="approval-edit-controls" style="padding: 8px 0 12px;">
+                        <div class="row-2">
+                            <div class="form-group">
+                                <label>Quantity</label>
+                                <input
+                                    type="number"
+                                    class="approval-quantity-input"
+                                    data-request-id="${request.id}"
+                                    data-item-id="${item.id}"
+                                    min="0"
+                                    step="0.01"
+                                    value="${quantity}"
+                                    ${canEditQuantity ? "" : "readonly"}>
+                            </div>
 
-                    <div class="form-group">
-                        <label>Unit Price</label>
-                        <input
-                            type="number"
-                            class="approval-unit-price-input"
-                            data-request-id="${request.id}"
-                            data-item-id="${item.id}"
-                            min="0"
-                            step="0.01"
-                            value="${unitPrice}"
-                            ${canEditUnitPrice ? "" : "readonly"}>
+                            <div class="form-group">
+                                <label>Unit Price</label>
+                                <input
+                                    type="number"
+                                    class="approval-unit-price-input"
+                                    data-request-id="${request.id}"
+                                    data-item-id="${item.id}"
+                                    min="0"
+                                    step="0.01"
+                                    value="${unitPrice}"
+                                    ${canEditUnitPrice ? "" : "readonly"}>
+                            </div>
+                        </div>
                     </div>
-                </div>
-
-                <div class="item-total-box">
-                    <span>Line total</span>
-                    <strong class="approval-line-total" data-request-id="${request.id}" data-item-id="${item.id}">
-                        ${formatAmount(total)}
-                    </strong>
-                </div>
+                ` : ""}
             </div>
         `;
     }
@@ -543,11 +563,22 @@
             const unitPriceInput = itemRow.querySelector(".approval-unit-price-input");
             const lineTotalElement = itemRow.querySelector(".approval-line-total");
 
-            const quantity = numberValue(quantityInput ? quantityInput.value : 0);
-            const unitPrice = numberValue(unitPriceInput ? unitPriceInput.value : 0);
+            const quantity = numberValue(quantityInput ? quantityInput.value : getFormulaQuantity(itemRow));
+            const unitPrice = numberValue(unitPriceInput ? unitPriceInput.value : getFormulaUnitPrice(itemRow));
             const lineTotal = quantity * unitPrice;
 
             requestTotal += lineTotal;
+
+            const qtyElement = itemRow.querySelector(".approval-formula-qty");
+            const unitPriceElement = itemRow.querySelector(".approval-formula-unit-price");
+
+            if (qtyElement) {
+                qtyElement.textContent = formatPlainNumber(quantity);
+            }
+
+            if (unitPriceElement) {
+                unitPriceElement.textContent = formatAmount(unitPrice);
+            }
 
             if (lineTotalElement) {
                 lineTotalElement.textContent = formatAmount(lineTotal);
@@ -652,7 +683,7 @@
         for (const itemRow of itemRows) {
             const itemId = itemRow.dataset.itemId;
             const unitPriceInput = itemRow.querySelector(".approval-unit-price-input");
-            const unitPrice = unitPriceInput ? unitPriceInput.value : "0";
+            const unitPrice = unitPriceInput ? unitPriceInput.value : getFormulaUnitPrice(itemRow);
 
             const itemPayload = {
                 updatedBy: getApproverName(),
@@ -845,6 +876,26 @@
         }
     }
 
+    function getFormulaQuantity(itemRow) {
+        const element = itemRow.querySelector(".approval-formula-qty");
+
+        if (!element) {
+            return 0;
+        }
+
+        return numberValue(element.textContent);
+    }
+
+    function getFormulaUnitPrice(itemRow) {
+        const element = itemRow.querySelector(".approval-formula-unit-price");
+
+        if (!element) {
+            return 0;
+        }
+
+        return numberValue(String(element.textContent || "").replace(/,/g, ""));
+    }
+
     function setLoading(isLoading) {
         const loading = document.querySelector(".loading");
 
@@ -970,6 +1021,16 @@
         }
 
         return number;
+    }
+
+    function formatPlainNumber(value) {
+        const number = numberValue(value);
+
+        if (Number.isInteger(number)) {
+            return String(number);
+        }
+
+        return String(number);
     }
 
     function formatAmount(value) {
