@@ -2,6 +2,14 @@
    EMS-L Mobile - Approvals
    Full clean file
    Path: src/main/resources/static/mobile/js/approvals.js
+
+   Logic:
+   - HOD sees only requests addressed to their department
+   - Finance sees all requests pending finance review
+   - Director sees all requests pending director approval
+   - HOD / Director can modify quantity
+   - Finance can modify unit price and finance fields
+   - Changes are saved automatically
    ========================================================= */
 
 (function () {
@@ -10,6 +18,7 @@
     let currentUser = null;
     let currentOrganization = "";
     let currentRole = "";
+    let currentDepartment = "";
     let pendingRequests = [];
 
     let funds = [];
@@ -24,6 +33,7 @@
             currentUser = requireLogin();
             currentOrganization = getCurrentOrganization();
             currentRole = normalizeRole(getCurrentUserRole());
+            currentDepartment = getCurrentUserDepartment();
 
             displayCurrentUser();
 
@@ -35,6 +45,10 @@
             showError("Failed to initialize approvals page: " + error.message);
         }
     });
+
+    /* =========================================================
+       INITIAL DATA
+       ========================================================= */
 
     async function loadReferenceData() {
         await Promise.all([
@@ -49,8 +63,12 @@
         setLoading(true);
 
         try {
-            const url =
+            let url =
                 `${BASE_URL}/api/needs-requests/pending-approval/${encodeURIComponent(currentOrganization)}/${encodeURIComponent(currentRole)}`;
+
+            if (currentRole === "HOD") {
+                url += `?department=${encodeURIComponent(currentDepartment)}`;
+            }
 
             const response = await fetch(url, {
                 method: "GET",
@@ -128,7 +146,7 @@
             );
 
             groupedDimensions = toArray(data).filter(function (dimension) {
-                return normalizeCode(dimension.dimensionCode) !== "FUND";
+                return !isExcludedFinanceDimension(dimension.dimensionCode);
             });
 
         } catch (error) {
@@ -154,6 +172,10 @@
 
         return text ? JSON.parse(text) : [];
     }
+
+    /* =========================================================
+       RENDER APPROVALS
+       ========================================================= */
 
     function renderApprovals() {
         const container = document.getElementById("pendingRequestsContainer");
@@ -217,6 +239,16 @@
                     <div>
                         <span class="label">Date</span>
                         <strong>${escapeHtml(request.requestDate || "")}</strong>
+                    </div>
+
+                    <div>
+                        <span class="label">Requester Dept.</span>
+                        <strong>${escapeHtml(request.requesterDepartment || "-")}</strong>
+                    </div>
+
+                    <div>
+                        <span class="label">Addressed Dept.</span>
+                        <strong>${escapeHtml(request.addressedDepartment || request.department || "-")}</strong>
                     </div>
 
                     <div>
@@ -424,6 +456,10 @@
         `;
     }
 
+    /* =========================================================
+       SELECT OPTIONS
+       ========================================================= */
+
     function renderFundOptions(selectedValue) {
         let html = `<option value="">Select fund</option>`;
 
@@ -542,6 +578,10 @@
 
         return html;
     }
+
+    /* =========================================================
+       AUTO SAVE
+       ========================================================= */
 
     function bindCardCalculation(card) {
         const inputs = card.querySelectorAll(".approval-quantity-input, .approval-unit-price-input");
@@ -677,7 +717,8 @@
             `${BASE_URL}/api/needs-requests/${encodeURIComponent(requestId)}/items/${encodeURIComponent(itemId)}/quantity`
             + `?quantity=${encodeURIComponent(quantity)}`
             + `&updatedBy=${encodeURIComponent(getApproverName())}`
-            + `&role=${encodeURIComponent(currentRole)}`;
+            + `&role=${encodeURIComponent(currentRole)}`
+            + `&department=${encodeURIComponent(currentDepartment)}`;
 
         const response = await fetch(url, {
             method: "PUT",
@@ -727,7 +768,6 @@
 
     function buildFinancePayload(card) {
         const dimensionValues = collectFinanceDimensions(card);
-
         const glAccountNo = getCardValue(card, ".finance-gl-account");
 
         return {
@@ -742,6 +782,10 @@
             dimensions: dimensionValues
         };
     }
+
+    /* =========================================================
+       APPROVE / REJECT
+       ========================================================= */
 
     async function saveChanges(requestId) {
         const request = findRequest(requestId);
@@ -817,6 +861,7 @@
                 `${BASE_URL}/api/needs-requests/${encodeURIComponent(requestId)}/approve`
                 + `?approvedBy=${encodeURIComponent(getApproverName())}`
                 + `&role=${encodeURIComponent(currentRole)}`
+                + `&department=${encodeURIComponent(currentDepartment)}`
                 + `&comment=${encodeURIComponent("Approved from mobile approval workflow")}`;
 
             const response = await fetch(url, {
@@ -863,6 +908,7 @@
                 `${BASE_URL}/api/needs-requests/${encodeURIComponent(requestId)}/reject`
                 + `?rejectedBy=${encodeURIComponent(getApproverName())}`
                 + `&role=${encodeURIComponent(currentRole)}`
+                + `&department=${encodeURIComponent(currentDepartment)}`
                 + `&reason=${encodeURIComponent(reason)}`;
 
             const response = await fetch(url, {
@@ -905,6 +951,10 @@
 
         return text ? JSON.parse(text) : null;
     }
+
+    /* =========================================================
+       CALCULATIONS
+       ========================================================= */
 
     function recalculateCardTotals(card) {
         let requestTotal = 0;
@@ -982,6 +1032,10 @@
         return 0;
     }
 
+    /* =========================================================
+       STATUS HELPERS
+       ========================================================= */
+
     function setItemAutoSaveStatus(itemId, message) {
         const element = document.querySelector(`[data-item-status="${itemId}"]`);
 
@@ -999,7 +1053,7 @@
     }
 
     function setFinanceAutoSaveStatus(card, message) {
-        let element = card.querySelector(".auto-save-hint");
+        const element = card.querySelector(".auto-save-hint");
 
         if (!element) {
             return;
@@ -1040,6 +1094,10 @@
             return request;
         });
     }
+
+    /* =========================================================
+       GENERAL HELPERS
+       ========================================================= */
 
     function getRequestCard(requestId) {
         const card = document.querySelector(`.approval-card[data-request-id="${requestId}"]`);
@@ -1135,6 +1193,16 @@
         );
     }
 
+    function getCurrentUserDepartment() {
+        return (
+            currentUser.department ||
+            currentUser.departement ||
+            currentUser.costCenter ||
+            currentUser.cost_center ||
+            ""
+        );
+    }
+
     function normalizeRole(role) {
         return String(role || "")
             .trim()
@@ -1148,6 +1216,21 @@
             .toUpperCase()
             .replace(/\s+/g, "_")
             .replace(/-/g, "_");
+    }
+
+    function isExcludedFinanceDimension(code) {
+        const normalizedCode = normalizeCode(code);
+
+        return (
+            normalizedCode === "FUND" ||
+            normalizedCode === "DEPARTMENT" ||
+            normalizedCode === "DEPARTMENTS" ||
+            normalizedCode === "DEPARTEMENT" ||
+            normalizedCode === "DEPARTEMENTS" ||
+            normalizedCode === "COST_CENTER" ||
+            normalizedCode === "COSTCENTRE" ||
+            normalizedCode === "COST_CENTRE"
+        );
     }
 
     function toArray(data) {
