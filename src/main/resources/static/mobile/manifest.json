@@ -1,28 +1,27 @@
 {
-  "name": "EMS-L Mobile Approval",
-  "short_name": "EMS-L Approval",
-  "description": "Expression de besoin and approval workflow",
+  "name": "EMS-L Approval",
+  "short_name": "EMS-L",
+  "description": "EMS-L mobile needs request and approval system",
   "start_url": "/mobile/login.html",
   "scope": "/mobile/",
   "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
   "background_color": "#ffffff",
-  "theme_color": "#ffffff",
+  "theme_color": "#0f6cbd",
   "orientation": "portrait",
+  "categories": ["business", "productivity"],
   "icons": [
-    {
-      "src": "/mobile/icons/icon-180.png",
-      "sizes": "180x180",
-      "type": "image/png"
-    },
     {
       "src": "/mobile/icons/icon-192.png",
       "sizes": "192x192",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
     },
     {
       "src": "/mobile/icons/icon-512.png",
       "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
     }
   ]
 }
