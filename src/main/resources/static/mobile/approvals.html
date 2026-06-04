@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <title>Approbations</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 
     <!-- PWA -->
-    <link rel="manifest" href="/mobile/manifest.json?v=20260603-dialog1">
+    <link rel="manifest" href="/mobile/manifest.json?v=android-approvals1">
     <meta name="theme-color" content="#ffffff">
 
     <link rel="apple-touch-icon" sizes="180x180" href="/mobile/icons/icon-180.png">
@@ -19,17 +19,18 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
 
     <!-- CSS -->
-    <link rel="stylesheet" href="css/mobile.css?v=20260603-dialog1">
-    <link rel="stylesheet" href="css/dialog.css?v=20260603-dialog1">
+    <link rel="stylesheet" href="css/mobile.css?v=android-approvals1">
+    <link rel="stylesheet" href="css/dialog.css?v=android-approvals1">
+    <link rel="stylesheet" href="css/approvals-android.css?v=android-approvals1">
 </head>
 <body>
 
-<div class="app">
+<div class="app approvals-page">
 
     <!-- Top Header -->
     <div class="top-header">
         <div class="top-header-left">
-            <a href="index.html" class="return-btn" aria-label="Back">
+            <a href="index.html?v=android-approvals1" class="return-btn" aria-label="Back">
                 ←
             </a>
 
@@ -58,9 +59,9 @@
     </div>
 
     <!-- Content -->
-    <div class="content">
+    <div class="content approval-content">
 
-        <div class="section-header">
+        <div class="section-header approval-section-header">
             <h2>Pending requests</h2>
             <span class="badge pending-count" id="pendingCount">0</span>
         </div>
@@ -78,11 +79,11 @@
 </div>
 
 <!-- Scripts: order is important -->
-<script src="js/config.js?v=20260603-dialog1"></script>
-<script src="js/mobile-dialog.js?v=20260603-dialog1"></script>
-<script src="js/auth.js?v=20260603-dialog1"></script>
-<script src="js/approvals.js?v=20260603-dialog1"></script>
-<script src="js/pwa-register.js?v=20260603-dialog1"></script>
+<script src="js/config.js?v=android-approvals1"></script>
+<script src="js/mobile-dialog.js?v=android-approvals1"></script>
+<script src="js/auth.js?v=android-approvals1"></script>
+<script src="js/approvals.js?v=android-approvals1"></script>
+<script src="js/pwa-register.js?v=android-approvals1"></script>
 
 </body>
 </html>

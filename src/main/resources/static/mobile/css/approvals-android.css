@@ -1,0 +1,725 @@
+/* =========================================================
+   EMS-L Mobile App - Approvals Android Fix
+   Path: src/main/resources/static/mobile/css/approvals-android.css
+   Version: android-approvals1
+   ========================================================= */
+
+/* =========================
+   PAGE BASE
+========================= */
+
+html,
+body {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden;
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+}
+
+.approvals-page {
+    width: 100%;
+    max-width: 480px;
+    min-height: 100vh;
+    margin: 0 auto;
+    overflow-x: hidden;
+    background: #f8fafc;
+}
+
+.approval-content {
+    width: 100%;
+    max-width: 480px;
+    margin: 0 auto;
+    padding: 18px 20px 28px;
+}
+
+/* =========================
+   HEADER FIX
+========================= */
+
+.approvals-page .top-header {
+    width: 100%;
+    max-width: 480px;
+    margin: 0 auto;
+    padding: 14px 18px;
+}
+
+.approvals-page .top-header-left {
+    min-width: 0;
+    flex: 1;
+}
+
+.approvals-page .app-title-box {
+    min-width: 0;
+    flex: 1;
+}
+
+.approvals-page .app-title-box h1 {
+    max-width: 100%;
+    font-size: 20px;
+}
+
+.approvals-page .app-title-box p {
+    max-width: 100%;
+}
+
+.approvals-page .top-header-right {
+    flex-shrink: 0;
+}
+
+.approvals-page .user-text strong,
+.approvals-page .user-name {
+    max-width: 105px;
+}
+
+.approvals-page .user-avatar {
+    flex-shrink: 0;
+}
+
+/* =========================
+   SECTION HEADER
+========================= */
+
+.approval-section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 14px;
+}
+
+.approval-section-header h2 {
+    margin: 0;
+    min-width: 0;
+    font-size: 20px;
+    line-height: 1.2;
+    font-weight: 900;
+    color: #111827;
+}
+
+.approval-section-header .badge,
+.approval-section-header .pending-count {
+    flex-shrink: 0;
+}
+
+/* =========================
+   APPROVAL LIST
+========================= */
+
+.approvals-page .approval-list {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.approvals-page .approval-card,
+.approvals-page .request-card {
+    width: 100%;
+    max-width: 100%;
+    margin: 0 0 16px;
+    padding: 18px;
+    border-radius: 22px;
+    background: #ffffff;
+    border: 1px solid #eef2f7;
+    box-shadow: 0 12px 30px rgba(15, 23, 42, 0.08);
+    overflow-x: hidden;
+}
+
+/* =========================
+   APPROVAL CARD HEADER
+========================= */
+
+.approvals-page .approval-card-header {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.approvals-page .approval-card-header > div:first-child,
+.approvals-page .approval-card-header .approval-card-title-box {
+    min-width: 0;
+    flex: 1;
+}
+
+.approvals-page .approval-card-header h3 {
+    margin: 0;
+    max-width: 100%;
+    font-size: 18px;
+    line-height: 1.25;
+    font-weight: 900;
+    color: #111827;
+    word-break: break-word;
+}
+
+.approvals-page .muted,
+.approvals-page .request-no {
+    margin: 4px 0 0;
+    font-size: 12px;
+    color: #6b7280;
+    font-weight: 800;
+    word-break: break-word;
+}
+
+.approvals-page .status-badge,
+.approvals-page .status-approved,
+.approvals-page .status-rejected {
+    flex-shrink: 0;
+    max-width: 140px;
+    white-space: normal;
+    text-align: center;
+    line-height: 1.2;
+}
+
+/* =========================
+   BODY / INFO GRID
+========================= */
+
+.approvals-page .approval-card-body {
+    width: 100%;
+    max-width: 100%;
+    font-size: 14px;
+    color: #4b5563;
+    line-height: 1.45;
+    overflow-x: hidden;
+}
+
+.approvals-page .info-grid,
+.approvals-page .approval-info,
+.approvals-page .request-detail-grid,
+.approvals-page .request-summary-box {
+    width: 100%;
+    max-width: 100%;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+    background: #f8fafc;
+    border-radius: 16px;
+    padding: 14px;
+    margin: 12px 0;
+}
+
+.approvals-page .info-grid > div,
+.approvals-page .approval-info > div,
+.approvals-page .request-detail-grid > div,
+.approvals-page .request-summary-box > div {
+    min-width: 0;
+}
+
+.approvals-page .info-grid .label,
+.approvals-page .approval-info span,
+.approvals-page .request-detail-grid span,
+.approvals-page .request-summary-box span {
+    display: block;
+    font-size: 12px;
+    color: #6b7280;
+    font-weight: 700;
+    margin-bottom: 4px;
+}
+
+.approvals-page .info-grid strong,
+.approvals-page .approval-info strong,
+.approvals-page .request-detail-grid strong,
+.approvals-page .request-summary-box strong {
+    display: block;
+    font-size: 14px;
+    color: #111827;
+    font-weight: 900;
+    word-break: break-word;
+}
+
+/* =========================
+   DESCRIPTION
+========================= */
+
+.approvals-page .approval-description,
+.approvals-page .request-description-clean,
+.approvals-page .request-description-box p {
+    width: 100%;
+    max-width: 100%;
+    font-size: 13px;
+    color: #4b5563;
+    line-height: 1.45;
+    margin-bottom: 12px;
+    word-break: break-word;
+}
+
+/* =========================
+   RECEIPT ITEMS
+========================= */
+
+.approvals-page .receipt-items-list,
+.approvals-page .approval-items,
+.approvals-page .items-clean-list {
+    width: 100%;
+    max-width: 100%;
+    border-top: 1px solid #e5e7eb;
+    margin-top: 12px;
+    padding-top: 10px;
+    overflow-x: hidden;
+}
+
+.approvals-page .approval-receipt-item {
+    width: 100%;
+    max-width: 100%;
+    padding: 14px 0;
+    border-bottom: 1px dashed #d1d5db;
+}
+
+.approvals-page .approval-receipt-item:last-child {
+    border-bottom: none;
+}
+
+.approvals-page .approval-receipt-main-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 8px;
+}
+
+.approvals-page .approval-receipt-name {
+    min-width: 0;
+    flex: 1;
+}
+
+.approvals-page .approval-receipt-name strong {
+    font-size: 15px;
+    font-weight: 900;
+    color: #111827;
+    line-height: 1.3;
+    word-break: break-word;
+}
+
+.approvals-page .approval-receipt-total {
+    flex-shrink: 0;
+    text-align: right;
+    max-width: 120px;
+}
+
+.approvals-page .approval-receipt-total strong {
+    font-size: 15px;
+    font-weight: 900;
+    color: #111827;
+    letter-spacing: 0;
+    word-break: break-word;
+}
+
+.approvals-page .approval-receipt-formula {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    flex-wrap: wrap;
+    font-size: 13px;
+    font-weight: 700;
+    color: #6b7280;
+    line-height: 1.4;
+}
+
+.approvals-page .approval-static-value {
+    color: #6b7280;
+    font-weight: 800;
+}
+
+.approvals-page .approval-inline-input {
+    width: 58px;
+    min-width: 58px;
+    height: 34px;
+    padding: 5px 7px;
+    border: 1px solid #d1d5db;
+    border-radius: 9px;
+    background: #ffffff;
+    font-size: 13px;
+    font-weight: 900;
+    color: #111827;
+    text-align: center;
+    display: inline-block;
+}
+
+.approvals-page .approval-inline-input:focus {
+    border-color: #0f6cbd;
+    box-shadow: 0 0 0 3px rgba(15, 108, 189, 0.15);
+}
+
+/* =========================
+   NORMAL ITEM LINES
+========================= */
+
+.approvals-page .approval-item-line,
+.approvals-page .clean-item-line {
+    width: 100%;
+    max-width: 100%;
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 14px 0;
+    border-bottom: 1px dashed #e5e7eb;
+}
+
+.approvals-page .approval-item-main {
+    min-width: 0;
+    flex: 1;
+}
+
+.approvals-page .approval-line-right {
+    flex-shrink: 0;
+    max-width: 125px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 8px;
+}
+
+/* =========================
+   FINANCE / EDIT SECTIONS
+========================= */
+
+.approvals-page .approval-edit-section,
+.approvals-page .approval-total-box {
+    width: 100%;
+    max-width: 100%;
+    background: #f8fafc;
+    border-radius: 14px;
+    padding: 14px;
+    margin-bottom: 14px;
+    overflow-x: hidden;
+}
+
+.approvals-page .approval-total-box {
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    color: #1e3a8a;
+    font-size: 15px;
+}
+
+.approvals-page .approval-edit-item {
+    width: 100%;
+    max-width: 100%;
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 16px;
+    padding: 14px;
+    margin-bottom: 12px;
+}
+
+.approvals-page .approval-edit-item-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 12px;
+}
+
+.approvals-page .approval-edit-item-header strong {
+    min-width: 0;
+    color: #1f2937;
+    font-size: 15px;
+    font-weight: 900;
+    word-break: break-word;
+}
+
+.approvals-page .qty-edit-row,
+.approvals-page .qty-same-line {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 8px;
+    font-size: 12px;
+    color: #6b7280;
+    flex-wrap: wrap;
+}
+
+.approvals-page .approval-qty-input {
+    width: 70px;
+    padding: 7px 9px;
+    border-radius: 9px;
+    font-size: 13px;
+    text-align: right;
+}
+
+/* =========================
+   ACTION BUTTONS
+========================= */
+
+.approvals-page .approval-card-actions,
+.approvals-page .approval-actions {
+    width: 100%;
+    max-width: 100%;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-top: 14px;
+}
+
+.approvals-page .approval-card-actions-three {
+    grid-template-columns: 1fr 1fr 1fr;
+}
+
+.approvals-page .approval-card-actions-two {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    margin-top: 14px;
+}
+
+.approvals-page .btn-primary,
+.approvals-page .btn-secondary,
+.approvals-page .btn-danger,
+.approvals-page .btn-approve,
+.approvals-page .btn-reject {
+    min-width: 0;
+    width: 100%;
+    padding: 13px 10px;
+    border-radius: 14px;
+    font-size: 14px;
+    font-weight: 900;
+    text-align: center;
+    white-space: normal;
+    line-height: 1.2;
+}
+
+/* =========================
+   FORMS IN APPROVALS
+========================= */
+
+.approvals-page input,
+.approvals-page select,
+.approvals-page textarea {
+    max-width: 100%;
+    font-size: 15px;
+}
+
+.approvals-page .row-2,
+.approvals-page .form-row {
+    width: 100%;
+    max-width: 100%;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+}
+
+.approvals-page .row-2 .form-group,
+.approvals-page .form-row .form-group {
+    min-width: 0;
+}
+
+/* =========================
+   RESPONSIVE ANDROID PHONE
+========================= */
+
+@media (max-width: 420px) {
+    .approval-content {
+        padding: 18px 18px 28px;
+    }
+
+    .approvals-page .approval-card,
+    .approvals-page .request-card {
+        padding: 17px;
+        border-radius: 22px;
+    }
+
+    .approvals-page .approval-card-header h3 {
+        font-size: 18px;
+    }
+
+    .approvals-page .info-grid,
+    .approvals-page .approval-info,
+    .approvals-page .request-detail-grid,
+    .approvals-page .request-summary-box {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+        padding: 13px;
+    }
+
+    .approvals-page .approval-card-actions,
+    .approvals-page .approval-actions,
+    .approvals-page .approval-card-actions-two {
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+    }
+}
+
+@media (max-width: 380px) {
+    .approvals-page .top-header {
+        padding: 12px 14px;
+    }
+
+    .approvals-page .return-btn,
+    .approvals-page .back-button {
+        width: 34px;
+        height: 34px;
+        margin-right: 8px;
+        font-size: 22px;
+    }
+
+    .approvals-page .app-title-box h1 {
+        font-size: 18px;
+    }
+
+    .approvals-page .app-title-box p {
+        font-size: 11px;
+    }
+
+    .approvals-page .user-info-box {
+        gap: 8px;
+    }
+
+    .approvals-page .user-text strong,
+    .approvals-page .user-name {
+        max-width: 82px;
+        font-size: 12px;
+    }
+
+    .approvals-page .user-text span,
+    .approvals-page .user-role {
+        font-size: 10px;
+    }
+
+    .approvals-page .user-avatar {
+        width: 38px;
+        height: 38px;
+    }
+
+    .approval-content {
+        padding: 16px 14px 28px;
+    }
+
+    .approval-section-header h2 {
+        font-size: 18px;
+    }
+
+    .approvals-page .approval-card,
+    .approvals-page .request-card {
+        padding: 15px;
+        border-radius: 20px;
+    }
+
+    .approvals-page .approval-card-header {
+        gap: 10px;
+        margin-bottom: 14px;
+    }
+
+    .approvals-page .approval-card-header h3 {
+        font-size: 17px;
+    }
+
+    .approvals-page .status-badge,
+    .approvals-page .status-approved,
+    .approvals-page .status-rejected {
+        max-width: 110px;
+        padding: 7px 9px;
+        font-size: 10px;
+    }
+
+    .approvals-page .info-grid,
+    .approvals-page .approval-info,
+    .approvals-page .request-detail-grid,
+    .approvals-page .request-summary-box {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 9px;
+        padding: 12px;
+    }
+
+    .approvals-page .info-grid .label,
+    .approvals-page .approval-info span,
+    .approvals-page .request-detail-grid span,
+    .approvals-page .request-summary-box span {
+        font-size: 11px;
+    }
+
+    .approvals-page .info-grid strong,
+    .approvals-page .approval-info strong,
+    .approvals-page .request-detail-grid strong,
+    .approvals-page .request-summary-box strong {
+        font-size: 13px;
+    }
+
+    .approvals-page .approval-receipt-main-row {
+        gap: 10px;
+    }
+
+    .approvals-page .approval-receipt-total {
+        max-width: 105px;
+    }
+
+    .approvals-page .approval-receipt-total strong {
+        font-size: 14px;
+    }
+
+    .approvals-page .approval-receipt-formula {
+        font-size: 12px;
+    }
+
+    .approvals-page .approval-inline-input {
+        width: 54px;
+        min-width: 54px;
+        height: 32px;
+        font-size: 12px;
+    }
+
+    .approvals-page .approval-card-actions,
+    .approvals-page .approval-actions,
+    .approvals-page .approval-card-actions-two {
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+    }
+
+    .approvals-page .approval-card-actions-three {
+        grid-template-columns: 1fr;
+    }
+
+    .approvals-page .btn-primary,
+    .approvals-page .btn-secondary,
+    .approvals-page .btn-danger,
+    .approvals-page .btn-approve,
+    .approvals-page .btn-reject {
+        padding: 12px 8px;
+        font-size: 13px;
+    }
+
+    .approvals-page .row-2,
+    .approvals-page .form-row {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 340px) {
+    .approval-content {
+        padding: 14px 10px 26px;
+    }
+
+    .approvals-page .top-header {
+        padding: 12px 10px;
+    }
+
+    .approvals-page .app-title-box h1 {
+        font-size: 17px;
+    }
+
+    .approvals-page .user-text strong,
+    .approvals-page .user-name {
+        max-width: 70px;
+    }
+
+    .approvals-page .approval-card,
+    .approvals-page .request-card {
+        padding: 13px;
+        border-radius: 18px;
+    }
+
+    .approvals-page .info-grid,
+    .approvals-page .approval-info,
+    .approvals-page .request-detail-grid,
+    .approvals-page .request-summary-box {
+        grid-template-columns: 1fr;
+    }
+
+    .approvals-page .approval-card-actions,
+    .approvals-page .approval-actions,
+    .approvals-page .approval-card-actions-two {
+        grid-template-columns: 1fr;
+    }
+}
