@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>EMS-L PWA Check</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <link rel="manifest" href="/mobile/manifest.json?v=pwa-check1">
+
+    <meta name="theme-color" content="#0f6cbd">
+    <meta name="mobile-web-app-capable" content="yes">
+
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="EMS-L Approval">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+
+    <link rel="apple-touch-icon" sizes="180x180" href="/mobile/icons/icon-180.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="/mobile/icons/icon-192.png">
+    <link rel="icon" type="image/png" sizes="512x512" href="/mobile/icons/icon-512.png">
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            font-family: Arial, "Segoe UI", sans-serif;
+            background: #f4f6f8;
+            color: #111827;
+        }
+
+        .app {
+            max-width: 520px;
+            margin: 0 auto;
+            min-height: 100vh;
+            background: #ffffff;
+        }
+
+        .header {
+            background: #0f6cbd;
+            color: #ffffff;
+            padding: 26px 22px;
+            border-bottom-left-radius: 24px;
+            border-bottom-right-radius: 24px;
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 24px;
+            font-weight: 900;
+        }
+
+        .header p {
+            margin: 8px 0 0;
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .content {
+            padding: 20px;
+        }
+
+        .card {
+            background: #ffffff;
+            border: 1px solid #e5e7eb;
+            border-radius: 18px;
+            padding: 16px;
+            box-shadow: 0 10px 25px rgba(15, 23, 42, 0.08);
+            margin-bottom: 14px;
+        }
+
+        .row {
+            display: flex;
+            justify-content: space-between;
+            gap: 14px;
+            padding: 12px 0;
+            border-bottom: 1px dashed #e5e7eb;
+        }
+
+        .row:last-child {
+            border-bottom: none;
+        }
+
+        .label {
+            font-size: 14px;
+            color: #374151;
+            font-weight: 800;
+        }
+
+        .value {
+            font-size: 13px;
+            font-weight: 900;
+            text-align: right;
+        }
+
+        .ok {
+            color: #16a34a;
+        }
+
+        .bad {
+            color: #dc2626;
+        }
+
+        .warn {
+            color: #d97706;
+        }
+
+        .btn {
+            width: 100%;
+            border: none;
+            border-radius: 14px;
+            padding: 13px;
+            font-size: 15px;
+            font-weight: 900;
+            margin-top: 10px;
+            background: #0f6cbd;
+            color: #ffffff;
+        }
+
+        .btn.secondary {
+            background: #eef6ff;
+            color: #0f6cbd;
+            border: 1px dashed #0f6cbd;
+        }
+
+        .btn:disabled {
+            opacity: 0.55;
+        }
+
+        pre {
+            background: #111827;
+            color: #e5e7eb;
+            padding: 14px;
+            border-radius: 14px;
+            overflow-x: auto;
+            font-size: 12px;
+            line-height: 1.4;
+        }
+
+        .small {
+            font-size: 12px;
+            color: #6b7280;
+            line-height: 1.45;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="app">
+
+    <div class="header">
+        <h1>EMS-L PWA Check</h1>
+        <p>Android install diagnostic page</p>
+    </div>
+
+    <div class="content">
+
+        <div class="card">
+            <div class="row">
+                <div class="label">HTTPS</div>
+                <div class="value" id="httpsStatus">Checking...</div>
+            </div>
+
+            <div class="row">
+                <div class="label">Manifest loaded</div>
+                <div class="value" id="manifestStatus">Checking...</div>
+            </div>
+
+            <div class="row">
+                <div class="label">Service worker support</div>
+                <div class="value" id="swSupportStatus">Checking...</div>
+            </div>
+
+            <div class="row">
+                <div class="label">Service worker registered</div>
+                <div class="value" id="swRegisteredStatus">Checking...</div>
+            </div>
+
+            <div class="row">
+                <div class="label">Standalone mode</div>
+                <div class="value" id="standaloneStatus">Checking...</div>
+            </div>
+
+            <div class="row">
+                <div class="label">Install prompt available</div>
+                <div class="value" id="installPromptStatus">Waiting...</div>
+            </div>
+        </div>
+
+        <div class="card">
+            <button type="button" class="btn" id="installBtn" disabled>
+                Install EMS-L
+            </button>
+
+            <button type="button" class="btn secondary" onclick="window.location.href='login.html?v=pwa-check1'">
+                Go to Login
+            </button>
+
+            <div class="small">
+                If “Install prompt available” remains NO, Chrome is still not recognizing the site as installable on this device.
+            </div>
+        </div>
+
+        <div class="card">
+            <strong>Diagnostic details</strong>
+            <pre id="debugOutput">Loading...</pre>
+        </div>
+
+    </div>
+
+</div>
+
+<script>
+    let deferredInstallPrompt = null;
+
+    const debug = {
+        userAgent: navigator.userAgent,
+        url: window.location.href,
+        protocol: window.location.protocol,
+        standaloneMatchMedia: false,
+        iosStandalone: false,
+        manifest: null,
+        serviceWorkerSupported: false,
+        serviceWorkerRegistered: false,
+        installPromptAvailable: false,
+        errors: []
+    };
+
+    document.addEventListener("DOMContentLoaded", async function () {
+        checkHttps();
+        await checkManifest();
+        await checkServiceWorker();
+        checkStandalone();
+        updateDebug();
+
+        setTimeout(function () {
+            if (!debug.installPromptAvailable) {
+                setStatus("installPromptStatus", "NO", "bad");
+                updateDebug();
+            }
+        }, 5000);
+    });
+
+    window.addEventListener("beforeinstallprompt", function (event) {
+        event.preventDefault();
+
+        deferredInstallPrompt = event;
+        debug.installPromptAvailable = true;
+
+        const installBtn = document.getElementById("installBtn");
+        installBtn.disabled = false;
+
+        setStatus("installPromptStatus", "YES", "ok");
+        updateDebug();
+    });
+
+    window.addEventListener("appinstalled", function () {
+        deferredInstallPrompt = null;
+        debug.installed = true;
+
+        setStatus("installPromptStatus", "INSTALLED", "ok");
+
+        const installBtn = document.getElementById("installBtn");
+        installBtn.disabled = true;
+
+        updateDebug();
+    });
+
+    document.getElementById("installBtn").addEventListener("click", async function () {
+        if (!deferredInstallPrompt) {
+            alert("Install prompt is not available yet. Use Chrome menu and check Install app / Add to Home screen.");
+            return;
+        }
+
+        deferredInstallPrompt.prompt();
+
+        const choice = await deferredInstallPrompt.userChoice;
+        debug.installChoice = choice.outcome;
+
+        deferredInstallPrompt = null;
+        this.disabled = true;
+
+        updateDebug();
+    });
+
+    function checkHttps() {
+        const isHttps = window.location.protocol === "https:" || window.location.hostname === "localhost";
+
+        if (isHttps) {
+            setStatus("httpsStatus", "YES", "ok");
+        } else {
+            setStatus("httpsStatus", "NO", "bad");
+        }
+    }
+
+    async function checkManifest() {
+        try {
+            const response = await fetch("/mobile/manifest.json?v=pwa-check1", {
+                cache: "no-store"
+            });
+
+            if (!response.ok) {
+                throw new Error("HTTP " + response.status);
+            }
+
+            const manifest = await response.json();
+
+            debug.manifest = manifest;
+
+            const hasName = Boolean(manifest.name || manifest.short_name);
+            const hasStartUrl = Boolean(manifest.start_url);
+            const hasScope = Boolean(manifest.scope);
+            const hasStandalone = manifest.display === "standalone" || manifest.display === "fullscreen" || manifest.display === "minimal-ui";
+            const hasIcons = Array.isArray(manifest.icons) && manifest.icons.length >= 2;
+
+            if (hasName && hasStartUrl && hasScope && hasStandalone && hasIcons) {
+                setStatus("manifestStatus", "YES", "ok");
+            } else {
+                setStatus("manifestStatus", "INCOMPLETE", "warn");
+            }
+
+        } catch (error) {
+            debug.errors.push("Manifest error: " + error.message);
+            setStatus("manifestStatus", "NO", "bad");
+        }
+    }
+
+    async function checkServiceWorker() {
+        debug.serviceWorkerSupported = "serviceWorker" in navigator;
+
+        if (!debug.serviceWorkerSupported) {
+            setStatus("swSupportStatus", "NO", "bad");
+            setStatus("swRegisteredStatus", "NO", "bad");
+            return;
+        }
+
+        setStatus("swSupportStatus", "YES", "ok");
+
+        try {
+            const registration = await navigator.serviceWorker.register("/mobile/service-worker.js", {
+                scope: "/mobile/"
+            });
+
+            await registration.update();
+
+            debug.serviceWorkerRegistered = true;
+            debug.serviceWorkerScope = registration.scope;
+
+            setStatus("swRegisteredStatus", "YES", "ok");
+
+        } catch (error) {
+            debug.errors.push("Service worker error: " + error.message);
+            setStatus("swRegisteredStatus", "NO", "bad");
+        }
+    }
+
+    function checkStandalone() {
+        const standaloneMatchMedia = window.matchMedia("(display-mode: standalone)").matches;
+        const iosStandalone = window.navigator.standalone === true;
+
+        debug.standaloneMatchMedia = standaloneMatchMedia;
+        debug.iosStandalone = iosStandalone;
+
+        if (standaloneMatchMedia || iosStandalone) {
+            setStatus("standaloneStatus", "YES", "ok");
+        } else {
+            setStatus("standaloneStatus", "NO", "warn");
+        }
+    }
+
+    function setStatus(id, text, className) {
+        const element = document.getElementById(id);
+
+        if (!element) {
+            return;
+        }
+
+        element.textContent = text;
+        element.className = "value " + className;
+    }
+
+    function updateDebug() {
+        document.getElementById("debugOutput").textContent = JSON.stringify(debug, null, 2);
+    }
+</script>
+
+</body>
+</html>
