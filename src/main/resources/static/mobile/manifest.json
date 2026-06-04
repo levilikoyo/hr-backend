@@ -10,7 +10,10 @@
   "background_color": "#ffffff",
   "theme_color": "#0f6cbd",
   "orientation": "portrait",
-  "categories": ["business", "productivity"],
+  "dir": "ltr",
+  "lang": "en",
+  "categories": ["business", "productivity", "finance"],
+  "prefer_related_applications": false,
   "icons": [
     {
       "src": "/mobile/icons/icon-192.png",
@@ -35,6 +38,22 @@
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/mobile/screenshots/login-540x720.png",
+      "sizes": "540x720",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "EMS-L mobile login"
+    },
+    {
+      "src": "/mobile/screenshots/dashboard-540x720.png",
+      "sizes": "540x720",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "EMS-L mobile dashboard"
     }
   ]
 }
