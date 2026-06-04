@@ -2,228 +2,493 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>EMS-L Approval - Connexion</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Connexion - EMS-L Approval</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 
-    <!-- PWA Manifest -->
-    <link rel="manifest" href="/mobile/manifest.json?v=pwa5">
-
-    <!-- Android PWA -->
+    <!-- PWA -->
+    <link rel="manifest" href="/mobile/manifest.json?v=android-login1">
     <meta name="theme-color" content="#0f6cbd">
     <meta name="mobile-web-app-capable" content="yes">
 
-    <!-- iOS PWA -->
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-title" content="EMS-L Approval">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
 
-    <!-- Icons -->
     <link rel="apple-touch-icon" sizes="180x180" href="/mobile/icons/icon-180.png">
     <link rel="icon" type="image/png" sizes="192x192" href="/mobile/icons/icon-192.png">
     <link rel="icon" type="image/png" sizes="512x512" href="/mobile/icons/icon-512.png">
 
     <!-- CSS -->
-    <link rel="stylesheet" href="css/mobile.css?v=pwa5">
-    <link rel="stylesheet" href="css/dialog.css?v=pwa5">
+    <link rel="stylesheet" href="css/mobile.css?v=android-login1">
+    <link rel="stylesheet" href="css/dialog.css?v=android-login1">
+
+    <style>
+        .login-wrapper {
+            min-height: 100vh;
+            background: #f4f6f8;
+        }
+
+        .login-header {
+            background: #0f6cbd;
+            color: #ffffff;
+            padding: 42px 28px 36px;
+            border-bottom-left-radius: 28px;
+            border-bottom-right-radius: 28px;
+        }
+
+        .login-header h1 {
+            margin: 0;
+            font-size: 27px;
+            font-weight: 900;
+            line-height: 1.2;
+        }
+
+        .login-header p {
+            margin: 10px 0 0;
+            font-size: 15px;
+            opacity: 0.9;
+            font-weight: 600;
+        }
+
+        .login-card {
+            margin: 28px 24px 0;
+            background: #ffffff;
+            border-radius: 22px;
+            padding: 24px;
+            box-shadow: 0 14px 38px rgba(15, 23, 42, 0.12);
+            border: 1px solid #edf2f7;
+        }
+
+        .login-card .form-group {
+            margin-bottom: 18px;
+        }
+
+        .login-card label {
+            font-size: 13px;
+            font-weight: 900;
+            color: #374151;
+        }
+
+        .login-card input {
+            height: 54px;
+            font-size: 16px;
+            border-radius: 14px;
+        }
+
+        .login-btn {
+            width: 100%;
+            border: none;
+            border-radius: 15px;
+            background: #0f6cbd;
+            color: #ffffff;
+            padding: 15px;
+            font-size: 16px;
+            font-weight: 900;
+            margin-top: 8px;
+        }
+
+        .login-btn:active {
+            transform: scale(0.99);
+        }
+
+        .login-btn:disabled {
+            opacity: 0.7;
+        }
+
+        .login-footer {
+            padding: 18px 28px;
+            text-align: center;
+            color: #6b7280;
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .login-debug {
+            display: none;
+            margin-top: 14px;
+            background: #f8fafc;
+            border: 1px dashed #d1d5db;
+            border-radius: 14px;
+            padding: 12px;
+            font-size: 11px;
+            color: #6b7280;
+            word-break: break-word;
+            line-height: 1.45;
+        }
+
+        .login-debug.show {
+            display: block;
+        }
+    </style>
 </head>
 <body>
 
-<div class="app">
+<div class="login-wrapper">
 
-    <div class="header">
+    <div class="login-header">
         <h1>Connexion</h1>
         <p>Accès mobile approval</p>
     </div>
 
-    <form class="form-card" id="loginForm">
+    <div class="login-card">
 
-        <div class="form-group">
-            <label for="email">Email</label>
-            <input
-                    type="email"
-                    id="email"
-                    name="email"
-                    placeholder="Ex: user@email.com"
-                    autocomplete="email"
-                    required>
-        </div>
+        <form id="loginForm">
 
-        <div class="form-group">
-            <label for="pinCode">PIN Code</label>
-            <input
-                    type="password"
-                    id="pinCode"
-                    name="pinCode"
-                    placeholder="Enter your PIN"
-                    autocomplete="current-password"
-                    required>
-        </div>
+            <div class="form-group">
+                <label for="email">Email</label>
+                <input
+                        type="email"
+                        id="email"
+                        name="email"
+                        autocomplete="email"
+                        placeholder="Votre adresse email"
+                        required>
+            </div>
 
-        <button type="submit" class="btn-primary" id="loginBtn">
-            Sign In
-        </button>
+            <div class="form-group">
+                <label for="pinCode">PIN Code</label>
+                <input
+                        type="password"
+                        id="pinCode"
+                        name="pinCode"
+                        inputmode="numeric"
+                        autocomplete="current-password"
+                        placeholder="Votre PIN"
+                        required>
+            </div>
 
-    </form>
+            <button type="submit" class="login-btn" id="loginBtn">
+                Se connecter
+            </button>
+
+            <div class="login-debug" id="loginDebug"></div>
+
+        </form>
+
+    </div>
+
+    <div class="login-footer">
+        EMS-L Finance System · Mobile Approval
+    </div>
 
 </div>
 
-<!-- Scripts: order is important -->
-<script src="js/config.js?v=pwa5"></script>
-<script src="js/mobile-dialog.js?v=pwa5"></script>
-<script src="js/auth.js?v=pwa5"></script>
-<script src="js/pwa-register.js?v=pwa5"></script>
+<script src="js/config.js?v=android-login1"></script>
+<script src="js/mobile-dialog.js?v=android-login1"></script>
+<script src="js/auth.js?v=android-login1"></script>
+<script src="js/pwa-register.js?v=android-login1"></script>
 
 <script>
-    document.addEventListener("DOMContentLoaded", function () {
-        const form = document.getElementById("loginForm");
-        const loginBtn = document.getElementById("loginBtn");
+    const LOGIN_ENDPOINTS = [
+        "/api/mobile-auth/login",
+        "/api/mobile/auth/login",
+        "/api/auth/mobile/login",
+        "/api/mobile-users/login",
+        "/api/mobile-users/auth/login",
+        "/api/mobile-user/login",
+        "/api/mobile/login"
+    ];
 
-        if (!form) {
+    const loginForm = document.getElementById("loginForm");
+    const loginBtn = document.getElementById("loginBtn");
+    const loginDebug = document.getElementById("loginDebug");
+
+    document.addEventListener("DOMContentLoaded", function () {
+        const currentUser = safeGetJson("currentUser");
+
+        if (currentUser && currentUser.email) {
+            window.location.href = "index.html?v=android-login1";
             return;
         }
 
-        form.addEventListener("submit", async function (event) {
-            event.preventDefault();
+        const rememberedEmail = localStorage.getItem("lastLoginEmail") || "";
 
-            const email = document.getElementById("email").value.trim();
-            const pinCode = document.getElementById("pinCode").value.trim();
+        if (rememberedEmail) {
+            document.getElementById("email").value = rememberedEmail;
+        }
+    });
 
-            if (!email) {
-                showLoginError("Please enter your email.");
-                return;
-            }
+    loginForm.addEventListener("submit", async function (event) {
+        event.preventDefault();
 
-            if (!pinCode) {
-                showLoginError("Please enter your PIN code.");
-                return;
-            }
+        const email = document.getElementById("email").value.trim();
+        const pinCode = document.getElementById("pinCode").value.trim();
 
-            try {
-                setLoginLoading(true);
-
-                const loginResponse = await tryLogin(email, pinCode);
-
-                if (!loginResponse || !loginResponse.user) {
-                    throw new Error("Invalid login response.");
-                }
-
-                saveCurrentUser(loginResponse.user, loginResponse.token || "");
-
-                window.location.href = "index.html";
-
-            } catch (error) {
-                console.error("Login error:", error);
-                showLoginError(error.message || "Login failed.");
-            } finally {
-                setLoginLoading(false);
-            }
-        });
-
-        async function tryLogin(email, pinCode) {
-            const endpoints = [
-                "/api/mobile-auth/login",
-                "/api/mobile/auth/login",
-                "/api/auth/mobile/login",
-                "/api/mobile-users/login",
-                "/api/mobile/login"
-            ];
-
-            const payloads = [
-                {
-                    email: email,
-                    pinCode: pinCode
-                },
-                {
-                    email: email,
-                    pin: pinCode
-                },
-                {
-                    email: email,
-                    password: pinCode
-                }
-            ];
-
-            let lastError = "";
-
-            for (const endpoint of endpoints) {
-                for (const payload of payloads) {
-                    try {
-                        const response = await fetch(BASE_URL + endpoint, {
-                            method: "POST",
-                            headers: {
-                                "Content-Type": "application/json",
-                                "Accept": "application/json"
-                            },
-                            body: JSON.stringify(payload)
-                        });
-
-                        const text = await response.text();
-
-                        if (!response.ok) {
-                            lastError = text || ("HTTP " + response.status);
-                            continue;
-                        }
-
-                        const data = text ? JSON.parse(text) : {};
-
-                        return normalizeLoginResponse(data);
-
-                    } catch (error) {
-                        lastError = error.message;
-                    }
-                }
-            }
-
-            throw new Error(lastError || "Invalid email or PIN.");
+        if (!email || !pinCode) {
+            showLoginError("Veuillez saisir l'email et le PIN.");
+            return;
         }
 
-        function normalizeLoginResponse(data) {
-            if (!data) {
+        loginBtn.disabled = true;
+        loginBtn.textContent = "Connexion...";
+
+        loginDebug.classList.remove("show");
+        loginDebug.textContent = "";
+
+        try {
+            const responseData = await loginWithFallback(email, pinCode);
+            const normalizedUser = normalizeLoginResponse(responseData, email);
+
+            if (!normalizedUser || !normalizedUser.email) {
+                throw new Error("Réponse de connexion invalide.");
+            }
+
+            saveLoggedInUser(normalizedUser);
+            localStorage.setItem("lastLoginEmail", email);
+
+            window.location.href = "index.html?v=android-login1";
+
+        } catch (error) {
+            showLoginError(error.message || "Login failed.");
+        } finally {
+            loginBtn.disabled = false;
+            loginBtn.textContent = "Se connecter";
+        }
+    });
+
+    async function loginWithFallback(email, pinCode) {
+        const baseUrl = getBackendBaseUrl();
+        const errors = [];
+
+        const payloads = [
+            {
+                email: email,
+                pinCode: pinCode
+            },
+            {
+                email: email,
+                pin: pinCode
+            },
+            {
+                mail: email,
+                pinCode: pinCode
+            },
+            {
+                username: email,
+                password: pinCode
+            },
+            {
+                email: email,
+                password: pinCode
+            }
+        ];
+
+        for (const endpoint of LOGIN_ENDPOINTS) {
+            const url = baseUrl + endpoint;
+
+            for (const payload of payloads) {
+                try {
+                    const response = await fetch(url, {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                            "Accept": "application/json"
+                        },
+                        body: JSON.stringify(payload)
+                    });
+
+                    const text = await response.text();
+                    const data = parseJsonOrText(text);
+
+                    if (response.ok) {
+                        return data;
+                    }
+
+                    errors.push(endpoint + " → HTTP " + response.status);
+
+                    if (response.status === 401 || response.status === 403) {
+                        throw new Error(extractErrorMessage(data) || "Email ou PIN incorrect.");
+                    }
+
+                } catch (error) {
+                    if (
+                        error.message &&
+                        (
+                            error.message.includes("Email ou PIN incorrect") ||
+                            error.message.includes("incorrect")
+                        )
+                    ) {
+                        throw error;
+                    }
+
+                    errors.push(endpoint + " → " + error.message);
+                }
+            }
+        }
+
+        showDebug(errors);
+
+        throw new Error(
+                "Login failed. Aucun endpoint mobile login valide trouvé. Dernier endpoint testé: "
+                + LOGIN_ENDPOINTS[LOGIN_ENDPOINTS.length - 1]
+        );
+    }
+
+    function getBackendBaseUrl() {
+        if (typeof BASE_URL !== "undefined" && BASE_URL) {
+            return removeTrailingSlash(BASE_URL);
+        }
+
+        if (window.CONFIG && window.CONFIG.BASE_URL) {
+            return removeTrailingSlash(window.CONFIG.BASE_URL);
+        }
+
+        return window.location.origin;
+    }
+
+    function removeTrailingSlash(value) {
+        return String(value || "").replace(/\/+$/, "");
+    }
+
+    function parseJsonOrText(text) {
+        if (!text) {
+            return {};
+        }
+
+        try {
+            return JSON.parse(text);
+        } catch (error) {
+            return {
+                message: text
+            };
+        }
+    }
+
+    function extractErrorMessage(data) {
+        if (!data) {
+            return "";
+        }
+
+        return data.message
+                || data.error
+                || data.details
+                || data.statusText
+                || "";
+    }
+
+    function normalizeLoginResponse(responseData, fallbackEmail) {
+        const data = responseData || {};
+
+        const user =
+                data.user
+                || data.mobileUser
+                || data.data
+                || data.result
+                || data;
+
+        const token =
+                data.token
+                || data.accessToken
+                || data.jwt
+                || user.token
+                || user.accessToken
+                || "";
+
+        const email =
+                user.email
+                || user.mail
+                || user.userEmail
+                || fallbackEmail
+                || "";
+
+        const fullName =
+                user.fullName
+                || user.name
+                || user.userName
+                || user.username
+                || user.employeeName
+                || user.displayName
+                || email;
+
+        const role =
+                user.role
+                || user.userRole
+                || user.profile
+                || "REQUESTER";
+
+        const organization =
+                user.organization
+                || user.organisation
+                || user.org
+                || "DEFAULT";
+
+        const department =
+                user.department
+                || user.departement
+                || user.costCenter
+                || user.cost_center
+                || "";
+
+        return {
+            id: user.id || user.userId || user.mobileUserId || null,
+            fullName: fullName,
+            name: fullName,
+            username: user.username || email,
+            email: email,
+            mail: email,
+            role: String(role || "REQUESTER").toUpperCase(),
+            organization: organization,
+            organisation: organization,
+            department: department,
+            departement: department,
+            costCenter: user.costCenter || user.cost_center || department,
+            token: token,
+            rawUser: user
+        };
+    }
+
+    function saveLoggedInUser(user) {
+        localStorage.setItem("currentUser", JSON.stringify(user));
+        localStorage.setItem("mobileUser", JSON.stringify(user));
+        localStorage.setItem("loggedInUser", JSON.stringify(user));
+        localStorage.setItem("currentUserEmail", user.email || "");
+        localStorage.setItem("currentUserName", user.fullName || user.name || "");
+        localStorage.setItem("currentUserRole", user.role || "");
+        localStorage.setItem("organization", user.organization || user.organisation || "");
+
+        if (user.token) {
+            localStorage.setItem("token", user.token);
+            localStorage.setItem("authToken", user.token);
+        }
+
+        sessionStorage.setItem("currentUser", JSON.stringify(user));
+    }
+
+    function safeGetJson(key) {
+        try {
+            const value = localStorage.getItem(key);
+
+            if (!value) {
                 return null;
             }
 
-            if (data.user) {
-                return {
-                    user: data.user,
-                    token: data.token || data.accessToken || ""
-                };
-            }
-
-            if (data.data && data.data.user) {
-                return {
-                    user: data.data.user,
-                    token: data.data.token || data.data.accessToken || ""
-                };
-            }
-
-            if (data.id || data.email || data.fullName || data.name) {
-                return {
-                    user: data,
-                    token: data.token || data.accessToken || ""
-                };
-            }
-
+            return JSON.parse(value);
+        } catch (error) {
             return null;
         }
+    }
 
-        function setLoginLoading(isLoading) {
-            if (!loginBtn) {
-                return;
-            }
-
-            loginBtn.disabled = isLoading;
-            loginBtn.textContent = isLoading ? "Signing in..." : "Sign In";
+    function showLoginError(message) {
+        if (typeof showDialog === "function") {
+            showDialog({
+                type: "error",
+                title: "Login failed",
+                message: message
+            });
+            return;
         }
 
-        function showLoginError(message) {
-            if (window.MobileDialog && typeof window.MobileDialog.error === "function") {
-                window.MobileDialog.error("Login failed", message);
-                return;
-            }
+        alert(message);
+    }
 
-            alert(message);
+    function showDebug(errors) {
+        if (!loginDebug) {
+            return;
         }
-    });
+
+        loginDebug.textContent = errors.slice(-12).join("\n");
+        loginDebug.classList.add("show");
+    }
 </script>
 
 </body>
