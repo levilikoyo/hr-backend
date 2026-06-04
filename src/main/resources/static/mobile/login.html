@@ -2,25 +2,29 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>Connexion mobile</title>
+    <title>EMS-L Approval - Connexion</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <!-- PWA -->
-    <link rel="manifest" href="/mobile/manifest.json">
-    <meta name="theme-color" content="#ffffff">
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="/mobile/manifest.json?v=pwa5">
 
-    <link rel="apple-touch-icon" sizes="180x180" href="/mobile/icons/icon-180.png">
-    <link rel="icon" type="image/png" sizes="192x192" href="/mobile/icons/icon-192.png">
-    <link rel="icon" type="image/png" sizes="512x512" href="/mobile/icons/icon-512.png">
-
+    <!-- Android PWA -->
+    <meta name="theme-color" content="#0f6cbd">
     <meta name="mobile-web-app-capable" content="yes">
+
+    <!-- iOS PWA -->
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-title" content="EMS-L Approval">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
 
+    <!-- Icons -->
+    <link rel="apple-touch-icon" sizes="180x180" href="/mobile/icons/icon-180.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="/mobile/icons/icon-192.png">
+    <link rel="icon" type="image/png" sizes="512x512" href="/mobile/icons/icon-512.png">
+
     <!-- CSS -->
-    <link rel="stylesheet" href="css/mobile.css">
-    <link rel="stylesheet" href="css/dialog.css">
+    <link rel="stylesheet" href="css/mobile.css?v=pwa5">
+    <link rel="stylesheet" href="css/dialog.css?v=pwa5">
 </head>
 <body>
 
@@ -51,310 +55,175 @@
                     id="pinCode"
                     name="pinCode"
                     placeholder="Enter your PIN"
-                    inputmode="numeric"
                     autocomplete="current-password"
                     required>
         </div>
 
-        <button type="submit" class="btn-primary" id="btnLogin">
-            Se connecter
+        <button type="submit" class="btn-primary" id="loginBtn">
+            Sign In
         </button>
 
     </form>
 
 </div>
 
-<script src="js/config.js"></script>
-<script src="js/mobile-dialog.js"></script>
-<script src="js/auth.js"></script>
-<script src="js/pwa-register.js"></script>
+<!-- Scripts: order is important -->
+<script src="js/config.js?v=pwa5"></script>
+<script src="js/mobile-dialog.js?v=pwa5"></script>
+<script src="js/auth.js?v=pwa5"></script>
+<script src="js/pwa-register.js?v=pwa5"></script>
 
 <script>
     document.addEventListener("DOMContentLoaded", function () {
-        const loginForm = document.getElementById("loginForm");
+        const form = document.getElementById("loginForm");
+        const loginBtn = document.getElementById("loginBtn");
 
-        if (loginForm) {
-            loginForm.addEventListener("submit", async function (event) {
-                event.preventDefault();
-                await handleMobileLogin();
-            });
-        }
-    });
-
-    async function handleMobileLogin() {
-        const emailInput = document.getElementById("email");
-        const pinInput = document.getElementById("pinCode");
-
-        const email = emailInput ? String(emailInput.value || "").trim() : "";
-        const pinCode = pinInput ? String(pinInput.value || "").trim() : "";
-
-        if (!email) {
-            showLoginError("Please enter your email.");
+        if (!form) {
             return;
         }
 
-        if (!pinCode) {
-            showLoginError("Please enter your PIN code.");
-            return;
-        }
+        form.addEventListener("submit", async function (event) {
+            event.preventDefault();
 
-        setLoginLoading(true);
+            const email = document.getElementById("email").value.trim();
+            const pinCode = document.getElementById("pinCode").value.trim();
 
-        try {
-            const loginResponse = await tryMobileLogin(email, pinCode);
-
-            console.log("Login response:", loginResponse);
-
-            const normalizedUser = normalizeLoginResponse(loginResponse);
-
-            if (!normalizedUser.organization) {
-                throw new Error("Login successful, but organization was not returned. Please check the mobile user organization in the database.");
+            if (!email) {
+                showLoginError("Please enter your email.");
+                return;
             }
 
-            saveCurrentUser(normalizedUser);
-
-            console.log("Saved mobile user:", getCurrentUser());
-            console.log("Saved organization:", getCurrentOrganization());
-
-            window.location.href = "index.html";
-
-        } catch (error) {
-            console.error("Mobile login error:", error);
-            showLoginError(error.message || "Login failed.");
-        } finally {
-            setLoginLoading(false);
-        }
-    }
-
-    async function tryMobileLogin(email, pinCode) {
-        const endpoints = [
-            `${BASE_URL}/api/mobile-auth/login`,
-            `${BASE_URL}/api/mobile/auth/login`,
-            `${BASE_URL}/api/auth/mobile/login`,
-            `${BASE_URL}/api/mobile-users/login`,
-            `${BASE_URL}/api/mobile/login`
-        ];
-
-        const payloads = [
-            {
-                email: email,
-                pinCode: pinCode
-            },
-            {
-                email: email,
-                pin: pinCode
-            },
-            {
-                email: email,
-                password: pinCode
-            },
-            {
-                username: email,
-                pinCode: pinCode
-            },
-            {
-                username: email,
-                password: pinCode
+            if (!pinCode) {
+                showLoginError("Please enter your PIN code.");
+                return;
             }
-        ];
 
-        let lastError = "";
+            try {
+                setLoginLoading(true);
 
-        for (const endpoint of endpoints) {
-            for (const payload of payloads) {
-                try {
-                    console.log("Trying login:", endpoint, payload);
+                const loginResponse = await tryLogin(email, pinCode);
 
-                    const response = await fetch(endpoint, {
-                        method: "POST",
-                        headers: {
-                            "Content-Type": "application/json",
-                            "Accept": "application/json"
-                        },
-                        body: JSON.stringify(payload),
-                        cache: "no-store"
-                    });
+                if (!loginResponse || !loginResponse.user) {
+                    throw new Error("Invalid login response.");
+                }
 
-                    const text = await response.text();
+                saveCurrentUser(loginResponse.user, loginResponse.token || "");
 
-                    console.log("Login response from:", endpoint, response.status, text);
+                window.location.href = "index.html";
 
-                    if (!response.ok) {
-                        lastError = `HTTP ${response.status} - ${text}`;
-                        continue;
-                    }
+            } catch (error) {
+                console.error("Login error:", error);
+                showLoginError(error.message || "Login failed.");
+            } finally {
+                setLoginLoading(false);
+            }
+        });
 
-                    if (!text) {
-                        lastError = "Empty login response.";
-                        continue;
-                    }
+        async function tryLogin(email, pinCode) {
+            const endpoints = [
+                "/api/mobile-auth/login",
+                "/api/mobile/auth/login",
+                "/api/auth/mobile/login",
+                "/api/mobile-users/login",
+                "/api/mobile/login"
+            ];
 
+            const payloads = [
+                {
+                    email: email,
+                    pinCode: pinCode
+                },
+                {
+                    email: email,
+                    pin: pinCode
+                },
+                {
+                    email: email,
+                    password: pinCode
+                }
+            ];
+
+            let lastError = "";
+
+            for (const endpoint of endpoints) {
+                for (const payload of payloads) {
                     try {
-                        return JSON.parse(text);
-                    } catch (jsonError) {
-                        throw new Error("Invalid JSON response from login endpoint.");
-                    }
+                        const response = await fetch(BASE_URL + endpoint, {
+                            method: "POST",
+                            headers: {
+                                "Content-Type": "application/json",
+                                "Accept": "application/json"
+                            },
+                            body: JSON.stringify(payload)
+                        });
 
-                } catch (error) {
-                    console.warn("Login endpoint failed:", endpoint, error);
-                    lastError = error.message || String(error);
+                        const text = await response.text();
+
+                        if (!response.ok) {
+                            lastError = text || ("HTTP " + response.status);
+                            continue;
+                        }
+
+                        const data = text ? JSON.parse(text) : {};
+
+                        return normalizeLoginResponse(data);
+
+                    } catch (error) {
+                        lastError = error.message;
+                    }
                 }
             }
+
+            throw new Error(lastError || "Invalid email or PIN.");
         }
 
-        throw new Error("Login failed. Last error: " + lastError);
-    }
-
-    function normalizeLoginResponse(response) {
-        if (!response || typeof response !== "object") {
-            throw new Error("Invalid login response.");
-        }
-
-        const sourceUser =
-            response.user ||
-            response.mobileUser ||
-            response.data ||
-            response.result ||
-            response;
-
-        const organization =
-            firstLoginValue(sourceUser, [
-                "organization",
-                "organisation",
-                "organizationCode",
-                "organisationCode",
-                "companyOrganization",
-                "company",
-                "org"
-            ]) ||
-            firstLoginValue(response, [
-                "organization",
-                "organisation",
-                "organizationCode",
-                "organisationCode",
-                "companyOrganization",
-                "company",
-                "org"
-            ]);
-
-        const fullName =
-            firstLoginValue(sourceUser, [
-                "fullName",
-                "fullname",
-                "full_name",
-                "name",
-                "names",
-                "username",
-                "userName",
-                "email"
-            ]) ||
-            firstLoginValue(response, [
-                "fullName",
-                "fullname",
-                "full_name",
-                "name",
-                "names",
-                "username",
-                "userName",
-                "email"
-            ]);
-
-        const email =
-            firstLoginValue(sourceUser, [
-                "email",
-                "mail",
-                "username",
-                "userName"
-            ]) ||
-            firstLoginValue(response, [
-                "email",
-                "mail",
-                "username",
-                "userName"
-            ]);
-
-        const role =
-            firstLoginValue(sourceUser, [
-                "role",
-                "userRole",
-                "profile",
-                "position"
-            ]) ||
-            firstLoginValue(response, [
-                "role",
-                "userRole",
-                "profile",
-                "position"
-            ]);
-
-        const token =
-            firstLoginValue(response, [
-                "token",
-                "accessToken",
-                "jwt"
-            ]) ||
-            firstLoginValue(sourceUser, [
-                "token",
-                "accessToken",
-                "jwt"
-            ]);
-
-        return {
-            ...sourceUser,
-            id: sourceUser.id || response.id || response.userId || sourceUser.userId || null,
-            fullName: fullName,
-            username: sourceUser.username || sourceUser.userName || email,
-            email: email,
-            role: role,
-            organization: organization,
-            token: token
-        };
-    }
-
-    function firstLoginValue(object, keys) {
-        if (!object || typeof object !== "object") {
-            return "";
-        }
-
-        for (const key of keys) {
-            const value = object[key];
-
-            if (value !== null && value !== undefined && String(value).trim() !== "") {
-                return String(value).trim();
+        function normalizeLoginResponse(data) {
+            if (!data) {
+                return null;
             }
+
+            if (data.user) {
+                return {
+                    user: data.user,
+                    token: data.token || data.accessToken || ""
+                };
+            }
+
+            if (data.data && data.data.user) {
+                return {
+                    user: data.data.user,
+                    token: data.data.token || data.data.accessToken || ""
+                };
+            }
+
+            if (data.id || data.email || data.fullName || data.name) {
+                return {
+                    user: data,
+                    token: data.token || data.accessToken || ""
+                };
+            }
+
+            return null;
         }
 
-        return "";
-    }
+        function setLoginLoading(isLoading) {
+            if (!loginBtn) {
+                return;
+            }
 
-    function setLoginLoading(isLoading) {
-        const button = document.getElementById("btnLogin");
-
-        if (!button) {
-            return;
+            loginBtn.disabled = isLoading;
+            loginBtn.textContent = isLoading ? "Signing in..." : "Sign In";
         }
 
-        button.disabled = isLoading;
-        button.textContent = isLoading ? "Connexion..." : "Se connecter";
-    }
+        function showLoginError(message) {
+            if (window.MobileDialog && typeof window.MobileDialog.error === "function") {
+                window.MobileDialog.error("Login failed", message);
+                return;
+            }
 
-    function showLoginError(message) {
-        if (window.MobileDialog && typeof window.MobileDialog.error === "function") {
-            window.MobileDialog.error("Login error", message);
-            return;
+            alert(message);
         }
-
-        if (window.Swal) {
-            Swal.fire({
-                icon: "error",
-                title: "Login error",
-                text: message
-            });
-            return;
-        }
-
-        alert(message);
-    }
+    });
 </script>
 
 </body>
