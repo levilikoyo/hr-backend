@@ -3,31 +3,37 @@
 <head>
     <meta charset="UTF-8">
     <title>Mes demandes</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 
     <!-- PWA -->
-    <link rel="manifest" href="/mobile/manifest.json">
+    <link rel="manifest" href="/mobile/manifest.json?v=android-myrequests1">
     <meta name="theme-color" content="#ffffff">
 
     <link rel="apple-touch-icon" sizes="180x180" href="/mobile/icons/icon-180.png">
     <link rel="icon" type="image/png" sizes="192x192" href="/mobile/icons/icon-192.png">
     <link rel="icon" type="image/png" sizes="512x512" href="/mobile/icons/icon-512.png">
 
+    <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-title" content="EMS-L Approval">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
 
-    <link rel="stylesheet" href="css/mobile.css">
-    <link rel="stylesheet" href="css/dialog.css">
+    <!-- CSS -->
+    <link rel="stylesheet" href="css/mobile.css?v=android-myrequests1">
+    <link rel="stylesheet" href="css/dialog.css?v=android-myrequests1">
+    <link rel="stylesheet" href="css/my-requests-android.css?v=android-myrequests1">
 </head>
 <body>
 
-<div class="app">
+<div class="app my-requests-page">
 
+    <!-- Top Header -->
     <div class="top-header">
 
         <div class="top-header-left">
-            <a href="index.html" class="return-btn">←</a>
+            <a href="index.html?v=android-myrequests1" class="return-btn" aria-label="Back">
+                ←
+            </a>
 
             <div class="app-title-box">
                 <h1>Mes demandes</h1>
@@ -37,10 +43,10 @@
 
         <div class="top-header-right">
 
-            <div class="user-info-box" onclick="toggleUserMenu()">
+            <div class="user-info-box" id="userInfoBox" onclick="toggleUserMenu()">
                 <div class="user-text">
-                    <strong id="currentUserName">User</strong>
-                    <span id="currentUserRole">Role</span>
+                    <strong id="currentUserName" class="user-name">User</strong>
+                    <span id="currentUserRole" class="user-role">Role</span>
                 </div>
 
                 <img src="images/user-avatar.png" alt="User" class="user-avatar">
@@ -60,14 +66,15 @@
 
     </div>
 
-    <div class="approval-container">
+    <!-- Content -->
+    <div class="approval-container my-requests-content">
 
-        <div class="approval-toolbar">
+        <div class="approval-toolbar my-requests-toolbar">
             <h2>Requests</h2>
             <span id="requestCount">0</span>
         </div>
 
-        <div class="filter-tabs">
+        <div class="filter-tabs my-requests-filter-tabs">
             <button type="button" class="tab-btn active" onclick="filterRequests('ALL', this)">
                 All
             </button>
@@ -93,17 +100,17 @@
             </button>
         </div>
 
-        <div id="myRequestsList"></div>
+        <div id="myRequestsList" class="my-requests-list"></div>
 
     </div>
 
 </div>
 
-<script src="js/config.js"></script>
-<script src="js/mobile-dialog.js"></script>
-<script src="js/auth.js"></script>
-<script src="js/my-requests.js"></script>
-<script src="js/pwa-register.js"></script>
+<script src="js/config.js?v=android-myrequests1"></script>
+<script src="js/mobile-dialog.js?v=android-myrequests1"></script>
+<script src="js/auth.js?v=android-myrequests1"></script>
+<script src="js/my-requests.js?v=android-myrequests1"></script>
+<script src="js/pwa-register.js?v=android-myrequests1"></script>
 
 </body>
 </html>

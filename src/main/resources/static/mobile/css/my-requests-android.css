@@ -1,0 +1,714 @@
+/* =========================================================
+   EMS-L Mobile App - My Requests Android Fix
+   Path: src/main/resources/static/mobile/css/my-requests-android.css
+   Version: android-myrequests1
+   ========================================================= */
+
+/* =========================
+   PAGE BASE
+========================= */
+
+html,
+body {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden;
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+}
+
+.my-requests-page {
+    width: 100%;
+    max-width: 480px;
+    min-height: 100vh;
+    margin: 0 auto;
+    overflow-x: hidden;
+    background: #f8fafc;
+}
+
+.my-requests-content {
+    width: 100%;
+    max-width: 480px;
+    margin: 0 auto;
+    padding: 18px 20px 28px;
+}
+
+/* =========================
+   HEADER FIX
+========================= */
+
+.my-requests-page .top-header {
+    width: 100%;
+    max-width: 480px;
+    margin: 0 auto;
+    padding: 14px 18px;
+}
+
+.my-requests-page .top-header-left {
+    min-width: 0;
+    flex: 1;
+}
+
+.my-requests-page .app-title-box {
+    min-width: 0;
+    flex: 1;
+}
+
+.my-requests-page .app-title-box h1 {
+    max-width: 100%;
+    font-size: 20px;
+}
+
+.my-requests-page .app-title-box p {
+    max-width: 100%;
+}
+
+.my-requests-page .top-header-right {
+    flex-shrink: 0;
+}
+
+.my-requests-page .user-text strong,
+.my-requests-page .user-name {
+    max-width: 105px;
+}
+
+.my-requests-page .user-avatar {
+    flex-shrink: 0;
+}
+
+/* =========================
+   TOOLBAR
+========================= */
+
+.my-requests-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 14px;
+}
+
+.my-requests-toolbar h2 {
+    margin: 0;
+    min-width: 0;
+    font-size: 20px;
+    line-height: 1.2;
+    font-weight: 900;
+    color: #111827;
+}
+
+.my-requests-toolbar span,
+.my-requests-toolbar .badge {
+    flex-shrink: 0;
+    background: #0f6cbd;
+    color: #ffffff;
+    min-width: 34px;
+    height: 34px;
+    border-radius: 999px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 900;
+    padding: 0 10px;
+}
+
+/* =========================
+   FILTER TABS
+========================= */
+
+.my-requests-filter-tabs {
+    width: 100%;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+    margin-bottom: 16px;
+}
+
+.my-requests-filter-tabs .tab-btn {
+    min-width: 0;
+    width: 100%;
+    border: none;
+    background: #e5e7eb;
+    color: #374151;
+    padding: 10px 6px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 900;
+    line-height: 1.2;
+    text-align: center;
+    white-space: normal;
+}
+
+.my-requests-filter-tabs .tab-btn.active {
+    background: #0f6cbd;
+    color: #ffffff;
+}
+
+/* =========================
+   REQUEST LIST
+========================= */
+
+.my-requests-list {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden;
+}
+
+.my-requests-page .request-card,
+.my-requests-page .approval-card {
+    width: 100%;
+    max-width: 100%;
+    margin: 0 0 16px;
+    padding: 18px;
+    border-radius: 22px;
+    background: #ffffff;
+    border: 1px solid #eef2f7;
+    box-shadow: 0 12px 30px rgba(15, 23, 42, 0.08);
+    overflow-x: hidden;
+}
+
+/* =========================
+   REQUEST CARD HEADER
+========================= */
+
+.my-requests-page .approval-card-header,
+.my-requests-page .request-card-header,
+.my-requests-page .request-header {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.my-requests-page .approval-card-header > div:first-child,
+.my-requests-page .request-card-header > div:first-child,
+.my-requests-page .request-header > div:first-child {
+    min-width: 0;
+    flex: 1;
+}
+
+.my-requests-page .approval-card-header h3,
+.my-requests-page .request-card-header h3,
+.my-requests-page .request-header h3,
+.my-requests-page .request-title {
+    margin: 0;
+    max-width: 100%;
+    font-size: 18px;
+    line-height: 1.25;
+    font-weight: 900;
+    color: #111827;
+    word-break: break-word;
+}
+
+.my-requests-page .muted,
+.my-requests-page .request-no {
+    margin: 4px 0 0;
+    font-size: 12px;
+    color: #6b7280;
+    font-weight: 800;
+    word-break: break-word;
+}
+
+.my-requests-page .status-badge,
+.my-requests-page .status-approved,
+.my-requests-page .status-rejected {
+    flex-shrink: 0;
+    max-width: 140px;
+    white-space: normal;
+    text-align: center;
+    line-height: 1.2;
+}
+
+/* =========================
+   REQUEST BODY
+========================= */
+
+.my-requests-page .approval-card-body,
+.my-requests-page .request-card-body,
+.my-requests-page .request-body {
+    width: 100%;
+    max-width: 100%;
+    font-size: 14px;
+    color: #4b5563;
+    line-height: 1.45;
+    overflow-x: hidden;
+}
+
+.my-requests-page .approval-description,
+.my-requests-page .request-description-clean,
+.my-requests-page .request-description-box p,
+.my-requests-page .request-description {
+    width: 100%;
+    max-width: 100%;
+    font-size: 13px;
+    color: #4b5563;
+    line-height: 1.45;
+    margin-bottom: 12px;
+    word-break: break-word;
+}
+
+/* =========================
+   INFO GRID
+========================= */
+
+.my-requests-page .info-grid,
+.my-requests-page .approval-info,
+.my-requests-page .request-detail-grid,
+.my-requests-page .request-summary-box {
+    width: 100%;
+    max-width: 100%;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+    background: #f8fafc;
+    border-radius: 16px;
+    padding: 14px;
+    margin: 12px 0;
+}
+
+.my-requests-page .info-grid > div,
+.my-requests-page .approval-info > div,
+.my-requests-page .request-detail-grid > div,
+.my-requests-page .request-summary-box > div {
+    min-width: 0;
+}
+
+.my-requests-page .info-grid .label,
+.my-requests-page .approval-info span,
+.my-requests-page .request-detail-grid span,
+.my-requests-page .request-summary-box span {
+    display: block;
+    font-size: 12px;
+    color: #6b7280;
+    font-weight: 700;
+    margin-bottom: 4px;
+}
+
+.my-requests-page .info-grid strong,
+.my-requests-page .approval-info strong,
+.my-requests-page .request-detail-grid strong,
+.my-requests-page .request-summary-box strong {
+    display: block;
+    font-size: 14px;
+    color: #111827;
+    font-weight: 900;
+    word-break: break-word;
+}
+
+/* =========================
+   WORKFLOW
+========================= */
+
+.my-requests-page .workflow-box {
+    width: 100%;
+    max-width: 100%;
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 22px;
+    padding: 16px;
+    margin: 14px 0 16px;
+    overflow-x: hidden;
+}
+
+.my-requests-page .workflow-title {
+    font-size: 16px;
+    font-weight: 900;
+    color: #374151;
+    margin-bottom: 14px;
+}
+
+.my-requests-page .workflow-steps {
+    width: 100%;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+}
+
+.my-requests-page .workflow-step {
+    min-width: 0;
+    border-radius: 18px;
+    padding: 12px 6px;
+    min-height: 88px;
+    text-align: center;
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+}
+
+.my-requests-page .workflow-step span {
+    width: 34px;
+    height: 34px;
+    border-radius: 999px;
+    background: #e5e7eb;
+    color: #374151;
+    font-size: 15px;
+    font-weight: 900;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 8px;
+}
+
+.my-requests-page .workflow-step strong {
+    display: block;
+    font-size: 12px;
+    font-weight: 900;
+    color: #111827;
+    margin-bottom: 6px;
+    word-break: break-word;
+}
+
+.my-requests-page .workflow-step small {
+    display: block;
+    font-size: 11px;
+    color: #6b7280;
+    word-break: break-word;
+}
+
+.my-requests-page .workflow-step.active {
+    border-color: #0f6cbd;
+    background: #eff6ff;
+}
+
+.my-requests-page .workflow-step.active span {
+    background: #0f6cbd;
+    color: #ffffff;
+}
+
+.my-requests-page .workflow-step.completed {
+    border-color: #16a34a;
+    background: #dcfce7;
+}
+
+.my-requests-page .workflow-step.completed span {
+    background: #16a34a;
+    color: #ffffff;
+}
+
+.my-requests-page .workflow-step.rejected {
+    border-color: #dc2626;
+    background: #fee2e2;
+}
+
+.my-requests-page .workflow-step.rejected span {
+    background: #dc2626;
+    color: #ffffff;
+}
+
+/* =========================
+   ITEMS
+========================= */
+
+.my-requests-page .approval-items,
+.my-requests-page .items-clean-list,
+.my-requests-page .receipt-items-list {
+    width: 100%;
+    max-width: 100%;
+    border-top: 1px solid #e5e7eb;
+    margin-top: 12px;
+    padding-top: 10px;
+    overflow-x: hidden;
+}
+
+.my-requests-page .approval-item-line,
+.my-requests-page .clean-item-line {
+    width: 100%;
+    max-width: 100%;
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 14px 0;
+    border-bottom: 1px dashed #e5e7eb;
+}
+
+.my-requests-page .approval-item-main {
+    min-width: 0;
+    flex: 1;
+}
+
+.my-requests-page .approval-line-right {
+    flex-shrink: 0;
+    max-width: 125px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 8px;
+}
+
+.my-requests-page .approval-item-line strong,
+.my-requests-page .clean-item-line strong {
+    font-size: 15px;
+    font-weight: 900;
+    color: #111827;
+    word-break: break-word;
+}
+
+.my-requests-page .approval-item-line span,
+.my-requests-page .clean-item-line span,
+.my-requests-page .clean-item-line small {
+    display: block;
+    margin-top: 5px;
+    font-size: 12px;
+    color: #6b7280;
+    word-break: break-word;
+}
+
+/* =========================
+   ACTIONS
+========================= */
+
+.my-requests-page .approval-card-actions,
+.my-requests-page .approval-actions,
+.my-requests-page .request-actions {
+    width: 100%;
+    max-width: 100%;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-top: 14px;
+}
+
+.my-requests-page .btn-primary,
+.my-requests-page .btn-secondary,
+.my-requests-page .btn-danger,
+.my-requests-page .btn-approve,
+.my-requests-page .btn-reject {
+    min-width: 0;
+    width: 100%;
+    padding: 13px 10px;
+    border-radius: 14px;
+    font-size: 14px;
+    font-weight: 900;
+    text-align: center;
+    white-space: normal;
+    line-height: 1.2;
+}
+
+/* =========================
+   RESPONSIVE ANDROID PHONE
+========================= */
+
+@media (max-width: 420px) {
+    .my-requests-content {
+        padding: 18px 18px 28px;
+    }
+
+    .my-requests-page .request-card,
+    .my-requests-page .approval-card {
+        padding: 17px;
+        border-radius: 22px;
+    }
+
+    .my-requests-page .request-title,
+    .my-requests-page .approval-card-header h3,
+    .my-requests-page .request-card-header h3,
+    .my-requests-page .request-header h3 {
+        font-size: 18px;
+    }
+
+    .my-requests-page .info-grid,
+    .my-requests-page .approval-info,
+    .my-requests-page .request-detail-grid,
+    .my-requests-page .request-summary-box {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+        padding: 13px;
+    }
+
+    .my-requests-filter-tabs {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 8px;
+    }
+}
+
+@media (max-width: 380px) {
+    .my-requests-page .top-header {
+        padding: 12px 14px;
+    }
+
+    .my-requests-page .return-btn,
+    .my-requests-page .back-button {
+        width: 34px;
+        height: 34px;
+        margin-right: 8px;
+        font-size: 22px;
+    }
+
+    .my-requests-page .app-title-box h1 {
+        font-size: 18px;
+    }
+
+    .my-requests-page .app-title-box p {
+        font-size: 11px;
+    }
+
+    .my-requests-page .user-info-box {
+        gap: 8px;
+    }
+
+    .my-requests-page .user-text strong,
+    .my-requests-page .user-name {
+        max-width: 82px;
+        font-size: 12px;
+    }
+
+    .my-requests-page .user-text span,
+    .my-requests-page .user-role {
+        font-size: 10px;
+    }
+
+    .my-requests-page .user-avatar {
+        width: 38px;
+        height: 38px;
+    }
+
+    .my-requests-content {
+        padding: 16px 14px 28px;
+    }
+
+    .my-requests-toolbar h2 {
+        font-size: 18px;
+    }
+
+    .my-requests-filter-tabs {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px;
+    }
+
+    .my-requests-filter-tabs .tab-btn {
+        font-size: 11px;
+        padding: 10px 6px;
+    }
+
+    .my-requests-page .request-card,
+    .my-requests-page .approval-card {
+        padding: 15px;
+        border-radius: 20px;
+    }
+
+    .my-requests-page .approval-card-header,
+    .my-requests-page .request-card-header,
+    .my-requests-page .request-header {
+        gap: 10px;
+        margin-bottom: 14px;
+    }
+
+    .my-requests-page .request-title,
+    .my-requests-page .approval-card-header h3,
+    .my-requests-page .request-card-header h3,
+    .my-requests-page .request-header h3 {
+        font-size: 17px;
+    }
+
+    .my-requests-page .status-badge,
+    .my-requests-page .status-approved,
+    .my-requests-page .status-rejected {
+        max-width: 110px;
+        padding: 7px 9px;
+        font-size: 10px;
+    }
+
+    .my-requests-page .info-grid,
+    .my-requests-page .approval-info,
+    .my-requests-page .request-detail-grid,
+    .my-requests-page .request-summary-box {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 9px;
+        padding: 12px;
+    }
+
+    .my-requests-page .info-grid .label,
+    .my-requests-page .approval-info span,
+    .my-requests-page .request-detail-grid span,
+    .my-requests-page .request-summary-box span {
+        font-size: 11px;
+    }
+
+    .my-requests-page .info-grid strong,
+    .my-requests-page .approval-info strong,
+    .my-requests-page .request-detail-grid strong,
+    .my-requests-page .request-summary-box strong {
+        font-size: 13px;
+    }
+
+    .my-requests-page .workflow-box {
+        padding: 14px;
+        border-radius: 20px;
+    }
+
+    .my-requests-page .workflow-steps {
+        gap: 8px;
+    }
+
+    .my-requests-page .workflow-step {
+        padding: 12px 6px;
+        min-height: 86px;
+    }
+
+    .my-requests-page .workflow-step strong {
+        font-size: 11px;
+    }
+
+    .my-requests-page .workflow-step small {
+        font-size: 10px;
+    }
+
+    .my-requests-page .approval-card-actions,
+    .my-requests-page .approval-actions,
+    .my-requests-page .request-actions {
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+    }
+
+    .my-requests-page .btn-primary,
+    .my-requests-page .btn-secondary,
+    .my-requests-page .btn-danger,
+    .my-requests-page .btn-approve,
+    .my-requests-page .btn-reject {
+        padding: 12px 8px;
+        font-size: 13px;
+    }
+}
+
+@media (max-width: 340px) {
+    .my-requests-content {
+        padding: 14px 10px 26px;
+    }
+
+    .my-requests-page .top-header {
+        padding: 12px 10px;
+    }
+
+    .my-requests-page .app-title-box h1 {
+        font-size: 17px;
+    }
+
+    .my-requests-page .user-text strong,
+    .my-requests-page .user-name {
+        max-width: 70px;
+    }
+
+    .my-requests-page .request-card,
+    .my-requests-page .approval-card {
+        padding: 13px;
+        border-radius: 18px;
+    }
+
+    .my-requests-page .info-grid,
+    .my-requests-page .approval-info,
+    .my-requests-page .request-detail-grid,
+    .my-requests-page .request-summary-box {
+        grid-template-columns: 1fr;
+    }
+
+    .my-requests-page .workflow-steps {
+        grid-template-columns: 1fr;
+    }
+
+    .my-requests-page .approval-card-actions,
+    .my-requests-page .approval-actions,
+    .my-requests-page .request-actions {
+        grid-template-columns: 1fr;
+    }
+}

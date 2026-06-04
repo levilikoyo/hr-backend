@@ -1,0 +1,584 @@
+/* =========================================================
+   EMS-L Mobile App - Needs Request Android Fix
+   Path: src/main/resources/static/mobile/css/needs-request-android.css
+   Version: android-needs1
+   ========================================================= */
+
+/* =========================
+   PAGE BASE
+========================= */
+
+html,
+body {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden;
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+}
+
+.needs-request-page {
+    width: 100%;
+    max-width: 480px;
+    min-height: 100vh;
+    margin: 0 auto;
+    overflow-x: hidden;
+    background: #f8fafc;
+}
+
+/* =========================
+   HEADER FIX
+========================= */
+
+.needs-request-page .top-header {
+    width: 100%;
+    max-width: 480px;
+    margin: 0 auto;
+    padding: 14px 18px;
+}
+
+.needs-request-page .top-header-left {
+    min-width: 0;
+    flex: 1;
+}
+
+.needs-request-page .app-title-box {
+    min-width: 0;
+    flex: 1;
+}
+
+.needs-request-page .app-title-box h1 {
+    max-width: 100%;
+    font-size: 20px;
+}
+
+.needs-request-page .app-title-box p {
+    max-width: 100%;
+}
+
+.needs-request-page .top-header-right {
+    flex-shrink: 0;
+}
+
+.needs-request-page .user-text strong,
+.needs-request-page .user-name {
+    max-width: 105px;
+}
+
+.needs-request-page .user-avatar {
+    flex-shrink: 0;
+}
+
+/* =========================
+   FORM WRAPPER
+========================= */
+
+.needs-request-form {
+    width: auto;
+    max-width: 440px;
+    margin: 20px auto 28px;
+    padding: 20px;
+    background: #ffffff;
+    border-radius: 22px;
+    box-shadow: 0 12px 30px rgba(15, 23, 42, 0.08);
+    border: 1px solid #eef2f7;
+    overflow-x: hidden;
+}
+
+.needs-request-form .form-group {
+    width: 100%;
+    max-width: 100%;
+    margin-bottom: 14px;
+}
+
+.needs-request-form label {
+    display: block;
+    margin-bottom: 6px;
+    font-size: 13px;
+    font-weight: 900;
+    color: #374151;
+}
+
+.needs-request-form input,
+.needs-request-form select,
+.needs-request-form textarea {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    border: 1px solid #d1d5db;
+    border-radius: 14px;
+    padding: 12px;
+    font-size: 15px;
+    outline: none;
+    background-color: #ffffff;
+    color: #1f2937;
+}
+
+.needs-request-form input,
+.needs-request-form select {
+    min-height: 48px;
+}
+
+.needs-request-form textarea {
+    min-height: 96px;
+    resize: vertical;
+    line-height: 1.45;
+}
+
+.needs-request-form input:focus,
+.needs-request-form select:focus,
+.needs-request-form textarea:focus {
+    border-color: #0f6cbd;
+    box-shadow: 0 0 0 3px rgba(15, 108, 189, 0.15);
+}
+
+.needs-request-form select {
+    appearance: none;
+    -webkit-appearance: none;
+    background-color: #ffffff;
+    background-image:
+        linear-gradient(45deg, transparent 50%, #374151 50%),
+        linear-gradient(135deg, #374151 50%, transparent 50%);
+    background-position:
+        calc(100% - 18px) center,
+        calc(100% - 12px) center;
+    background-size: 6px 6px, 6px 6px;
+    background-repeat: no-repeat;
+    padding-right: 38px;
+}
+
+/* =========================
+   FORM ROWS
+========================= */
+
+.needs-request-page .row-2,
+.needs-request-page .form-row,
+.needs-request-page .needs-row-2 {
+    width: 100%;
+    max-width: 100%;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+}
+
+.needs-request-page .row-2 .form-group,
+.needs-request-page .form-row .form-group,
+.needs-request-page .needs-row-2 .form-group {
+    min-width: 0;
+    width: 100%;
+}
+
+/* =========================
+   SECTION TITLE
+========================= */
+
+.needs-request-page .section-title {
+    margin: 18px 0 12px;
+    font-size: 16px;
+    font-weight: 900;
+    color: #1f2937;
+    line-height: 1.25;
+}
+
+/* =========================
+   ITEM CARDS
+========================= */
+
+.needs-items-container {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden;
+}
+
+.needs-request-page .request-item,
+.needs-request-page .item-card {
+    width: 100%;
+    max-width: 100%;
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 20px;
+    padding: 16px;
+    margin-bottom: 16px;
+    box-shadow: 0 10px 25px rgba(15, 23, 42, 0.06);
+    overflow-x: hidden;
+}
+
+.needs-request-page .item-header,
+.needs-request-page .item-card-header {
+    width: 100%;
+    max-width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 14px;
+    cursor: pointer;
+}
+
+.needs-request-page .item-header-left {
+    min-width: 0;
+    flex: 1;
+}
+
+.needs-request-page .item-title {
+    max-width: 100%;
+    font-size: 17px;
+    font-weight: 900;
+    color: #111827;
+    line-height: 1.2;
+    word-break: break-word;
+}
+
+.needs-request-page .item-summary {
+    margin-top: 4px !important;
+    font-size: 12px !important;
+    font-weight: 500 !important;
+    color: #6b7280 !important;
+    line-height: 1.3 !important;
+    letter-spacing: 0 !important;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.needs-request-page .item-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+.needs-request-page .collapse-icon {
+    width: 30px;
+    height: 30px;
+    color: #374151;
+    transition: transform 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    font-weight: 900;
+}
+
+.needs-request-page .btn-remove-item,
+.needs-request-page .item-remove-btn,
+.needs-request-page .remove-item {
+    border: none;
+    background: #fee2e2;
+    color: #991b1b;
+    border-radius: 999px;
+    min-width: 34px;
+    height: 34px;
+    padding: 0 11px;
+    font-size: 18px;
+    font-weight: 900;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+}
+
+.needs-request-page .item-body {
+    width: 100%;
+    max-width: 100%;
+    display: block;
+}
+
+.needs-request-page .item-card.collapsed .item-body {
+    display: none;
+}
+
+.needs-request-page .item-card.collapsed {
+    padding-bottom: 0;
+}
+
+.needs-request-page .item-card.collapsed .item-header {
+    margin-bottom: 0;
+}
+
+.needs-request-page .item-card.collapsed .collapse-icon {
+    transform: rotate(180deg);
+}
+
+/* =========================
+   TOTAL BOX
+========================= */
+
+.needs-total-box,
+.needs-request-page .total-box,
+.needs-request-page .item-total-box {
+    width: 100%;
+    max-width: 100%;
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    color: #1e3a8a;
+    padding: 14px;
+    border-radius: 14px;
+    margin-bottom: 16px;
+    font-size: 15px;
+    overflow-x: hidden;
+}
+
+.needs-request-page .item-total-box,
+.needs-request-page .needs-total-box {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+}
+
+.needs-request-page .item-total-box strong,
+.needs-request-page .needs-total-box strong {
+    font-size: 16px;
+    color: #111827;
+}
+
+.needs-request-page #grandTotal {
+    font-size: 16px;
+    font-weight: 900;
+    color: #0f6cbd;
+    word-break: break-word;
+    text-align: right;
+}
+
+/* =========================
+   DYNAMIC DIMENSIONS
+========================= */
+
+.needs-dimensions-container,
+.needs-request-page #dynamicDimensionsContainer {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden;
+}
+
+.needs-request-page .dynamic-dimension-group {
+    width: 100%;
+    max-width: 100%;
+}
+
+/* =========================
+   BUTTONS
+========================= */
+
+.needs-request-page .btn-primary,
+.needs-request-page .btn-secondary,
+.needs-request-page .btn-danger {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    border: none;
+    padding: 13px 14px;
+    border-radius: 14px;
+    font-size: 15px;
+    font-weight: 900;
+    text-align: center;
+    line-height: 1.2;
+    white-space: normal;
+}
+
+.needs-request-page .btn-primary {
+    margin-top: 10px;
+    background: #0f6cbd;
+    color: #ffffff;
+}
+
+.needs-request-page .btn-secondary {
+    border: 1px dashed #0f6cbd;
+    background: #eef6ff;
+    color: #0f6cbd;
+    margin-bottom: 14px;
+}
+
+.needs-request-page .btn-danger {
+    background: #fee2e2;
+    color: #b91c1c;
+}
+
+/* =========================
+   RESPONSIVE ANDROID PHONE
+========================= */
+
+@media (max-width: 420px) {
+    .needs-request-page .top-header {
+        padding: 14px 18px;
+    }
+
+    .needs-request-form {
+        max-width: none;
+        margin: 18px 20px 28px;
+        padding: 18px;
+        border-radius: 22px;
+    }
+
+    .needs-request-page .row-2,
+    .needs-request-page .form-row,
+    .needs-request-page .needs-row-2 {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+    }
+
+    .needs-request-page .request-item,
+    .needs-request-page .item-card {
+        padding: 16px;
+        border-radius: 20px;
+    }
+}
+
+@media (max-width: 380px) {
+    .needs-request-page .top-header {
+        padding: 12px 14px;
+    }
+
+    .needs-request-page .return-btn,
+    .needs-request-page .back-button {
+        width: 34px;
+        height: 34px;
+        margin-right: 8px;
+        font-size: 22px;
+    }
+
+    .needs-request-page .app-title-box h1 {
+        font-size: 18px;
+    }
+
+    .needs-request-page .app-title-box p {
+        font-size: 11px;
+    }
+
+    .needs-request-page .user-info-box {
+        gap: 8px;
+    }
+
+    .needs-request-page .user-text strong,
+    .needs-request-page .user-name {
+        max-width: 82px;
+        font-size: 12px;
+    }
+
+    .needs-request-page .user-text span,
+    .needs-request-page .user-role {
+        font-size: 10px;
+    }
+
+    .needs-request-page .user-avatar {
+        width: 38px;
+        height: 38px;
+    }
+
+    .needs-request-form {
+        margin: 16px 14px 28px;
+        padding: 15px;
+        border-radius: 20px;
+    }
+
+    .needs-request-form label {
+        font-size: 12px;
+    }
+
+    .needs-request-form input,
+    .needs-request-form select,
+    .needs-request-form textarea {
+        font-size: 14px;
+        border-radius: 13px;
+        padding: 11px;
+    }
+
+    .needs-request-form input,
+    .needs-request-form select {
+        min-height: 46px;
+    }
+
+    .needs-request-page .row-2,
+    .needs-request-page .form-row,
+    .needs-request-page .needs-row-2 {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+    }
+
+    .needs-request-page .section-title {
+        font-size: 15px;
+        margin: 17px 0 11px;
+    }
+
+    .needs-request-page .request-item,
+    .needs-request-page .item-card {
+        padding: 14px;
+        border-radius: 18px;
+    }
+
+    .needs-request-page .item-header,
+    .needs-request-page .item-card-header {
+        gap: 10px;
+        margin-bottom: 12px;
+    }
+
+    .needs-request-page .item-title {
+        font-size: 16px;
+    }
+
+    .needs-request-page .item-summary {
+        font-size: 11px !important;
+    }
+
+    .needs-request-page .btn-remove-item,
+    .needs-request-page .item-remove-btn,
+    .needs-request-page .remove-item {
+        min-width: 32px;
+        height: 32px;
+        font-size: 17px;
+    }
+
+    .needs-request-page .collapse-icon {
+        width: 28px;
+        height: 28px;
+        font-size: 17px;
+    }
+
+    .needs-total-box,
+    .needs-request-page .total-box,
+    .needs-request-page .item-total-box {
+        padding: 13px;
+        font-size: 14px;
+    }
+
+    .needs-request-page .btn-primary,
+    .needs-request-page .btn-secondary,
+    .needs-request-page .btn-danger {
+        padding: 12px 10px;
+        font-size: 14px;
+    }
+}
+
+@media (max-width: 340px) {
+    .needs-request-page .top-header {
+        padding: 12px 10px;
+    }
+
+    .needs-request-page .app-title-box h1 {
+        font-size: 17px;
+    }
+
+    .needs-request-page .user-text strong,
+    .needs-request-page .user-name {
+        max-width: 70px;
+    }
+
+    .needs-request-form {
+        margin: 14px 10px 26px;
+        padding: 13px;
+        border-radius: 18px;
+    }
+
+    .needs-request-page .row-2,
+    .needs-request-page .form-row,
+    .needs-request-page .needs-row-2 {
+        grid-template-columns: 1fr;
+    }
+
+    .needs-request-page .request-item,
+    .needs-request-page .item-card {
+        padding: 13px;
+        border-radius: 18px;
+    }
+}

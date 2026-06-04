@@ -3,9 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <title>Expression de besoin</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 
-    <link rel="manifest" href="/mobile/manifest.json?v=dept1">
+    <!-- PWA -->
+    <link rel="manifest" href="/mobile/manifest.json?v=android-needs1">
     <meta name="theme-color" content="#ffffff">
 
     <link rel="apple-touch-icon" sizes="180x180" href="/mobile/icons/icon-180.png">
@@ -17,16 +18,21 @@
     <meta name="apple-mobile-web-app-title" content="EMS-L Approval">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
 
-    <link rel="stylesheet" href="css/mobile.css?v=dept1">
-    <link rel="stylesheet" href="css/dialog.css?v=dept1">
+    <!-- CSS -->
+    <link rel="stylesheet" href="css/mobile.css?v=android-needs1">
+    <link rel="stylesheet" href="css/dialog.css?v=android-needs1">
+    <link rel="stylesheet" href="css/needs-request-android.css?v=android-needs1">
 </head>
 <body>
 
-<div class="app">
+<div class="app needs-request-page">
 
+    <!-- Top Header -->
     <div class="top-header">
         <div class="top-header-left">
-            <a href="index.html" class="return-btn" aria-label="Back">←</a>
+            <a href="index.html?v=android-needs1" class="return-btn" aria-label="Back">
+                ←
+            </a>
 
             <div class="app-title-box">
                 <h1>Expression de besoin</h1>
@@ -52,7 +58,8 @@
         </div>
     </div>
 
-    <form class="form-card" id="needsRequestForm">
+    <!-- Form -->
+    <form class="form-card needs-request-form" id="needsRequestForm">
 
         <div class="form-group">
             <label for="title">Objet du besoin *</label>
@@ -72,7 +79,7 @@
                     placeholder="Décrivez le besoin général..."></textarea>
         </div>
 
-        <div class="row-2">
+        <div class="row-2 needs-row-2">
             <div class="form-group">
                 <label for="requestDate">Date souhaitée *</label>
                 <input
@@ -108,7 +115,7 @@
             Items requested
         </div>
 
-        <div id="itemsContainer">
+        <div id="itemsContainer" class="needs-items-container">
             <!-- Items are rendered by needs-request.js -->
         </div>
 
@@ -116,7 +123,7 @@
             + Add item
         </button>
 
-        <div class="total-box">
+        <div class="total-box needs-total-box">
             <strong>Total amount:</strong>
             <span id="grandTotal">0.00</span>
         </div>
@@ -159,7 +166,7 @@
             Dimensions
         </div>
 
-        <div id="dynamicDimensionsContainer">
+        <div id="dynamicDimensionsContainer" class="needs-dimensions-container">
             <!-- Dynamic dimensions are rendered by needs-request.js -->
         </div>
 
@@ -175,11 +182,11 @@
 
 </div>
 
-<script src="js/config.js?v=dept1"></script>
-<script src="js/mobile-dialog.js?v=dept1"></script>
-<script src="js/auth.js?v=dept1"></script>
-<script src="js/needs-request.js?v=dept1"></script>
-<script src="js/pwa-register.js?v=dept1"></script>
+<script src="js/config.js?v=android-needs1"></script>
+<script src="js/mobile-dialog.js?v=android-needs1"></script>
+<script src="js/auth.js?v=android-needs1"></script>
+<script src="js/needs-request.js?v=android-needs1"></script>
+<script src="js/pwa-register.js?v=android-needs1"></script>
 
 </body>
 </html>
