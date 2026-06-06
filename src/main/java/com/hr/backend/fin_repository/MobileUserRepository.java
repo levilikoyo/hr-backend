@@ -11,10 +11,13 @@ package com.hr.backend.fin_repository;
 
 
 import com.hr.backend.fin_model.MobileUserModel;
+import java.util.List;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface MobileUserRepository extends JpaRepository<MobileUserModel, Long> {
+
+    List<MobileUserModel> findByOrganizationOrderByFullNameAsc(String organization);
 
     Optional<MobileUserModel> findByEmailIgnoreCase(String email);
 
@@ -22,4 +25,8 @@ public interface MobileUserRepository extends JpaRepository<MobileUserModel, Lon
             String organization,
             String email
     );
+
+    boolean existsByOrganizationAndEmailIgnoreCase(String organization, String email);
+
+    void deleteByOrganizationAndEmailIgnoreCase(String organization, String email);
 }
