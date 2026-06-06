@@ -7,6 +7,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -31,7 +32,7 @@ public class FundDocumentController {
     }
 
     @PostMapping("/upload")
-    public FundDocumentModel upload(
+    public ResponseEntity<?> upload(
             @RequestParam("organization") String organization,
             @RequestParam("fundCode") String fundCode,
             @RequestParam("fundName") String fundName,
@@ -39,33 +40,50 @@ public class FundDocumentController {
             @RequestParam("documentName") String documentName,
             @RequestParam(value = "uploadedBy", required = false) String uploadedBy,
             @RequestParam("file") MultipartFile file
-    ) throws Exception {
-        String cleanOrganization = clean(organization);
-        String cleanFundCode = clean(fundCode);
-        String cleanCategory = clean(category).toLowerCase();
-        String originalFileName = file.getOriginalFilename() == null
-                ? "document"
-                : file.getOriginalFilename();
+    ) {
+        try {
+            String cleanOrganization = clean(organization);
+            String cleanFundCode = clean(fundCode);
+            String cleanCategory = clean(category).toLowerCase();
+            String originalFileName = file.getOriginalFilename() == null
+                    ? "document"
+                    : file.getOriginalFilename();
+            String contentType = file.getContentType() == null
+                    ? MediaType.APPLICATION_OCTET_STREAM_VALUE
+                    : file.getContentType();
+            String objectName = cleanOrganization + "/funds/" + cleanFundCode + "/" + cleanCategory + "/" + originalFileName;
 
-        String fileUrl = storageService.uploadFile(
-                file.getBytes(),
-                cleanOrganization + "/funds/" + cleanFundCode + "/" + cleanCategory + "/" + originalFileName,
-                file.getContentType()
-        );
+            System.out.println("Fund document upload received: org=" + cleanOrganization
+                    + ", fundCode=" + cleanFundCode
+                    + ", category=" + cleanCategory
+                    + ", file=" + originalFileName
+                    + ", size=" + file.getSize());
 
-        FundDocumentModel document = new FundDocumentModel();
-        document.setOrganization(cleanOrganization);
-        document.setFundCode(cleanFundCode);
-        document.setFundName(clean(fundName));
-        document.setCategory(cleanCategory);
-        document.setDocumentName(clean(documentName));
-        document.setOriginalFileName(originalFileName);
-        document.setFileUrl(fileUrl);
-        document.setContentType(file.getContentType());
-        document.setUploadedAt(LocalDateTime.now());
-        document.setUploadedBy(clean(uploadedBy));
+            String fileUrl = storageService.uploadFile(
+                    file.getBytes(),
+                    objectName,
+                    contentType
+            );
 
-        return repository.save(document);
+            FundDocumentModel document = new FundDocumentModel();
+            document.setOrganization(cleanOrganization);
+            document.setFundCode(cleanFundCode);
+            document.setFundName(clean(fundName));
+            document.setCategory(cleanCategory);
+            document.setDocumentName(clean(documentName));
+            document.setOriginalFileName(originalFileName);
+            document.setFileUrl(fileUrl);
+            document.setContentType(contentType);
+            document.setUploadedAt(LocalDateTime.now());
+            document.setUploadedBy(clean(uploadedBy));
+
+            return ResponseEntity.ok(repository.save(document));
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            return ResponseEntity
+                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Fund document upload failed: " + ex.getClass().getSimpleName() + " - " + ex.getMessage());
+        }
     }
 
     @GetMapping("/organization/{organization}/fund/{fundCode}")
