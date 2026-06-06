@@ -6,6 +6,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.List;
+import jakarta.transaction.Transactional;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
@@ -21,6 +22,20 @@ public class FundController {
 @PostMapping
 public ResponseEntity<?> saveFund(@RequestBody FundModel fund) {
     try {
+        if (fund.getOrganization() == null || fund.getOrganization().trim().isEmpty()) {
+            return ResponseEntity.badRequest().body("Organization is required");
+        }
+        if (fund.getFundCode() == null || fund.getFundCode().trim().isEmpty()) {
+            return ResponseEntity.badRequest().body("Fund code is required");
+        }
+
+        fund.setOrganization(fund.getOrganization().trim());
+        fund.setFundCode(fund.getFundCode().trim());
+
+        if (fundRepository.existsByFundCodeAndOrganization(fund.getFundCode(), fund.getOrganization())) {
+            return ResponseEntity.status(HttpStatus.CONFLICT)
+                    .body("Fund code already exists for this organization");
+        }
 
         if (fund.getCurrency() == null || fund.getCurrency().trim().isEmpty()) {
             fund.setCurrency("USD");
@@ -87,6 +102,15 @@ public FundModel updateFundInfo(@RequestBody FundModel updatedData) {
             )
             .orElseThrow(() -> new RuntimeException("Fund not found"));
 
+    if (updatedData.getFundName() != null) {
+        fund.setFundName(updatedData.getFundName());
+    }
+    if (updatedData.getFundType() != null) {
+        fund.setFundType(updatedData.getFundType());
+    }
+    if (updatedData.getDonor() != null) {
+        fund.setDonor(updatedData.getDonor());
+    }
     fund.setCurrency(updatedData.getCurrency());
     fund.setBudgetYear(updatedData.getBudgetYear());
     fund.setGrantAgreementNo(updatedData.getGrantAgreementNo());
@@ -101,5 +125,32 @@ public FundModel updateFundInfo(@RequestBody FundModel updatedData) {
     fund.setFooterPath(updatedData.getFooterPath());
 
     return fundRepository.save(fund);
+}
+
+@Transactional
+@DeleteMapping("/organization/{organization}/code/{fundCode}")
+public ResponseEntity<?> deleteFundByCode(
+        @PathVariable String organization,
+        @PathVariable String fundCode
+) {
+    String cleanOrganization = clean(organization);
+    String cleanFundCode = clean(fundCode);
+
+    boolean exists = fundRepository.existsByFundCodeAndOrganization(
+            cleanFundCode,
+            cleanOrganization
+    );
+
+    if (!exists) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body("Fund not found");
+    }
+
+    fundRepository.deleteByFundCodeAndOrganization(cleanFundCode, cleanOrganization);
+    return ResponseEntity.ok("Fund deleted successfully");
+}
+
+private String clean(String value) {
+    return value == null ? "" : value.trim();
 }
 }
