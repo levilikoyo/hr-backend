@@ -20,11 +20,15 @@ public class FundDocumentModel {
     private String category;
     private String documentName;
     private String originalFileName;
+    private String versionNumber;
+    private String archiveStatus;
+    private String archivedBy;
     @Column(columnDefinition = "TEXT")
     private String fileUrl;
     private String contentType;
     private LocalDateTime uploadedAt;
     private String uploadedBy;
+    private LocalDateTime archivedAt;
 
     public Long getId() {
         return id;
@@ -78,6 +82,30 @@ public class FundDocumentModel {
         this.originalFileName = originalFileName;
     }
 
+    public String getVersionNumber() {
+        return versionNumber;
+    }
+
+    public void setVersionNumber(String versionNumber) {
+        this.versionNumber = versionNumber;
+    }
+
+    public String getArchiveStatus() {
+        return archiveStatus;
+    }
+
+    public void setArchiveStatus(String archiveStatus) {
+        this.archiveStatus = archiveStatus;
+    }
+
+    public String getArchivedBy() {
+        return archivedBy;
+    }
+
+    public void setArchivedBy(String archivedBy) {
+        this.archivedBy = archivedBy;
+    }
+
     public String getFileUrl() {
         return fileUrl;
     }
@@ -108,5 +136,13 @@ public class FundDocumentModel {
 
     public void setUploadedBy(String uploadedBy) {
         this.uploadedBy = uploadedBy;
+    }
+
+    public LocalDateTime getArchivedAt() {
+        return archivedAt;
+    }
+
+    public void setArchivedAt(LocalDateTime archivedAt) {
+        this.archivedAt = archivedAt;
     }
 }

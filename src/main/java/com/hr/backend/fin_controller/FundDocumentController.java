@@ -51,7 +51,9 @@ public class FundDocumentController {
             String contentType = file.getContentType() == null
                     ? MediaType.APPLICATION_OCTET_STREAM_VALUE
                     : file.getContentType();
-            String objectName = cleanOrganization + "/funds/" + cleanFundCode + "/" + cleanCategory + "/" + originalFileName;
+            LocalDateTime archiveTime = LocalDateTime.now();
+            String objectName = cleanOrganization + "/funds/" + cleanFundCode + "/" + cleanCategory + "/"
+                    + System.currentTimeMillis() + "_" + sanitizeFileName(originalFileName);
 
             System.out.println("Fund document upload received: org=" + cleanOrganization
                     + ", fundCode=" + cleanFundCode
@@ -72,10 +74,14 @@ public class FundDocumentController {
             document.setCategory(cleanCategory);
             document.setDocumentName(clean(documentName));
             document.setOriginalFileName(originalFileName);
+            document.setVersionNumber("1.0");
+            document.setArchiveStatus("Archived");
             document.setFileUrl(fileUrl);
             document.setContentType(contentType);
-            document.setUploadedAt(LocalDateTime.now());
+            document.setUploadedAt(archiveTime);
             document.setUploadedBy(clean(uploadedBy));
+            document.setArchivedAt(archiveTime);
+            document.setArchivedBy(clean(uploadedBy));
 
             return ResponseEntity.ok(repository.save(document));
         } catch (Exception ex) {
@@ -119,7 +125,7 @@ public class FundDocumentController {
 
         return ResponseEntity.ok()
                 .header("Content-Disposition", "inline; filename=\"" + document.getOriginalFileName() + "\"")
-                .contentType(MediaType.parseMediaType(document.getContentType()))
+                .contentType(MediaType.parseMediaType(contentType(document)))
                 .body(fileBytes);
     }
 
@@ -136,5 +142,15 @@ public class FundDocumentController {
 
     private String clean(String value) {
         return value == null ? "" : value.trim();
+    }
+
+    private String sanitizeFileName(String value) {
+        String cleaned = clean(value).replaceAll("[^a-zA-Z0-9._-]", "_");
+        return cleaned.isEmpty() ? "document" : cleaned;
+    }
+
+    private String contentType(FundDocumentModel document) {
+        String value = clean(document.getContentType());
+        return value.isEmpty() ? MediaType.APPLICATION_OCTET_STREAM_VALUE : value;
     }
 }
