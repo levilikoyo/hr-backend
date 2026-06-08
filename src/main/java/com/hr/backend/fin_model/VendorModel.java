@@ -52,6 +52,9 @@ public class VendorModel {
 
     private String invoicing;
 
+    @Column(name = "linked_gl_account")
+    private String linkedGlAccount;
+
     private String currency;
 
     @Column(name = "payment_terms")
@@ -118,6 +121,10 @@ public class VendorModel {
 
     public String getInvoicing() {
         return invoicing;
+    }
+
+    public String getLinkedGlAccount() {
+        return linkedGlAccount;
     }
 
     public String getCurrency() {
@@ -194,6 +201,10 @@ public class VendorModel {
 
     public void setInvoicing(String invoicing) {
         this.invoicing = invoicing;
+    }
+
+    public void setLinkedGlAccount(String linkedGlAccount) {
+        this.linkedGlAccount = linkedGlAccount;
     }
 
     public void setCurrency(String currency) {

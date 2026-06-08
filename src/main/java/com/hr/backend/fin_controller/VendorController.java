@@ -131,6 +131,9 @@ public class VendorController {
             vendor.setVendorPhone(updatedData.getVendorPhone());
             vendor.setVendorMail(updatedData.getVendorMail());
             vendor.setInvoicing(updatedData.getInvoicing());
+            if (updatedData.getLinkedGlAccount() != null) {
+                vendor.setLinkedGlAccount(updatedData.getLinkedGlAccount());
+            }
             vendor.setCurrency(updatedData.getCurrency());
             vendor.setPaymentTerms(updatedData.getPaymentTerms());
             vendor.setPaymentMethod(updatedData.getPaymentMethod());

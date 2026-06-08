@@ -100,6 +100,9 @@ public ResponseEntity<?> updateCustomerInfo(@RequestBody CustomerModel updatedDa
         customer.setCustomerPhone(updatedData.getCustomerPhone());
         customer.setCustomerMail(updatedData.getCustomerMail());
         customer.setInvoicing(updatedData.getInvoicing());
+        if (updatedData.getLinkedGlAccount() != null) {
+            customer.setLinkedGlAccount(updatedData.getLinkedGlAccount());
+        }
 
         // New fields you requested
         customer.setStartingDate(updatedData.getStartingDate());

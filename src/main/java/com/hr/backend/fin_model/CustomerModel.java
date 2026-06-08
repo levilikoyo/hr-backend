@@ -47,6 +47,9 @@ public class CustomerModel {
     @Column(name = "invoicing")
     private String invoicing;
 
+    @Column(name = "linked_gl_account")
+    private String linkedGlAccount;
+
     @Column(name = "blocked")
     private Boolean blocked = false;
 
@@ -99,6 +102,10 @@ public class CustomerModel {
 
     public String getInvoicing() {
         return invoicing;
+    }
+
+    public String getLinkedGlAccount() {
+        return linkedGlAccount;
     }
 
     public Boolean getBlocked() {
@@ -155,6 +162,10 @@ public class CustomerModel {
 
     public void setInvoicing(String invoicing) {
         this.invoicing = invoicing;
+    }
+
+    public void setLinkedGlAccount(String linkedGlAccount) {
+        this.linkedGlAccount = linkedGlAccount;
     }
 
     public void setBlocked(Boolean blocked) {
