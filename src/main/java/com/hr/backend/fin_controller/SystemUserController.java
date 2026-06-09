@@ -7,6 +7,7 @@ import java.security.MessageDigest;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -54,7 +55,11 @@ public class SystemUserController {
             return ResponseEntity.status(409).body(Map.of("message", "Email already exists"));
         }
         user.setPasswordHash(hashPassword(user.getPasswordHash()));
-        return ResponseEntity.ok(userRepository.save(user));
+        try {
+            return ResponseEntity.ok(userRepository.save(user));
+        } catch (DataIntegrityViolationException e) {
+            return ResponseEntity.badRequest().body(Map.of("message", "User data is too long or violates a database rule."));
+        }
     }
 
     @PutMapping("/{username}")
@@ -77,7 +82,11 @@ public class SystemUserController {
         if (!isBlank(incoming.getPasswordHash())) {
             existing.setPasswordHash(hashPassword(incoming.getPasswordHash()));
         }
-        return ResponseEntity.ok(userRepository.save(existing));
+        try {
+            return ResponseEntity.ok(userRepository.save(existing));
+        } catch (DataIntegrityViolationException e) {
+            return ResponseEntity.badRequest().body(Map.of("message", "User data is too long or violates a database rule."));
+        }
     }
 
     private String validateUser(SystemUserModel user, boolean passwordRequired) {
@@ -95,6 +104,18 @@ public class SystemUserController {
         }
         if (passwordRequired && isBlank(user.getPasswordHash())) {
             return "Password is required";
+        }
+        if (cleanText(user.getFullName()).length() > 180) {
+            return "Full name must be 180 characters or less";
+        }
+        if (cleanLower(user.getUsername()).length() > 120) {
+            return "Username must be 120 characters or less";
+        }
+        if (cleanLower(user.getEmail()).length() > 320) {
+            return "Email must be 320 characters or less";
+        }
+        if (!isBlank(user.getPhone()) && cleanText(user.getPhone()).length() > 60) {
+            return "Phone must be 60 characters or less";
         }
         return null;
     }

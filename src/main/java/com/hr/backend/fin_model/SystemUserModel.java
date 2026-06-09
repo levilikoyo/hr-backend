@@ -18,27 +18,29 @@ public class SystemUserModel {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "full_name", nullable = false)
+    @Column(name = "full_name", nullable = false, length = 180)
     private String fullName;
 
-    @Column(nullable = false, unique = true)
+    @Column(nullable = false, unique = true, length = 120)
     private String username;
 
-    @Column(nullable = false, unique = true)
+    @Column(nullable = false, unique = true, length = 320)
     private String email;
 
+    @Column(length = 60)
     private String phone;
 
-    @Column(name = "user_type")
+    @Column(name = "user_type", length = 40)
     private String userType;
 
-    @Column(name = "global_role")
+    @Column(name = "global_role", length = 60)
     private String globalRole;
 
     @Column(name = "password_hash", length = 128)
     private String passwordHash;
 
     private Boolean blocked;
+    @Column(length = 40)
     private String status;
 
     @Column(name = "created_by")
