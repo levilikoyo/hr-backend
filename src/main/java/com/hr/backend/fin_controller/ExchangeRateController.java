@@ -10,8 +10,13 @@ package com.hr.backend.fin_controller;
  */
 
 import com.hr.backend.fin_model.ExchangeRateModel;
+import com.hr.backend.fin_model.CurrencyModel;
 import com.hr.backend.fin_repository.ExchangeRateRepository;
+import com.hr.backend.fin_repository.CurrencyRepository;
+import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -24,6 +29,9 @@ public class ExchangeRateController {
 
     @Autowired
     private ExchangeRateRepository exchangeRateRepository;
+
+    @Autowired
+    private CurrencyRepository currencyRepository;
 
     @PostMapping
     public ResponseEntity<?> saveExchangeRate(@RequestBody ExchangeRateModel exchangeRate) {
@@ -40,6 +48,8 @@ public class ExchangeRateController {
                 return ResponseEntity.badRequest().body("Exchange date is required");
             }
 
+            cleanExchangeRate(exchangeRate);
+
             boolean exists = exchangeRateRepository
                     .existsByCurrencyCodeAndExchangeCurrencyDateAndOrganization(
                             exchangeRate.getCurrencyCode(),
@@ -53,6 +63,7 @@ public class ExchangeRateController {
             }
 
             ExchangeRateModel saved = exchangeRateRepository.save(exchangeRate);
+            syncCurrencyNearestRate(saved.getOrganization(), saved.getCurrencyCode());
             return ResponseEntity.ok(saved);
 
         } catch (Exception e) {
@@ -87,6 +98,8 @@ public class ExchangeRateController {
                 return ResponseEntity.badRequest().body("Exchange date is required");
             }
 
+            cleanExchangeRate(updatedData);
+
             ExchangeRateModel exchangeRate = exchangeRateRepository
                     .findByCurrencyCodeAndExchangeCurrencyDateAndOrganization(
                             updatedData.getCurrencyCode(),
@@ -102,7 +115,9 @@ public class ExchangeRateController {
             exchangeRate.setBudgetExchangeRateUnity(updatedData.getBudgetExchangeRateUnity());
             exchangeRate.setBudgetExchangeRateAmount(updatedData.getBudgetExchangeRateAmount());
 
-            return ResponseEntity.ok(exchangeRateRepository.save(exchangeRate));
+            ExchangeRateModel saved = exchangeRateRepository.save(exchangeRate);
+            syncCurrencyNearestRate(saved.getOrganization(), saved.getCurrencyCode());
+            return ResponseEntity.ok(saved);
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -126,6 +141,7 @@ public class ExchangeRateController {
                     .orElseThrow(() -> new RuntimeException("Exchange rate not found"));
 
             exchangeRateRepository.delete(exchangeRate);
+            syncCurrencyNearestRate(organization, currencyCode);
             return ResponseEntity.ok("Exchange rate deleted successfully");
 
         } catch (Exception e) {
@@ -146,8 +162,98 @@ public List<ExchangeRateModel> getByOrganizationAndCurrencyCode(
     );
 }
 
+@GetMapping("/organization/{organization}/currency/{currencyCode}/nearest")
+public ResponseEntity<?> getNearestExchangeRate(
+        @PathVariable String organization,
+        @PathVariable String currencyCode,
+        @RequestParam(required = false) String date) {
+    String targetDate = clean(date).isEmpty() ? LocalDate.now().toString() : clean(date);
+    return nearestRate(organization, currencyCode, targetDate)
+            .<ResponseEntity<?>>map(ResponseEntity::ok)
+            .orElse(ResponseEntity.notFound().build());
+}
+
     @GetMapping("/test")
     public String test() {
         return "Exchange Rate API is working";
+    }
+
+    private void cleanExchangeRate(ExchangeRateModel exchangeRate) {
+        exchangeRate.setOrganization(clean(exchangeRate.getOrganization()));
+        exchangeRate.setCurrencyCode(clean(exchangeRate.getCurrencyCode()));
+        exchangeRate.setExchangeCurrencyDate(clean(exchangeRate.getExchangeCurrencyDate()));
+    }
+
+    private void syncCurrencyNearestRate(String organization, String currencyCode) {
+        String cleanOrganization = clean(organization);
+        String cleanCurrencyCode = clean(currencyCode);
+        if (cleanOrganization.isEmpty() || cleanCurrencyCode.isEmpty()) {
+            return;
+        }
+
+        Optional<CurrencyModel> currencyOptional = currencyRepository
+                .findByCurencyCodeAndOrganization(cleanCurrencyCode, cleanOrganization);
+        if (currencyOptional.isEmpty()) {
+            return;
+        }
+
+        CurrencyModel currency = currencyOptional.get();
+        Optional<ExchangeRateModel> rateOptional = nearestRate(
+                cleanOrganization,
+                cleanCurrencyCode,
+                LocalDate.now().toString()
+        );
+
+        if (rateOptional.isEmpty()) {
+            currency.setExchangeRateDate("");
+            currency.setExchangeRate("");
+        } else {
+            ExchangeRateModel rate = rateOptional.get();
+            currency.setExchangeRateDate(rate.getExchangeCurrencyDate());
+            currency.setExchangeRate(rateValue(rate));
+        }
+
+        currencyRepository.save(currency);
+    }
+
+    private Optional<ExchangeRateModel> nearestRate(String organization, String currencyCode, String targetDate) {
+        String cleanOrganization = clean(organization);
+        String cleanCurrencyCode = clean(currencyCode);
+        String cleanTargetDate = clean(targetDate);
+
+        Optional<ExchangeRateModel> onOrBefore = exchangeRateRepository
+                .findTopByOrganizationAndCurrencyCodeAndExchangeCurrencyDateLessThanEqualOrderByExchangeCurrencyDateDesc(
+                        cleanOrganization,
+                        cleanCurrencyCode,
+                        cleanTargetDate
+                );
+        if (onOrBefore.isPresent()) {
+            return onOrBefore;
+        }
+
+        return exchangeRateRepository
+                .findTopByOrganizationAndCurrencyCodeAndExchangeCurrencyDateGreaterThanOrderByExchangeCurrencyDateAsc(
+                        cleanOrganization,
+                        cleanCurrencyCode,
+                        cleanTargetDate
+                );
+    }
+
+    private String rateValue(ExchangeRateModel rate) {
+        BigDecimal unity = rate.getActualExchangeRateUnity();
+        BigDecimal amount = rate.getActualExchangeRateAmount();
+        if (unity == null || BigDecimal.ZERO.compareTo(unity) == 0) {
+            return amount == null ? "0.00" : amount.stripTrailingZeros().toPlainString();
+        }
+        if (amount == null) {
+            return "0.00";
+        }
+        return amount.divide(unity, 8, java.math.RoundingMode.HALF_UP)
+                .stripTrailingZeros()
+                .toPlainString();
+    }
+
+    private String clean(Object value) {
+        return value == null ? "" : value.toString().trim();
     }
 }

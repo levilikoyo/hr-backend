@@ -33,4 +33,16 @@ public interface ExchangeRateRepository extends JpaRepository<ExchangeRateModel,
         String organization,
         String currencyCode
 );
+
+    Optional<ExchangeRateModel> findTopByOrganizationAndCurrencyCodeAndExchangeCurrencyDateLessThanEqualOrderByExchangeCurrencyDateDesc(
+            String organization,
+            String currencyCode,
+            String exchangeCurrencyDate
+    );
+
+    Optional<ExchangeRateModel> findTopByOrganizationAndCurrencyCodeAndExchangeCurrencyDateGreaterThanOrderByExchangeCurrencyDateAsc(
+            String organization,
+            String currencyCode,
+            String exchangeCurrencyDate
+    );
 }
