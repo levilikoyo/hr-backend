@@ -13,6 +13,7 @@ import com.hr.backend.fin_model.FixedAssetModel;
 import com.hr.backend.fin_repository.FixedAssetRepository;
 import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -44,12 +45,16 @@ public class FixedAssetController {
             if (exists) {
                 return ResponseEntity
                         .status(HttpStatus.CONFLICT)
-                        .body("Fixed asset already exists");
+                        .body("Duplicate fixed asset code for this organization: " + fixedAsset.getAssetCode());
             }
 
             FixedAssetModel saved = fixedAssetRepository.save(fixedAsset);
             return ResponseEntity.ok(saved);
 
+        } catch (DataIntegrityViolationException e) {
+            return ResponseEntity
+                    .status(HttpStatus.CONFLICT)
+                    .body("Duplicate fixed asset code for this organization: " + fixedAsset.getAssetCode());
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity

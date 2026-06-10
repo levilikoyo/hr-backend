@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.List;
 import jakarta.transaction.Transactional;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
@@ -34,7 +35,7 @@ public ResponseEntity<?> saveFund(@RequestBody FundModel fund) {
 
         if (fundRepository.existsByFundCodeAndOrganization(fund.getFundCode(), fund.getOrganization())) {
             return ResponseEntity.status(HttpStatus.CONFLICT)
-                    .body("Fund code already exists for this organization");
+                    .body("Duplicate fund code for this organization: " + fund.getFundCode());
         }
 
         if (fund.getCurrency() == null || fund.getCurrency().trim().isEmpty()) {
@@ -62,6 +63,11 @@ public ResponseEntity<?> saveFund(@RequestBody FundModel fund) {
 
     } catch (Exception e) {
         e.printStackTrace();
+        if (e instanceof DataIntegrityViolationException
+                || (e.getCause() instanceof DataIntegrityViolationException)) {
+            return ResponseEntity.status(HttpStatus.CONFLICT)
+                    .body("Duplicate fund code for this organization: " + fund.getFundCode());
+        }
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body("Backend error: " + e.getClass().getName() + " - " + e.getMessage());
     }

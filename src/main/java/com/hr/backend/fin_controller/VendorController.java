@@ -13,6 +13,7 @@ import com.hr.backend.fin_model.VendorModel;
 import com.hr.backend.fin_repository.VendorRepository;
 import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -40,7 +41,7 @@ public class VendorController {
                     vendor.getVendorCode(),
                     vendor.getOrganization())) {
                 return ResponseEntity.status(HttpStatus.CONFLICT)
-                        .body("Vendor already exists for this organization");
+                        .body("Duplicate vendor code for this organization: " + vendor.getVendorCode());
             }
 
             if (vendor.getBlocked() == null) {
@@ -54,6 +55,10 @@ public class VendorController {
             VendorModel saved = vendorRepository.save(vendor);
             return ResponseEntity.ok(saved);
 
+        } catch (DataIntegrityViolationException e) {
+            return ResponseEntity
+                    .status(HttpStatus.CONFLICT)
+                    .body("Duplicate vendor code for this organization: " + vendor.getVendorCode());
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity

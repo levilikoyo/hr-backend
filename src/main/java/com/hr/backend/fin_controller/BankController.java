@@ -4,6 +4,7 @@ import com.hr.backend.fin_model.BankModel;
 import com.hr.backend.fin_repository.BankRepository;
 import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -27,12 +28,16 @@ public class BankController {
             );
 
             if (exists) {
-                return ResponseEntity.status(HttpStatus.CONFLICT).body("Bank already exists");
+                return ResponseEntity.status(HttpStatus.CONFLICT)
+                        .body("Duplicate bank code for this organization: " + bank.getBankCode());
             }
 
             return ResponseEntity.ok(bankRepository.save(bank));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
+        } catch (DataIntegrityViolationException e) {
+            return ResponseEntity.status(HttpStatus.CONFLICT)
+                    .body("Duplicate bank code for this organization: " + bank.getBankCode());
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)

@@ -4,6 +4,7 @@ import com.hr.backend.fin_model.CurrencyModel;
 import com.hr.backend.fin_repository.CurrencyRepository;
 import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -27,9 +28,25 @@ public class CurrencyController {
                 return ResponseEntity.badRequest().body("Currency code is required");
             }
 
+            currency.setOrganization(currency.getOrganization().trim());
+            currency.setCurencyCode(currency.getCurencyCode().trim());
+
+            if (currencyRepository.existsByCurencyCodeAndOrganization(
+                    currency.getCurencyCode(),
+                    currency.getOrganization()
+            )) {
+                return ResponseEntity
+                        .status(HttpStatus.CONFLICT)
+                        .body("Duplicate currency code for this organization: " + currency.getCurencyCode());
+            }
+
             CurrencyModel saved = currencyRepository.save(currency);
             return ResponseEntity.ok(saved);
 
+        } catch (DataIntegrityViolationException e) {
+            return ResponseEntity
+                    .status(HttpStatus.CONFLICT)
+                    .body("Duplicate currency code for this organization: " + currency.getCurencyCode());
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity

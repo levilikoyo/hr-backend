@@ -22,6 +22,12 @@ public interface GLAccountRepository extends JpaRepository<GLAccountModel, Long>
 
     boolean existsByGlCodeAndOrganization(String glCode, String organization);
 
+    boolean existsByOrganizationAndFrameworkCodeAndGlCode(
+            String organization,
+            String frameworkCode,
+            String glCode
+    );
+
     List<GLAccountModel> findByOrganizationAndBlocked(String organization, Boolean blocked);
 
     List<GLAccountModel> findByOrganizationAndAccountCategory(String organization, String accountCategory);

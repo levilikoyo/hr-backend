@@ -15,11 +15,17 @@ import jakarta.persistence.Id;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Column;
+import jakarta.persistence.UniqueConstraint;
 
 import java.math.BigDecimal;
 
 @Entity
-@Table(name = "funds")
+@Table(
+        name = "funds",
+        uniqueConstraints = {
+            @UniqueConstraint(columnNames = {"organization", "fund_code"})
+        }
+)
 public class FundModel {
 
     @Id

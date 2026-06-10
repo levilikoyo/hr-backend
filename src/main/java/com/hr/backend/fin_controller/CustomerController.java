@@ -13,6 +13,7 @@ import com.hr.backend.fin_model.CustomerModel;
 import com.hr.backend.fin_repository.CustomerRepository;
 import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -44,12 +45,16 @@ public class CustomerController {
             if (exists) {
                 return ResponseEntity
                         .status(HttpStatus.CONFLICT)
-                        .body("Customer already exists");
+                        .body("Duplicate customer code for this organization: " + customer.getCustomerCode());
             }
 
             CustomerModel saved = customerRepository.save(customer);
             return ResponseEntity.ok(saved);
 
+        } catch (DataIntegrityViolationException e) {
+            return ResponseEntity
+                    .status(HttpStatus.CONFLICT)
+                    .body("Duplicate customer code for this organization: " + customer.getCustomerCode());
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity

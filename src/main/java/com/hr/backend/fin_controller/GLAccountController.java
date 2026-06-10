@@ -13,6 +13,9 @@ import com.hr.backend.fin_model.GLAccountModel;
 import com.hr.backend.fin_repository.GLAccountRepository;
 import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -24,8 +27,36 @@ public class GLAccountController {
     private GLAccountRepository glAccountRepository;
 
     @PostMapping
-    public GLAccountModel saveGLAccount(@RequestBody GLAccountModel glAccount) {
-        return glAccountRepository.save(glAccount);
+    public ResponseEntity<?> saveGLAccount(@RequestBody GLAccountModel glAccount) {
+        try {
+            if (glAccount.getOrganization() == null || glAccount.getOrganization().trim().isEmpty()) {
+                return ResponseEntity.badRequest().body("Organization is required");
+            }
+            if (glAccount.getFrameworkCode() == null || glAccount.getFrameworkCode().trim().isEmpty()) {
+                return ResponseEntity.badRequest().body("Accounting framework is required");
+            }
+            if (glAccount.getGlCode() == null || glAccount.getGlCode().trim().isEmpty()) {
+                return ResponseEntity.badRequest().body("G/L account code is required");
+            }
+
+            glAccount.setOrganization(glAccount.getOrganization().trim());
+            glAccount.setFrameworkCode(glAccount.getFrameworkCode().trim());
+            glAccount.setGlCode(glAccount.getGlCode().trim());
+
+            if (glAccountRepository.existsByOrganizationAndFrameworkCodeAndGlCode(
+                    glAccount.getOrganization(),
+                    glAccount.getFrameworkCode(),
+                    glAccount.getGlCode()
+            )) {
+                return ResponseEntity.status(HttpStatus.CONFLICT)
+                        .body("Duplicate G/L account code for this organization and framework: " + glAccount.getGlCode());
+            }
+
+            return ResponseEntity.ok(glAccountRepository.save(glAccount));
+        } catch (DataIntegrityViolationException e) {
+            return ResponseEntity.status(HttpStatus.CONFLICT)
+                    .body("Duplicate G/L account code for this organization and framework: " + glAccount.getGlCode());
+        }
     }
 
     @GetMapping("/organization/{organization}")
