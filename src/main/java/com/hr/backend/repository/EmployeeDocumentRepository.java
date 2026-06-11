@@ -31,4 +31,6 @@ List<EmployeeDocument> findByEmployeeCodeAndCategoryAndOrganization(
         String category,
         String organization
 );
+
+List<EmployeeDocument> findByEmployeeCodeAndOrganization(String employeeCode, String organization);
 }

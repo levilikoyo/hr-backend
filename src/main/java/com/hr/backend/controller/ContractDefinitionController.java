@@ -14,7 +14,9 @@ import com.hr.backend.model.ContractDefinition;
 import com.hr.backend.repository.ContractDefinitionRepository;
 import java.time.LocalDate;
 import java.util.List;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 
 @RestController
 @RequestMapping("/api/contracts")
@@ -29,6 +31,10 @@ public class ContractDefinitionController {
 
     @PostMapping
     public ContractDefinition saveContract(@RequestBody ContractDefinition contract) {
+        requireText(contract.getOrganization(), "Organization is required");
+        requireText(contract.getContractCode(), "Contract code is required");
+        contract.setOrganization(cleanText(contract.getOrganization()));
+        contract.setContractCode(cleanCode(contract.getContractCode()));
         if (contract.getCreatedDate() == null || contract.getCreatedDate().trim().isEmpty()) {
             contract.setCreatedDate(LocalDate.now().toString());
         }
@@ -44,21 +50,32 @@ public class ContractDefinitionController {
     @GetMapping("/{id}")
     public ContractDefinition getContractById(@PathVariable Integer id) {
         return repository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Contract not found"));
+                .orElseThrow(() -> notFound("Contract not found"));
     }
 
     @GetMapping("/code/{contractCode}")
     public ContractDefinition getContractByCode(@PathVariable String contractCode) {
-        return repository.findByContractCode(contractCode)
-                .orElseThrow(() -> new RuntimeException("Contract not found"));
+        return repository.findByContractCode(cleanCode(contractCode))
+                .orElseThrow(() -> notFound("Contract not found"));
+    }
+
+    @GetMapping("/code/{contractCode}/organization/{organization}")
+    public ContractDefinition getContractByCodeAndOrganization(
+            @PathVariable String contractCode,
+            @PathVariable String organization) {
+        return repository.findByContractCodeAndOrganization(cleanCode(contractCode), cleanText(organization))
+                .orElseThrow(() -> notFound("Contract not found"));
     }
 
     @PutMapping("/{id}")
     public ContractDefinition updateContract(@PathVariable Integer id, @RequestBody ContractDefinition updated) {
         ContractDefinition contract = repository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Contract not found"));
+                .orElseThrow(() -> notFound("Contract not found"));
 
-        contract.setContractCode(updated.getContractCode());
+        requireText(updated.getOrganization(), "Organization is required");
+        requireText(updated.getContractCode(), "Contract code is required");
+        contract.setOrganization(cleanText(updated.getOrganization()));
+        contract.setContractCode(cleanCode(updated.getContractCode()));
         contract.setContractName(updated.getContractName());
         contract.setContractType(updated.getContractType());
         contract.setContractDescription(updated.getContractDescription());
@@ -88,27 +105,51 @@ public class ContractDefinitionController {
 
     @DeleteMapping("/{id}")
     public String deleteContract(@PathVariable Integer id) {
+        if (!repository.existsById(id)) {
+            throw notFound("Contract not found");
+        }
         repository.deleteById(id);
         return "Contract deleted successfully";
     }
     @GetMapping("/organization/{organization}")
 public List<ContractDefinition> getContractsByOrganization(@PathVariable String organization) {
-    return repository.findByOrganization(organization);
+    return repository.findByOrganization(cleanText(organization));
 }
 
 @PutMapping("/contract-info")
 public ContractDefinition updateContractBycodeOrg(@RequestBody ContractDefinition updatedData) {
+   requireText(updatedData.getOrganization(), "Organization is required");
+   requireText(updatedData.getContractCode(), "Contract code is required");
    ContractDefinition contract = repository
            
-           .findByContractCodeAndOrganization(updatedData.getContractCode(), updatedData.getOrganization())
-            .orElseThrow(() -> new RuntimeException("Employee not found"));
+           .findByContractCodeAndOrganization(cleanCode(updatedData.getContractCode()), cleanText(updatedData.getOrganization()))
+            .orElseThrow(() -> notFound("Contract not found"));
 
    contract.setContractStatus(updatedData.getContractStatus());
    contract.setBenefits(updatedData.getBenefits());
    contract.setOvertimeAllowed(updatedData.getOvertimeAllowed());
    contract.setLeaveEntitlement(updatedData.getLeaveEntitlement());
+   contract.setUpdatedDate(LocalDate.now().toString());
 
 
     return repository.save(contract);
 }
+
+    private void requireText(String value, String message) {
+        if (value == null || value.trim().isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, message);
+        }
+    }
+
+    private ResponseStatusException notFound(String message) {
+        return new ResponseStatusException(HttpStatus.NOT_FOUND, message);
+    }
+
+    private String cleanText(String value) {
+        return value == null ? "" : value.trim();
+    }
+
+    private String cleanCode(String value) {
+        return cleanText(value).toUpperCase();
+    }
 }

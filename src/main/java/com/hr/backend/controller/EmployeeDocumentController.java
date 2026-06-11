@@ -22,8 +22,11 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.server.ResponseStatusException;
 
 @RestController
 @RequestMapping("/api/employee-documents")
@@ -51,19 +54,27 @@ public EmployeeDocument upload(
         @RequestParam("documentName") String documentName,
         @RequestParam("file") MultipartFile file
 ) throws Exception {
+    requireText(employeeCode, "Employee code is required");
+    requireText(employeeNames, "Employee names are required");
+    requireText(organization, "Organization is required");
+    requireText(category, "Category is required");
+    requireText(documentName, "Document name is required");
+    if (file == null || file.isEmpty()) {
+        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "File is required");
+    }
 
     String fileUrl = storageService.uploadFile(
             file.getBytes(),
-            employeeCode + "/" + category + "/" + file.getOriginalFilename(),
+            cleanCode(employeeCode) + "/" + cleanText(category) + "/" + file.getOriginalFilename(),
             file.getContentType()
     );
 
     EmployeeDocument doc = new EmployeeDocument();
-    doc.setEmployeeCode(employeeCode);
-    doc.setEmployeeNames(employeeNames);
-    doc.setOrganization(organization); // ✅ important
-    doc.setCategory(category);
-    doc.setDocumentName(documentName);
+    doc.setEmployeeCode(cleanCode(employeeCode));
+    doc.setEmployeeNames(cleanText(employeeNames));
+    doc.setOrganization(cleanText(organization));
+    doc.setCategory(cleanText(category));
+    doc.setDocumentName(cleanText(documentName));
     doc.setOriginalFileName(file.getOriginalFilename());
     doc.setFileUrl(fileUrl);
     doc.setContentType(file.getContentType());
@@ -80,9 +91,9 @@ public List<EmployeeDocument> getDocuments(
         @RequestParam("organization") String organization
 ) {
     return repository.findByEmployeeCodeAndCategoryAndOrganization(
-            employeeCode,
-            category,
-            organization
+            cleanCode(employeeCode),
+            cleanText(category),
+            cleanText(organization)
     );
 }
 @GetMapping("/tree")
@@ -90,11 +101,23 @@ public List<ArchiveTreeDTO> getArchiveTree() {
     return repository.getArchiveTreeData();
 }
 
+@GetMapping("/employee/{employeeCode}")
+public List<EmployeeDocument> getByEmployee(@PathVariable String employeeCode) {
+    return repository.findByEmployeeCode(cleanCode(employeeCode));
+}
+
+@GetMapping("/employee/{employeeCode}/category/{category}")
+public List<EmployeeDocument> getByEmployeeAndCategory(
+        @PathVariable String employeeCode,
+        @PathVariable String category) {
+    return repository.findByEmployeeCodeAndCategory(cleanCode(employeeCode), cleanText(category));
+}
+
 @GetMapping("/download/{id}")
 public ResponseEntity<byte[]> download(@PathVariable Long id) {
     try {
         EmployeeDocument doc = repository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Document not found"));
+                .orElseThrow(() -> notFound("Document not found"));
 
         byte[] fileBytes = storageService.downloadFile(doc.getFileUrl());
 
@@ -104,18 +127,36 @@ public ResponseEntity<byte[]> download(@PathVariable Long id) {
                 .body(fileBytes);
 
     } catch (Exception e) {
-        throw new RuntimeException("Download failed: " + e.getMessage());
+        throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Download failed: " + e.getMessage());
     }
 }
 @DeleteMapping("/{id}")
-public String deleteDocument(@PathVariable Long id) {
+public ResponseEntity<Map<String, String>> deleteDocument(@PathVariable Long id) {
     EmployeeDocument doc = repository.findById(id)
-            .orElseThrow(() -> new RuntimeException("Document not found"));
+            .orElseThrow(() -> notFound("Document not found"));
 
     storageService.deleteFile(doc.getFileUrl());
 
     repository.deleteById(id);
 
-    return "Document deleted successfully";
+    return ResponseEntity.ok(Map.of("message", "Document deleted successfully"));
+}
+
+private void requireText(String value, String message) {
+    if (value == null || value.trim().isEmpty()) {
+        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, message);
+    }
+}
+
+private ResponseStatusException notFound(String message) {
+    return new ResponseStatusException(HttpStatus.NOT_FOUND, message);
+}
+
+private String cleanText(String value) {
+    return value == null ? "" : value.trim();
+}
+
+private String cleanCode(String value) {
+    return cleanText(value).toUpperCase();
 }
 }
