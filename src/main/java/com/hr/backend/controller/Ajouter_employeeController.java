@@ -128,12 +128,14 @@ public String deleteEmployee(
     String cleanRoll = cleanCode(roll);
     String cleanOrganization = cleanText(organization);
 
-    Ajouter_employee employee = employeeRepository
-            .findByRollAndOrganization(cleanRoll, cleanOrganization)
-            .orElseThrow(() -> notFound("Employee not found"));
+    List<Ajouter_employee> employees = employeeRepository
+            .findAllByRollAndOrganization(cleanRoll, cleanOrganization);
+    if (employees.isEmpty()) {
+        throw notFound("Employee not found");
+    }
 
     deleteEmployeeChildren(cleanRoll, cleanOrganization);
-    employeeRepository.delete(employee);
+    employeeRepository.deleteAll(employees);
 
     return "Deleted successfully";
 }

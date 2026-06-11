@@ -16,6 +16,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 public interface Ajouter_EmployeeReposotory extends JpaRepository<Ajouter_employee, Integer> {
     Optional<Ajouter_employee> findByRoll(String roll);
     Optional<Ajouter_employee> findByRollAndOrganization(String roll, String organization);
+    List<Ajouter_employee> findAllByRollAndOrganization(String roll, String organization);
       List<Ajouter_employee> findByOrganization(String organization);
     
 }
