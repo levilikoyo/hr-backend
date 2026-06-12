@@ -127,6 +127,55 @@ public class SystemUserController {
         ));
     }
 
+    @PostMapping("/credentials")
+    public ResponseEntity<?> updateCredentials(@RequestBody Map<String, String> request) {
+        String currentUsername = cleanLower(request == null ? "" : request.get("currentUsername"));
+        String newUsername = cleanLower(request == null ? "" : request.get("newUsername"));
+        String password = cleanText(request == null ? "" : request.get("password"));
+        String updatedBy = cleanText(request == null ? "" : request.get("updatedBy"));
+        if (isBlank(currentUsername)) {
+            return ResponseEntity.badRequest().body(Map.of("message", "Current username is required"));
+        }
+        if (isBlank(newUsername) && isBlank(password)) {
+            return ResponseEntity.badRequest().body(Map.of("message", "Enter a new username or password"));
+        }
+
+        Optional<SystemUserModel> optionalUser = userRepository.findByUsernameIgnoreCase(currentUsername);
+        if (optionalUser.isEmpty()) {
+            return ResponseEntity.status(404).body(Map.of("message", "User not found"));
+        }
+
+        SystemUserModel user = optionalUser.get();
+        String finalUsername = isBlank(newUsername) ? currentUsername : newUsername;
+        if (!finalUsername.equalsIgnoreCase(currentUsername)
+                && userRepository.existsByUsernameIgnoreCase(finalUsername)) {
+            return ResponseEntity.status(409).body(Map.of("message", "Username already exists"));
+        }
+
+        user.setUsername(finalUsername);
+        if (!isBlank(password)) {
+            user.setPasswordHash(hashPassword(password));
+        }
+        user.setUpdatedBy(updatedBy);
+
+        List<UserOrganizationAccessModel> accessRows =
+                accessRepository.findByUsernameIgnoreCaseOrderByDefaultOrganizationDescOrganizationCodeAsc(currentUsername);
+        for (UserOrganizationAccessModel access : accessRows) {
+            access.setUsername(finalUsername);
+        }
+
+        try {
+            userRepository.save(user);
+            accessRepository.saveAll(accessRows);
+            return ResponseEntity.ok(Map.of(
+                    "message", "Credentials updated successfully",
+                    "username", finalUsername
+            ));
+        } catch (DataIntegrityViolationException e) {
+            return ResponseEntity.badRequest().body(Map.of("message", "Credential data is too long or violates a database rule."));
+        }
+    }
+
     @PutMapping("/{username}")
     public ResponseEntity<?> updateUser(
             @PathVariable String username,
