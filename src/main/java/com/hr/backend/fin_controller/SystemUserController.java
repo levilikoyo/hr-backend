@@ -1,9 +1,12 @@
 package com.hr.backend.fin_controller;
 
 import com.hr.backend.fin_model.SystemUserModel;
+import com.hr.backend.fin_model.UserOrganizationAccessModel;
 import com.hr.backend.fin_repository.SystemUserRepository;
+import com.hr.backend.fin_repository.UserOrganizationAccessRepository;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -24,9 +27,14 @@ import org.springframework.web.bind.annotation.RestController;
 public class SystemUserController {
 
     private final SystemUserRepository userRepository;
+    private final UserOrganizationAccessRepository accessRepository;
 
-    public SystemUserController(SystemUserRepository userRepository) {
+    public SystemUserController(
+            SystemUserRepository userRepository,
+            UserOrganizationAccessRepository accessRepository
+    ) {
         this.userRepository = userRepository;
+        this.accessRepository = accessRepository;
     }
 
     @GetMapping
@@ -60,6 +68,63 @@ public class SystemUserController {
         } catch (DataIntegrityViolationException e) {
             return ResponseEntity.badRequest().body(Map.of("message", "User data is too long or violates a database rule."));
         }
+    }
+
+    @PostMapping("/login")
+    public ResponseEntity<?> login(@RequestBody Map<String, String> request) {
+        String username = cleanLower(request == null ? "" : request.get("username"));
+        String password = cleanText(request == null ? "" : request.get("password"));
+        if (isBlank(username) || isBlank(password)) {
+            return ResponseEntity.badRequest().body(Map.of("message", "Username and password are required"));
+        }
+
+        Optional<SystemUserModel> optionalUser = userRepository.findByUsernameIgnoreCase(username);
+        if (optionalUser.isEmpty()) {
+            return ResponseEntity.status(401).body(Map.of("message", "Invalid username or password"));
+        }
+
+        SystemUserModel user = optionalUser.get();
+        if (!hashPassword(password).equals(cleanText(user.getPasswordHash()))) {
+            return ResponseEntity.status(401).body(Map.of("message", "Invalid username or password"));
+        }
+        if (Boolean.TRUE.equals(user.getBlocked()) || "BLOCKED".equalsIgnoreCase(cleanText(user.getStatus()))) {
+            return ResponseEntity.status(403).body(Map.of("message", "This user is blocked. Contact the administrator."));
+        }
+        if (!isBlank(user.getStatus()) && !"ACTIVE".equalsIgnoreCase(cleanText(user.getStatus()))) {
+            return ResponseEntity.status(403).body(Map.of("message", "This user is not active. Contact the administrator."));
+        }
+
+        List<UserOrganizationAccessModel> accessRows =
+                accessRepository.findByUsernameIgnoreCaseAndStatusIgnoreCaseOrderByDefaultOrganizationDescOrganizationCodeAsc(
+                        username,
+                        "ACTIVE"
+                );
+        List<String> organizations = new ArrayList<>();
+        String defaultOrganization = "";
+        for (UserOrganizationAccessModel access : accessRows) {
+            String code = cleanUpper(access.getOrganizationCode());
+            if (code.isEmpty()) {
+                continue;
+            }
+            if (!organizations.contains(code)) {
+                organizations.add(code);
+            }
+            if (defaultOrganization.isEmpty() || Boolean.TRUE.equals(access.getDefaultOrganization())) {
+                defaultOrganization = code;
+            }
+        }
+
+        return ResponseEntity.ok(Map.of(
+                "username", cleanLower(user.getUsername()),
+                "fullName", cleanText(user.getFullName()),
+                "email", cleanLower(user.getEmail()),
+                "phone", cleanText(user.getPhone()),
+                "userType", cleanUpper(user.getUserType()),
+                "globalRole", cleanUpper(user.getGlobalRole()),
+                "status", cleanUpper(user.getStatus()),
+                "defaultOrganization", defaultOrganization,
+                "organizations", organizations
+        ));
     }
 
     @PutMapping("/{username}")
