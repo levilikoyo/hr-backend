@@ -2,10 +2,13 @@ package com.hr.backend.fin_controller;
 
 import com.hr.backend.fin_model.SystemUserModel;
 import com.hr.backend.fin_model.UserOrganizationAccessModel;
+import com.hr.backend.fin_model.OrganizationModel;
+import com.hr.backend.fin_repository.OrganizationRepository;
 import com.hr.backend.fin_repository.SystemUserRepository;
 import com.hr.backend.fin_repository.UserOrganizationAccessRepository;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -28,13 +31,16 @@ public class SystemUserController {
 
     private final SystemUserRepository userRepository;
     private final UserOrganizationAccessRepository accessRepository;
+    private final OrganizationRepository organizationRepository;
 
     public SystemUserController(
             SystemUserRepository userRepository,
-            UserOrganizationAccessRepository accessRepository
+            UserOrganizationAccessRepository accessRepository,
+            OrganizationRepository organizationRepository
     ) {
         this.userRepository = userRepository;
         this.accessRepository = accessRepository;
+        this.organizationRepository = organizationRepository;
     }
 
     @GetMapping
@@ -101,9 +107,25 @@ public class SystemUserController {
                 );
         List<String> organizations = new ArrayList<>();
         String defaultOrganization = "";
+        boolean admin = "ADMIN".equalsIgnoreCase(cleanText(user.getGlobalRole()));
+        if (admin && accessRows.isEmpty()) {
+            for (OrganizationModel organization : organizationRepository.findAllByOrderByCodeAsc()) {
+                String code = cleanUpper(organization.getCode());
+                if (!code.isEmpty()) {
+                    organizations.add(code);
+                    if (defaultOrganization.isEmpty()) {
+                        defaultOrganization = code;
+                    }
+                }
+            }
+        }
         for (UserOrganizationAccessModel access : accessRows) {
             String code = cleanUpper(access.getOrganizationCode());
             if (code.isEmpty()) {
+                continue;
+            }
+            Optional<OrganizationModel> organization = organizationRepository.findByCodeIgnoreCase(code);
+            if (organization.isPresent() && !isBillableAccessAllowed(organization.get(), admin)) {
                 continue;
             }
             if (!organizations.contains(code)) {
@@ -262,4 +284,29 @@ public class SystemUserController {
     private String cleanText(String value) { return value == null ? "" : value.trim(); }
     private String cleanLower(String value) { return cleanText(value).toLowerCase(); }
     private String cleanUpper(String value) { return cleanText(value).toUpperCase(); }
+
+    private boolean isBillableAccessAllowed(OrganizationModel organization, boolean admin) {
+        if (admin) {
+            return true;
+        }
+        if (organization == null || !"ACTIVE".equalsIgnoreCase(cleanText(organization.getStatus()))) {
+            return false;
+        }
+        String billingStatus = cleanUpper(organization.getBillingStatus());
+        if ("BLOCKED".equals(billingStatus) || "FAILED".equals(billingStatus) || "PAST_DUE".equals(billingStatus)) {
+            return isDateTodayOrFuture(organization.getGraceUntil());
+        }
+        if ("TRIAL".equals(billingStatus)) {
+            return isDateTodayOrFuture(organization.getGraceUntil()) || isDateTodayOrFuture(organization.getPaidThrough());
+        }
+        if ("PAID".equals(billingStatus) || "ACTIVE".equals(billingStatus)) {
+            LocalDate paidThrough = organization.getPaidThrough();
+            return paidThrough == null || isDateTodayOrFuture(paidThrough);
+        }
+        return billingStatus.isEmpty();
+    }
+
+    private boolean isDateTodayOrFuture(LocalDate date) {
+        return date != null && !date.isBefore(LocalDate.now());
+    }
 }

@@ -3,8 +3,10 @@ package com.hr.backend.fin_controller;
 import com.hr.backend.fin_model.OrganizationModel;
 import com.hr.backend.fin_model.UserOrganizationAccessModel;
 import com.hr.backend.fin_repository.OrganizationRepository;
+import com.hr.backend.fin_repository.SystemUserRepository;
 import com.hr.backend.fin_repository.UserOrganizationAccessRepository;
 import jakarta.transaction.Transactional;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -29,13 +31,16 @@ public class OrganizationController {
 
     private final OrganizationRepository organizationRepository;
     private final UserOrganizationAccessRepository accessRepository;
+    private final SystemUserRepository userRepository;
 
     public OrganizationController(
             OrganizationRepository organizationRepository,
-            UserOrganizationAccessRepository accessRepository
+            UserOrganizationAccessRepository accessRepository,
+            SystemUserRepository userRepository
     ) {
         this.organizationRepository = organizationRepository;
         this.accessRepository = accessRepository;
+        this.userRepository = userRepository;
     }
 
     @GetMapping
@@ -57,6 +62,9 @@ public class OrganizationController {
 
     @GetMapping("/user/{username}")
     public ResponseEntity<List<OrganizationModel>> getOrganizationsForUser(@PathVariable String username) {
+        boolean admin = userRepository.findByUsernameIgnoreCase(cleanLower(username))
+                .map(user -> "ADMIN".equalsIgnoreCase(cleanText(user.getGlobalRole())))
+                .orElse(false);
         List<UserOrganizationAccessModel> accessRows =
                 accessRepository.findByUsernameIgnoreCaseAndStatusIgnoreCaseOrderByDefaultOrganizationDescOrganizationCodeAsc(
                         cleanLower(username),
@@ -64,7 +72,10 @@ public class OrganizationController {
                 );
 
         if (accessRows.isEmpty()) {
-            return ResponseEntity.ok(organizationRepository.findByStatusIgnoreCaseOrderByCodeAsc("ACTIVE"));
+            return ResponseEntity.ok(filterBillableOrganizations(
+                    organizationRepository.findByStatusIgnoreCaseOrderByCodeAsc("ACTIVE"),
+                    admin
+            ));
         }
 
         Set<String> codes = new LinkedHashSet<>();
@@ -75,7 +86,11 @@ public class OrganizationController {
         List<OrganizationModel> organizations = new ArrayList<>();
         for (String code : codes) {
             Optional<OrganizationModel> org = organizationRepository.findByCodeIgnoreCase(code);
-            org.ifPresent(organizations::add);
+            org.ifPresent(item -> {
+                if (isBillableAccessAllowed(item, admin)) {
+                    organizations.add(item);
+                }
+            });
         }
         return ResponseEntity.ok(organizations);
     }
@@ -132,6 +147,13 @@ public class OrganizationController {
         existing.setFiscalYearStart(cleanText(incoming.getFiscalYearStart()));
         existing.setFiscalYearEnd(cleanText(incoming.getFiscalYearEnd()));
         existing.setStatus(cleanUpper(incoming.getStatus()));
+        existing.setSubscriptionPlan(cleanUpper(incoming.getSubscriptionPlan()));
+        existing.setBillingPeriod(cleanUpper(incoming.getBillingPeriod()));
+        existing.setBillingStatus(cleanUpper(incoming.getBillingStatus()));
+        existing.setPaidThrough(incoming.getPaidThrough());
+        existing.setGraceUntil(incoming.getGraceUntil());
+        existing.setPaymentProvider(cleanUpper(incoming.getPaymentProvider()));
+        existing.setPaymentCustomerId(cleanText(incoming.getPaymentCustomerId()));
         existing.setUpdatedBy(cleanText(incoming.getUpdatedBy()));
     }
 
@@ -140,6 +162,49 @@ public class OrganizationController {
         organization.setName(cleanText(organization.getName()));
         organization.setBaseCurrency(cleanUpper(organization.getBaseCurrency()));
         organization.setStatus(cleanUpper(organization.getStatus()));
+        organization.setSubscriptionPlan(cleanUpper(organization.getSubscriptionPlan()));
+        organization.setBillingPeriod(cleanUpper(organization.getBillingPeriod()));
+        organization.setBillingStatus(cleanUpper(organization.getBillingStatus()));
+        organization.setPaymentProvider(cleanUpper(organization.getPaymentProvider()));
+        organization.setPaymentCustomerId(cleanText(organization.getPaymentCustomerId()));
+    }
+
+    private List<OrganizationModel> filterBillableOrganizations(List<OrganizationModel> organizations, boolean admin) {
+        List<OrganizationModel> allowed = new ArrayList<>();
+        for (OrganizationModel organization : organizations) {
+            if (isBillableAccessAllowed(organization, admin)) {
+                allowed.add(organization);
+            }
+        }
+        return allowed;
+    }
+
+    private boolean isBillableAccessAllowed(OrganizationModel organization, boolean admin) {
+        if (admin) {
+            return true;
+        }
+        if (organization == null) {
+            return false;
+        }
+        if (!"ACTIVE".equalsIgnoreCase(cleanText(organization.getStatus()))) {
+            return false;
+        }
+        String billingStatus = cleanUpper(organization.getBillingStatus());
+        if ("BLOCKED".equals(billingStatus) || "FAILED".equals(billingStatus) || "PAST_DUE".equals(billingStatus)) {
+            return isDateTodayOrFuture(organization.getGraceUntil());
+        }
+        if ("TRIAL".equals(billingStatus)) {
+            return isDateTodayOrFuture(organization.getGraceUntil()) || isDateTodayOrFuture(organization.getPaidThrough());
+        }
+        if ("PAID".equals(billingStatus) || "ACTIVE".equals(billingStatus)) {
+            LocalDate paidThrough = organization.getPaidThrough();
+            return paidThrough == null || isDateTodayOrFuture(paidThrough);
+        }
+        return billingStatus.isEmpty();
+    }
+
+    private boolean isDateTodayOrFuture(LocalDate date) {
+        return date != null && !date.isBefore(LocalDate.now());
     }
 
     private String validateOrganization(OrganizationModel organization) {
