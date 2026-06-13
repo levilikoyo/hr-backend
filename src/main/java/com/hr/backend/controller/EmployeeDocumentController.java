@@ -52,6 +52,7 @@ public EmployeeDocument upload(
         @RequestParam("organization") String organization,
         @RequestParam("category") String category,
         @RequestParam("documentName") String documentName,
+        @RequestParam(value = "folderPath", required = false) String folderPath,
         @RequestParam("file") MultipartFile file
 ) throws Exception {
     requireText(employeeCode, "Employee code is required");
@@ -63,9 +64,14 @@ public EmployeeDocument upload(
         throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "File is required");
     }
 
+    String cleanFolderPath = cleanPath(folderPath);
+    String storageFolder = cleanFolderPath.isEmpty()
+            ? cleanCode(employeeCode) + "/" + cleanText(category)
+            : "rh-archives/" + cleanText(organization) + "/" + cleanFolderPath;
+
     String fileUrl = storageService.uploadFile(
             file.getBytes(),
-            cleanCode(employeeCode) + "/" + cleanText(category) + "/" + file.getOriginalFilename(),
+            storageFolder + "/" + file.getOriginalFilename(),
             file.getContentType()
     );
 
@@ -78,6 +84,7 @@ public EmployeeDocument upload(
     doc.setOriginalFileName(file.getOriginalFilename());
     doc.setFileUrl(fileUrl);
     doc.setContentType(file.getContentType());
+    doc.setFolderPath(cleanFolderPath);
     doc.setUploadedAt(java.time.LocalDateTime.now());
 
     return repository.save(doc);
@@ -99,6 +106,14 @@ public List<EmployeeDocument> getDocuments(
 @GetMapping("/tree")
 public List<ArchiveTreeDTO> getArchiveTree() {
     return repository.getArchiveTreeData();
+}
+
+@GetMapping("/organization/{organization}/folder")
+public List<EmployeeDocument> getByOrganizationFolder(
+        @PathVariable String organization,
+        @RequestParam(value = "folderPath", required = false) String folderPath
+) {
+    return repository.findByOrganizationAndFolderPath(cleanText(organization), cleanPath(folderPath));
 }
 
 @GetMapping("/employee/{employeeCode}")
@@ -158,5 +173,9 @@ private String cleanText(String value) {
 
 private String cleanCode(String value) {
     return cleanText(value).toUpperCase();
+}
+
+private String cleanPath(String value) {
+    return cleanText(value).replace("\\", "/").replaceAll("/+", "/").replaceAll("^/|/$", "");
 }
 }

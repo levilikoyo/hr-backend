@@ -14,6 +14,7 @@ import com.hr.backend.model.EmployeeDocument;
 import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.List;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
   public interface EmployeeDocumentRepository extends JpaRepository<EmployeeDocument, Long> {
 
@@ -33,4 +34,10 @@ List<EmployeeDocument> findByEmployeeCodeAndCategoryAndOrganization(
 );
 
 List<EmployeeDocument> findByEmployeeCodeAndOrganization(String employeeCode, String organization);
+
+@Query("SELECT d FROM EmployeeDocument d WHERE d.organization = :organization AND COALESCE(d.folderPath, '') = :folderPath ORDER BY d.uploadedAt DESC")
+List<EmployeeDocument> findByOrganizationAndFolderPath(
+        @Param("organization") String organization,
+        @Param("folderPath") String folderPath
+);
 }

@@ -32,6 +32,7 @@ public class EmployeeDocument {
 
     private String fileUrl;
     private String fileKey;
+    private String folderPath;
 
     private String contentType;
     private LocalDateTime uploadedAt;
@@ -99,6 +100,14 @@ public class EmployeeDocument {
 
     public void setFileKey(String fileKey) {
         this.fileKey = fileKey;
+    }
+
+    public String getFolderPath() {
+        return folderPath;
+    }
+
+    public void setFolderPath(String folderPath) {
+        this.folderPath = folderPath;
     }
 
     public String getContentType() {
