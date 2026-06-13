@@ -12,6 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -91,6 +92,32 @@ public class ValidationRuleController {
             @PathVariable String ruleCode) {
 
         return lineRepository.findByOrganizationAndRuleCodeOrderByBusinessObjectCodeAsc(organization, ruleCode);
+    }
+
+    @DeleteMapping("/organization/{organization}/rule/{ruleCode}")
+    @Transactional
+    public ResponseEntity<?> deleteRule(
+            @PathVariable String organization,
+            @PathVariable String ruleCode) {
+
+        try {
+            if (isEmpty(organization)) {
+                return ResponseEntity.badRequest().body("Organization is required");
+            }
+            if (isEmpty(ruleCode)) {
+                return ResponseEntity.badRequest().body("Validation rule code is required");
+            }
+            ValidationRuleModel rule = ruleRepository
+                    .findByOrganizationAndCode(organization, ruleCode)
+                    .orElseThrow(() -> new RuntimeException("Validation rule not found"));
+
+            lineRepository.deleteByOrganizationAndRuleCode(organization, ruleCode);
+            ruleRepository.delete(rule);
+            return ResponseEntity.ok("SUCCESS");
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.internalServerError().body("Delete validation rule failed: " + e.getMessage());
+        }
     }
 
     @PostMapping("/organization/{organization}/rule/{ruleCode}/lines")
