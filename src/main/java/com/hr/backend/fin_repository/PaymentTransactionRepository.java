@@ -1,6 +1,7 @@
 package com.hr.backend.fin_repository;
 
 import com.hr.backend.fin_model.PaymentTransactionModel;
+import java.util.Optional;
 import java.util.List;
 import org.springframework.data.jpa.repository.JpaRepository;
 
@@ -9,4 +10,6 @@ public interface PaymentTransactionRepository extends JpaRepository<PaymentTrans
     List<PaymentTransactionModel> findAllByOrderByCreatedAtDesc();
 
     List<PaymentTransactionModel> findByOrganizationCodeIgnoreCaseOrderByCreatedAtDesc(String organizationCode);
+
+    Optional<PaymentTransactionModel> findFirstByProviderCheckoutIdOrderByCreatedAtDesc(String providerCheckoutId);
 }

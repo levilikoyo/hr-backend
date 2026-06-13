@@ -1,9 +1,15 @@
 package com.hr.backend.fin_controller;
 
+import com.google.gson.Gson;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 import com.hr.backend.fin_model.OrganizationModel;
+import com.hr.backend.fin_model.MpesaPaymentRequest;
 import com.hr.backend.fin_model.PaymentTransactionModel;
 import com.hr.backend.fin_repository.OrganizationRepository;
 import com.hr.backend.fin_repository.PaymentTransactionRepository;
+import com.hr.backend.service.MpesaClientService;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
@@ -24,13 +30,17 @@ public class PaymentTransactionController {
 
     private final PaymentTransactionRepository paymentRepository;
     private final OrganizationRepository organizationRepository;
+    private final MpesaClientService mpesaClientService;
+    private final Gson gson = new Gson();
 
     public PaymentTransactionController(
             PaymentTransactionRepository paymentRepository,
-            OrganizationRepository organizationRepository
+            OrganizationRepository organizationRepository,
+            MpesaClientService mpesaClientService
     ) {
         this.paymentRepository = paymentRepository;
         this.organizationRepository = organizationRepository;
+        this.mpesaClientService = mpesaClientService;
     }
 
     @GetMapping
@@ -71,6 +81,93 @@ public class PaymentTransactionController {
         applyPaymentToOrganization(organization, saved);
         organizationRepository.save(organization);
         return ResponseEntity.ok(saved);
+    }
+
+    @PostMapping("/mpesa/initiate")
+    public ResponseEntity<?> initiateMpesaPayment(@RequestBody MpesaPaymentRequest request) {
+        String validationError = validateMpesa(request);
+        if (validationError != null) {
+            return ResponseEntity.badRequest().body(Map.of("message", validationError));
+        }
+
+        String organizationCode = cleanUpper(request.getOrganizationCode());
+        Optional<OrganizationModel> optionalOrganization = organizationRepository.findByCodeIgnoreCase(organizationCode);
+        if (optionalOrganization.isEmpty()) {
+            return ResponseEntity.status(404).body(Map.of("message", "Organization not found"));
+        }
+
+        OrganizationModel organization = optionalOrganization.get();
+        PaymentTransactionModel payment = new PaymentTransactionModel();
+        payment.setOrganizationCode(organizationCode);
+        payment.setOrganizationName(cleanText(organization.getName()));
+        payment.setBillingPeriod(defaultUpper(request.getBillingPeriod(), "MONTHLY"));
+        payment.setBillingStatus("PENDING");
+        payment.setAmount(request.getAmount());
+        payment.setCurrency(defaultUpper(request.getCurrency(), defaultUpper(organization.getBaseCurrency(), "USD")));
+        payment.setProvider("M_PESA");
+        payment.setProviderReference("MPESA-" + System.currentTimeMillis());
+        payment.setPaymentDate(request.getPaymentDate() == null ? LocalDate.now() : request.getPaymentDate());
+        payment.setPaidFrom(request.getPaidFrom());
+        payment.setPaidThrough(request.getPaidThrough());
+        payment.setGraceUntil(request.getGraceUntil());
+        payment.setPayerPhone(cleanText(request.getPhoneNumber()));
+        payment.setNotes(cleanText(request.getNotes()));
+        payment.setCreatedBy(cleanText(request.getCreatedBy()));
+
+        MpesaClientService.MpesaResponse response = mpesaClientService.requestPayment(
+                request.getPhoneNumber(),
+                request.getAmount(),
+                organizationCode,
+                "EMS-L subscription " + organizationCode
+        );
+        payment.setProviderStatus(response.isSuccess() ? "PENDING" : "FAILED");
+        payment.setProviderCheckoutId(response.getCheckoutRequestId());
+        payment.setProviderMessage(response.getMessage());
+        PaymentTransactionModel saved = paymentRepository.save(payment);
+
+        if (!response.isSuccess()) {
+            return ResponseEntity.status(502).body(Map.of(
+                    "message", response.getMessage(),
+                    "paymentId", saved.getId()
+            ));
+        }
+        return ResponseEntity.ok(saved);
+    }
+
+    @PostMapping("/mpesa/callback")
+    public ResponseEntity<?> mpesaCallback(@RequestBody Map<String, Object> callback) {
+        JsonObject root = gson.toJsonTree(callback == null ? Map.of() : callback).getAsJsonObject();
+        JsonObject body = getObject(root, "Body");
+        JsonObject stkCallback = getObject(body, "stkCallback");
+        if (stkCallback == null) {
+            return ResponseEntity.badRequest().body(Map.of("message", "Invalid M-Pesa callback body"));
+        }
+
+        String checkoutRequestId = read(stkCallback, "CheckoutRequestID");
+        Optional<PaymentTransactionModel> optionalPayment =
+                paymentRepository.findFirstByProviderCheckoutIdOrderByCreatedAtDesc(checkoutRequestId);
+        if (optionalPayment.isEmpty()) {
+            return ResponseEntity.ok(Map.of("message", "Payment callback received but transaction was not found"));
+        }
+
+        PaymentTransactionModel payment = optionalPayment.get();
+        int resultCode = readInt(stkCallback, "ResultCode");
+        payment.setProviderMessage(read(stkCallback, "ResultDesc"));
+        if (resultCode == 0) {
+            payment.setBillingStatus("PAID");
+            payment.setProviderStatus("PAID");
+            payment.setProviderReceipt(callbackMetadata(stkCallback, "MpesaReceiptNumber"));
+            paymentRepository.save(payment);
+            organizationRepository.findByCodeIgnoreCase(payment.getOrganizationCode()).ifPresent(organization -> {
+                applyPaymentToOrganization(organization, payment);
+                organizationRepository.save(organization);
+            });
+        } else {
+            payment.setBillingStatus("FAILED");
+            payment.setProviderStatus("FAILED");
+            paymentRepository.save(payment);
+        }
+        return ResponseEntity.ok(Map.of("message", "Callback processed"));
     }
 
     @PostMapping("/organization/{organizationCode}/block")
@@ -123,6 +220,63 @@ public class PaymentTransactionController {
             return "Paid through date is required";
         }
         return null;
+    }
+
+    private String validateMpesa(MpesaPaymentRequest request) {
+        if (request == null) {
+            return "M-Pesa payment body is required";
+        }
+        if (isBlank(request.getOrganizationCode())) {
+            return "Organization is required";
+        }
+        if (request.getAmount() == null) {
+            return "Amount is required";
+        }
+        if (request.getAmount().compareTo(java.math.BigDecimal.ZERO) <= 0) {
+            return "Amount must be greater than zero";
+        }
+        if (isBlank(request.getPhoneNumber())) {
+            return "M-Pesa phone number is required";
+        }
+        if (request.getPaidThrough() == null) {
+            return "Paid through date is required";
+        }
+        return null;
+    }
+
+    private String read(JsonObject json, String field) {
+        return json != null && json.has(field) && !json.get(field).isJsonNull()
+                ? json.get(field).getAsString()
+                : "";
+    }
+
+    private JsonObject getObject(JsonObject json, String field) {
+        return json != null && json.has(field) && json.get(field).isJsonObject()
+                ? json.getAsJsonObject(field)
+                : null;
+    }
+
+    private int readInt(JsonObject json, String field) {
+        try {
+            return json != null && json.has(field) ? json.get(field).getAsInt() : -1;
+        } catch (Exception e) {
+            return -1;
+        }
+    }
+
+    private String callbackMetadata(JsonObject stkCallback, String name) {
+        try {
+            JsonObject metadata = stkCallback.getAsJsonObject("CallbackMetadata");
+            JsonArray items = metadata.getAsJsonArray("Item");
+            for (JsonElement item : items) {
+                JsonObject row = item.getAsJsonObject();
+                if (name.equals(read(row, "Name")) && row.has("Value")) {
+                    return row.get("Value").getAsString();
+                }
+            }
+        } catch (Exception ignored) {
+        }
+        return "";
     }
 
     private boolean isBlank(String value) { return value == null || value.trim().isEmpty(); }

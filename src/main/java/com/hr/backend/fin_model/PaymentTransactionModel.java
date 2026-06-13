@@ -38,6 +38,21 @@ public class PaymentTransactionModel {
     @Column(name = "provider_reference")
     private String providerReference;
 
+    @Column(name = "provider_checkout_id")
+    private String providerCheckoutId;
+
+    @Column(name = "provider_receipt")
+    private String providerReceipt;
+
+    @Column(name = "provider_status")
+    private String providerStatus;
+
+    @Column(name = "provider_message", columnDefinition = "TEXT")
+    private String providerMessage;
+
+    @Column(name = "payer_phone")
+    private String payerPhone;
+
     @Column(name = "payment_date")
     private LocalDate paymentDate;
 
@@ -71,6 +86,11 @@ public class PaymentTransactionModel {
         currency = cleanUpper(currency);
         provider = cleanUpper(provider);
         providerReference = clean(providerReference);
+        providerCheckoutId = clean(providerCheckoutId);
+        providerReceipt = clean(providerReceipt);
+        providerStatus = cleanUpper(providerStatus);
+        providerMessage = clean(providerMessage);
+        payerPhone = clean(payerPhone);
         notes = clean(notes);
         createdBy = clean(createdBy);
         if (paymentDate == null) {
@@ -111,6 +131,16 @@ public class PaymentTransactionModel {
     public void setProvider(String provider) { this.provider = provider; }
     public String getProviderReference() { return providerReference; }
     public void setProviderReference(String providerReference) { this.providerReference = providerReference; }
+    public String getProviderCheckoutId() { return providerCheckoutId; }
+    public void setProviderCheckoutId(String providerCheckoutId) { this.providerCheckoutId = providerCheckoutId; }
+    public String getProviderReceipt() { return providerReceipt; }
+    public void setProviderReceipt(String providerReceipt) { this.providerReceipt = providerReceipt; }
+    public String getProviderStatus() { return providerStatus; }
+    public void setProviderStatus(String providerStatus) { this.providerStatus = providerStatus; }
+    public String getProviderMessage() { return providerMessage; }
+    public void setProviderMessage(String providerMessage) { this.providerMessage = providerMessage; }
+    public String getPayerPhone() { return payerPhone; }
+    public void setPayerPhone(String payerPhone) { this.payerPhone = payerPhone; }
     public LocalDate getPaymentDate() { return paymentDate; }
     public void setPaymentDate(LocalDate paymentDate) { this.paymentDate = paymentDate; }
     public LocalDate getPaidFrom() { return paidFrom; }
