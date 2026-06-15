@@ -29,17 +29,24 @@ public class StorageService {
     }
 
     public String uploadObject(byte[] fileBytes, String objectName, String contentType) {
+        return uploadObjectToBucket(bucketName, fileBytes, objectName, contentType);
+    }
+
+    public String uploadObjectToBucket(String targetBucketName, byte[] fileBytes, String objectName, String contentType) {
 
         Storage storage = StorageOptions.getDefaultInstance().getService();
 
-        BlobId blobId = BlobId.of(bucketName, objectName);
+        String cleanBucketName = targetBucketName == null || targetBucketName.trim().isEmpty()
+                ? bucketName
+                : targetBucketName.trim();
+        BlobId blobId = BlobId.of(cleanBucketName, objectName);
         BlobInfo blobInfo = BlobInfo.newBuilder(blobId)
                 .setContentType(contentType)
                 .build();
 
         storage.create(blobInfo, fileBytes);
 
-        return "https://storage.googleapis.com/" + bucketName + "/" + objectName;
+        return "https://storage.googleapis.com/" + cleanBucketName + "/" + objectName;
     }
 
     public byte[] downloadObject(String objectName) {

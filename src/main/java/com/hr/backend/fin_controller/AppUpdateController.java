@@ -62,6 +62,9 @@ public class AppUpdateController {
     @Value("${ems.app.update.windows.installer-type:exe}")
     private String windowsInstallerType;
 
+    @Value("${ems.app.update.bucket:ems-l-desktop-updates-136775602294}")
+    private String updateBucket;
+
     @Value("${ems.app.update.publish-token:}")
     private String publishToken;
 
@@ -120,7 +123,7 @@ public class AppUpdateController {
         byte[] bytes = file.getBytes();
         String sha256 = sha256(bytes);
         String objectName = "desktop-updates/windows/EMS-L-" + safeFilePart(cleanVersion) + ".exe";
-        String url = storageService.uploadObject(bytes, objectName, "application/vnd.microsoft.portable-executable");
+        String url = storageService.uploadObjectToBucket(updateBucket, bytes, objectName, "application/vnd.microsoft.portable-executable");
         String publishedAt = OffsetDateTime.now().toString();
 
         Properties manifest = new Properties();
