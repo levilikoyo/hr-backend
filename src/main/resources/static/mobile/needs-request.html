@@ -1,8 +1,8 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Expression de besoin</title>
+    <title>Needs request</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 
     <!-- PWA -->
@@ -30,30 +30,31 @@
     <!-- Top Header -->
     <div class="top-header">
         <div class="top-header-left">
-            <a href="index.html?v=android-needs1" class="return-btn" aria-label="Back">
+            <a href="index.html?v=android-needs1" class="return-btn" aria-label="Back" data-i18n-aria-label="common.back">
                 ←
             </a>
 
             <div class="app-title-box">
-                <h1>Expression de besoin</h1>
-                <p>Créer une nouvelle demande</p>
+                <h1 data-i18n="needs.title">Needs request</h1>
+                <p data-i18n="needs.subtitle">Create a new request</p>
             </div>
         </div>
 
         <div class="top-header-right">
             <div class="user-info-box" id="userInfoBox">
                 <div class="user-text">
-                    <strong id="currentUserName" class="user-name">User</strong>
-                    <span id="currentUserRole" class="user-role">ROLE</span>
+                    <strong id="currentUserName" class="user-name" data-i18n="common.user">User</strong>
+                    <span id="currentUserRole" class="user-role" data-i18n="common.role">ROLE</span>
                 </div>
                 <img src="images/user-avatar.png" alt="User" class="user-avatar">
             </div>
 
             <div class="user-dropdown" id="userDropdown">
-                <strong id="dropdownUserName">User</strong>
+                <strong id="dropdownUserName" data-i18n="common.user">User</strong>
                 <span id="dropdownUserEmail">user@email.com</span>
-                <small id="dropdownUserRole">ROLE</small>
-                <button type="button" onclick="logout()">Logout</button>
+                <small id="dropdownUserRole" data-i18n="common.role">ROLE</small>
+                <div data-language-switcher></div>
+                <button type="button" onclick="logout()" data-i18n="common.logout">Logout</button>
             </div>
         </div>
     </div>
@@ -62,26 +63,28 @@
     <form class="form-card needs-request-form" id="needsRequestForm">
 
         <div class="form-group">
-            <label for="title">Objet du besoin *</label>
+            <label for="title" data-i18n="needs.object">Need title *</label>
             <input
                     type="text"
                     id="title"
                     name="title"
-                    placeholder="Ex: Achat carburant terrain"
+                    placeholder="Example: Field fuel purchase"
+                    data-i18n-placeholder="needs.objectPlaceholder"
                     required>
         </div>
 
         <div class="form-group">
-            <label for="description">Description générale</label>
+            <label for="description" data-i18n="needs.description">General description</label>
             <textarea
                     id="description"
                     name="description"
-                    placeholder="Décrivez le besoin général..."></textarea>
+                    placeholder="Describe the general need..."
+                    data-i18n-placeholder="needs.descriptionPlaceholder"></textarea>
         </div>
 
         <div class="row-2 needs-row-2">
             <div class="form-group">
-                <label for="requestDate">Date souhaitée *</label>
+                <label for="requestDate" data-i18n="needs.requestDate">Requested date *</label>
                 <input
                         type="date"
                         id="requestDate"
@@ -90,7 +93,7 @@
             </div>
 
             <div class="form-group">
-                <label for="priority">Priorité</label>
+                <label for="priority" data-i18n="needs.priority">Priority</label>
                 <select id="priority" name="priority">
                     <option value="NORMAL">NORMAL</option>
                     <option value="LOW">LOW</option>
@@ -101,18 +104,18 @@
         </div>
 
         <div class="section-title">
-            Department approval
+            <span data-i18n="needs.departmentApproval">Department approval</span>
         </div>
 
         <div class="form-group">
-            <label for="addressedDepartment">Addressed Department *</label>
+            <label for="addressedDepartment" data-i18n="needs.addressedDepartment">Addressed Department *</label>
             <select id="addressedDepartment" name="addressedDepartment" required>
-                <option value="">Loading departments...</option>
+                <option value="" data-i18n="needs.loadingDepartments">Loading departments...</option>
             </select>
         </div>
 
         <div class="section-title">
-            Items requested
+            <span data-i18n="needs.items">Items requested</span>
         </div>
 
         <div id="itemsContainer" class="needs-items-container">
@@ -120,50 +123,51 @@
         </div>
 
         <button type="button" class="btn-secondary" id="addItemBtn">
-            + Add item
+            <span data-i18n="needs.addItem">+ Add item</span>
         </button>
 
         <div class="total-box needs-total-box">
-            <strong>Total amount:</strong>
+            <strong data-i18n="needs.totalAmount">Total amount:</strong>
             <span id="grandTotal">0.00</span>
         </div>
 
         <div class="section-title">
-            Budget and accounting information
+            <span data-i18n="needs.budgetAccounting">Budget and accounting information</span>
         </div>
 
         <div class="form-group">
-            <label for="budgetPlan">Budget Plan</label>
+            <label for="budgetPlan" data-i18n="needs.budgetPlan">Budget Plan</label>
             <input
                     type="text"
                     id="budgetPlan"
                     name="budgetPlan"
-                    placeholder="Optional budget plan">
+                    placeholder="Optional budget plan"
+                    data-i18n-placeholder="needs.budgetPlanPlaceholder">
         </div>
 
         <div class="form-group">
-            <label for="fundCode">Fund *</label>
+            <label for="fundCode" data-i18n="needs.fund">Fund *</label>
             <select id="fundCode" name="fundCode" required>
-                <option value="">Loading funds...</option>
+                <option value="" data-i18n="needs.loadingFunds">Loading funds...</option>
             </select>
         </div>
 
         <div class="form-group">
-            <label for="currencyCode">Currency *</label>
+            <label for="currencyCode" data-i18n="needs.currency">Currency *</label>
             <select id="currencyCode" name="currencyCode" required>
-                <option value="">Loading currencies...</option>
+                <option value="" data-i18n="needs.loadingCurrencies">Loading currencies...</option>
             </select>
         </div>
 
         <div class="form-group">
-            <label for="glAccountCode">G/L Account *</label>
+            <label for="glAccountCode" data-i18n="needs.glAccount">G/L Account *</label>
             <select id="glAccountCode" name="glAccountCode" required>
-                <option value="">Loading G/L accounts...</option>
+                <option value="" data-i18n="needs.loadingGlAccounts">Loading G/L accounts...</option>
             </select>
         </div>
 
         <div class="section-title">
-            Dimensions
+            <span data-i18n="needs.dimensions">Dimensions</span>
         </div>
 
         <div id="dynamicDimensionsContainer" class="needs-dimensions-container">
@@ -171,11 +175,11 @@
         </div>
 
         <button type="submit" class="btn-primary" id="submitBtn">
-            Submit Request
+            <span data-i18n="needs.submit">Submit Request</span>
         </button>
 
         <button type="button" class="btn-secondary" id="cancelBtn">
-            Cancel
+            <span data-i18n="common.cancel">Cancel</span>
         </button>
 
     </form>
@@ -184,6 +188,7 @@
 
 <script src="js/config.js?v=android-needs1"></script>
 <script src="js/mobile-dialog.js?v=android-needs1"></script>
+<script src="js/i18n.js?v=android-lang1"></script>
 <script src="js/auth.js?v=android-needs1"></script>
 <script src="js/needs-request.js?v=android-needs1"></script>
 <script src="js/pwa-register.js?v=android-needs1"></script>

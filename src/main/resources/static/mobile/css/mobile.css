@@ -297,6 +297,46 @@ button:disabled {
     transform: scale(0.98);
 }
 
+.language-switcher {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin: 12px 0;
+    padding: 10px 0;
+    border-top: 1px solid #eef2f7;
+    border-bottom: 1px solid #eef2f7;
+    color: #374151;
+    font-size: 12px;
+    font-weight: 900;
+}
+
+.language-switcher select {
+    min-width: 112px;
+    height: 36px;
+    border: 1px solid #d1d5db;
+    border-radius: 10px;
+    background: #ffffff;
+    color: #111827;
+    padding: 0 8px;
+    font-size: 13px;
+    font-weight: 800;
+}
+
+.login-language {
+    display: flex;
+    justify-content: flex-end;
+    padding: 14px 20px 0;
+}
+
+.login-language .language-switcher {
+    width: 190px;
+    margin: 0;
+    padding: 0;
+    border: none;
+    color: #ffffff;
+}
+
 /* =========================
    PAGE INTRO
 ========================= */

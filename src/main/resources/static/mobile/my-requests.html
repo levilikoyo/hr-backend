@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <title>Mes demandes</title>
@@ -31,13 +31,13 @@
     <div class="top-header">
 
         <div class="top-header-left">
-            <a href="index.html?v=android-myrequests1" class="return-btn" aria-label="Back">
+            <a href="index.html?v=android-myrequests1" class="return-btn" aria-label="Back" data-i18n-aria-label="common.back">
                 ←
             </a>
 
             <div class="app-title-box">
-                <h1>Mes demandes</h1>
-                <p>Suivi des demandes</p>
+                <h1 data-i18n="myRequests.title">My requests</h1>
+                <p data-i18n="myRequests.subtitle">Request tracking</p>
             </div>
         </div>
 
@@ -45,19 +45,20 @@
 
             <div class="user-info-box" id="userInfoBox" onclick="toggleUserMenu()">
                 <div class="user-text">
-                    <strong id="currentUserName" class="user-name">User</strong>
-                    <span id="currentUserRole" class="user-role">Role</span>
+                    <strong id="currentUserName" class="user-name" data-i18n="common.user">User</strong>
+                    <span id="currentUserRole" class="user-role" data-i18n="common.role">Role</span>
                 </div>
 
                 <img src="images/user-avatar.png" alt="User" class="user-avatar">
             </div>
 
             <div class="user-dropdown" id="userDropdown">
-                <strong id="dropdownUserName">User</strong>
+                <strong id="dropdownUserName" data-i18n="common.user">User</strong>
                 <span id="dropdownUserEmail">email</span>
-                <small id="dropdownUserRole">Role</small>
+                <small id="dropdownUserRole" data-i18n="common.role">Role</small>
+                <div data-language-switcher></div>
 
-                <button type="button" onclick="logoutUser()">
+                <button type="button" onclick="logoutUser()" data-i18n="common.logout">
                     Logout
                 </button>
             </div>
@@ -70,13 +71,13 @@
     <div class="approval-container my-requests-content">
 
         <div class="approval-toolbar my-requests-toolbar">
-            <h2>Requests</h2>
+            <h2 data-i18n="myRequests.requests">Requests</h2>
             <span id="requestCount">0</span>
         </div>
 
         <div class="filter-tabs my-requests-filter-tabs">
             <button type="button" class="tab-btn active" onclick="filterRequests('ALL', this)">
-                All
+                <span data-i18n="myRequests.all">All</span>
             </button>
 
             <button type="button" class="tab-btn" onclick="filterRequests('PENDING_HOD_APPROVAL', this)">
@@ -92,11 +93,11 @@
             </button>
 
             <button type="button" class="tab-btn" onclick="filterRequests('APPROVED', this)">
-                Approved
+                <span data-i18n="home.approved">Approved</span>
             </button>
 
             <button type="button" class="tab-btn" onclick="filterRequests('REJECTED', this)">
-                Rejected
+                <span data-i18n="home.rejected">Rejected</span>
             </button>
         </div>
 
@@ -108,6 +109,7 @@
 
 <script src="js/config.js?v=android-myrequests1"></script>
 <script src="js/mobile-dialog.js?v=android-myrequests1"></script>
+<script src="js/i18n.js?v=android-lang1"></script>
 <script src="js/auth.js?v=android-myrequests1"></script>
 <script src="js/my-requests.js?v=android-myrequests1"></script>
 <script src="js/pwa-register.js?v=android-myrequests1"></script>

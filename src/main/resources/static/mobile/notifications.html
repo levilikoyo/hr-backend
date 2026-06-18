@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <title>Notifications</title>
@@ -27,11 +27,11 @@
     <div class="top-header">
 
         <div class="top-header-left">
-            <a href="index.html" class="return-btn">←</a>
+            <a href="index.html" class="return-btn" aria-label="Back" data-i18n-aria-label="common.back">←</a>
 
             <div class="app-title-box">
-                <h1>Notifications</h1>
-                <p>Alertes et mises à jour</p>
+                <h1 data-i18n="notifications.title">Notifications</h1>
+                <p data-i18n="notifications.subtitle">Alerts and updates</p>
             </div>
         </div>
 
@@ -39,19 +39,20 @@
 
             <div class="user-info-box" onclick="toggleUserMenu()">
                 <div class="user-text">
-                    <strong id="currentUserName">User</strong>
-                    <span id="currentUserRole">Role</span>
+                    <strong id="currentUserName" data-i18n="common.user">User</strong>
+                    <span id="currentUserRole" data-i18n="common.role">Role</span>
                 </div>
 
                 <img src="images/user-avatar.png" alt="User" class="user-avatar">
             </div>
 
             <div class="user-dropdown" id="userDropdown">
-                <strong id="dropdownUserName">User</strong>
+                <strong id="dropdownUserName" data-i18n="common.user">User</strong>
                 <span id="dropdownUserEmail">email</span>
-                <small id="dropdownUserRole">Role</small>
+                <small id="dropdownUserRole" data-i18n="common.role">Role</small>
+                <div data-language-switcher></div>
 
-                <button type="button" onclick="logoutUser()">
+                <button type="button" onclick="logoutUser()" data-i18n="common.logout">
                     Logout
                 </button>
             </div>
@@ -63,13 +64,13 @@
     <div class="approval-container">
 
         <div class="approval-toolbar">
-            <h2>My notifications</h2>
+            <h2 data-i18n="notifications.mine">My notifications</h2>
             <span id="notificationCount">0</span>
         </div>
 
         <div class="notification-actions">
             <button type="button" class="btn-secondary" onclick="markAllNotificationsRead()">
-                Mark all as read
+                <span data-i18n="notifications.markAllRead">Mark all as read</span>
             </button>
         </div>
 
@@ -81,6 +82,7 @@
 
 <script src="js/config.js"></script>
 <script src="js/mobile-dialog.js"></script>
+<script src="js/i18n.js?v=android-lang1"></script>
 <script src="js/auth.js"></script>
 <script src="js/notifications.js"></script>
 <script src="js/pwa-register.js"></script>

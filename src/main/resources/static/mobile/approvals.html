@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <title>Approbations</title>
@@ -30,30 +30,31 @@
     <!-- Top Header -->
     <div class="top-header">
         <div class="top-header-left">
-            <a href="index.html?v=android-approvals1" class="return-btn" aria-label="Back">
+            <a href="index.html?v=android-approvals1" class="return-btn" aria-label="Back" data-i18n-aria-label="common.back">
                 ←
             </a>
 
             <div class="app-title-box">
-                <h1>Approbations</h1>
-                <p>Demandes en attente</p>
+                <h1 data-i18n="approvals.title">Approvals</h1>
+                <p data-i18n="approvals.subtitle">Pending requests</p>
             </div>
         </div>
 
         <div class="top-header-right">
             <div class="user-info-box" id="userInfoBox">
                 <div class="user-text">
-                    <strong id="currentUserName" class="user-name">User</strong>
-                    <span id="currentUserRole" class="user-role">ROLE</span>
+                    <strong id="currentUserName" class="user-name" data-i18n="common.user">User</strong>
+                    <span id="currentUserRole" class="user-role" data-i18n="common.role">ROLE</span>
                 </div>
                 <img src="images/user-avatar.png" alt="User" class="user-avatar">
             </div>
 
             <div class="user-dropdown" id="userDropdown">
-                <strong id="dropdownUserName">User</strong>
+                <strong id="dropdownUserName" data-i18n="common.user">User</strong>
                 <span id="dropdownUserEmail">user@email.com</span>
-                <small id="dropdownUserRole">ROLE</small>
-                <button type="button" onclick="logout()">Logout</button>
+                <small id="dropdownUserRole" data-i18n="common.role">ROLE</small>
+                <div data-language-switcher></div>
+                <button type="button" onclick="logout()" data-i18n="common.logout">Logout</button>
             </div>
         </div>
     </div>
@@ -62,12 +63,12 @@
     <div class="content approval-content">
 
         <div class="section-header approval-section-header">
-            <h2>Pending requests</h2>
+            <h2 data-i18n="approvals.pendingRequests">Pending requests</h2>
             <span class="badge pending-count" id="pendingCount">0</span>
         </div>
 
         <div class="loading" style="display:none;">
-            Loading pending approvals...
+            <span data-i18n="approvals.loading">Loading pending approvals...</span>
         </div>
 
         <div id="pendingRequestsContainer" class="approval-list">
@@ -81,6 +82,7 @@
 <!-- Scripts: order is important -->
 <script src="js/config.js?v=android-approvals1"></script>
 <script src="js/mobile-dialog.js?v=android-approvals1"></script>
+<script src="js/i18n.js?v=android-lang1"></script>
 <script src="js/auth.js?v=android-approvals1"></script>
 <script src="js/approvals.js?v=android-approvals1"></script>
 <script src="js/pwa-register.js?v=android-approvals1"></script>

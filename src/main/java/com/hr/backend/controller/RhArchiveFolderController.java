@@ -1,16 +1,23 @@
 package com.hr.backend.controller;
 
 import com.hr.backend.model.RhArchiveFolder;
+import com.hr.backend.model.EmployeeDocument;
+import com.hr.backend.repository.EmployeeDocumentRepository;
 import com.hr.backend.repository.RhArchiveFolderRepository;
+import com.hr.backend.service.StorageService;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -19,9 +26,17 @@ import org.springframework.web.server.ResponseStatusException;
 public class RhArchiveFolderController {
 
     private final RhArchiveFolderRepository repository;
+    private final EmployeeDocumentRepository documentRepository;
+    private final StorageService storageService;
 
-    public RhArchiveFolderController(RhArchiveFolderRepository repository) {
+    public RhArchiveFolderController(
+            RhArchiveFolderRepository repository,
+            EmployeeDocumentRepository documentRepository,
+            StorageService storageService
+    ) {
         this.repository = repository;
+        this.documentRepository = documentRepository;
+        this.storageService = storageService;
     }
 
     @GetMapping("/organization/{organization}")
@@ -52,6 +67,45 @@ public class RhArchiveFolderController {
         folder.setCreatedAt(LocalDateTime.now());
         folder.setCreatedBy(createdBy);
         return repository.save(folder);
+    }
+
+    @DeleteMapping("/organization/{organization}")
+    public ResponseEntity<Map<String, Object>> deleteFolder(
+            @PathVariable String organization,
+            @RequestParam("fullPath") String fullPath
+    ) {
+        String cleanOrganization = cleanText(organization);
+        String cleanFullPath = cleanPath(fullPath);
+        requireText(cleanOrganization, "Organization is required");
+        requireText(cleanFullPath, "Folder path is required");
+
+        repository.findByOrganizationAndFullPath(cleanOrganization, cleanFullPath)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Folder not found."));
+
+        List<EmployeeDocument> documents =
+                documentRepository.findByOrganizationAndFolderPathTree(cleanOrganization, cleanFullPath);
+        for (EmployeeDocument document : documents) {
+            try {
+                storageService.deleteFile(document.getFileUrl());
+            } catch (Exception ignored) {
+            }
+        }
+        documentRepository.deleteAll(documents);
+
+        List<RhArchiveFolder> folders = new ArrayList<>();
+        for (RhArchiveFolder folder : repository.findByOrganizationOrderByFullPathAsc(cleanOrganization)) {
+            String path = cleanPath(folder.getFullPath());
+            if (path.equals(cleanFullPath) || path.startsWith(cleanFullPath + "/")) {
+                folders.add(folder);
+            }
+        }
+        repository.deleteAll(folders);
+
+        return ResponseEntity.ok(Map.of(
+                "message", "Folder deleted",
+                "foldersDeleted", folders.size(),
+                "documentsDeleted", documents.size()
+        ));
     }
 
     private void requireText(String value, String message) {

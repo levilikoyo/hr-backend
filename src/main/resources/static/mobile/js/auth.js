@@ -27,6 +27,7 @@
         displayCurrentUser();
         ensureUserDropdown();
         bindUserDropdown();
+        applyLanguage();
     });
 
     /* =========================================================
@@ -214,7 +215,7 @@
             : [normalizeRole(allowedRoles)];
 
         if (!allowed.includes(role) && role !== "ADMIN") {
-            showAuthError("You are not allowed to access this page.");
+            showAuthError(translate("auth.notAllowed", "You are not allowed to access this page."));
             redirectToHome();
             throw new Error("Unauthorized role.");
         }
@@ -332,10 +333,12 @@
             <strong id="dropdownUserName">${escapeHtml(name)}</strong>
             <span id="dropdownUserEmail">${escapeHtml(email)}</span>
             <small id="dropdownUserRole">${escapeHtml(role)}</small>
-            <button type="button" id="logoutBtn">Logout</button>
+            <div data-language-switcher></div>
+            <button type="button" id="logoutBtn" data-i18n="common.logout">${translate("common.logout", "Logout")}</button>
         `;
 
         forceDropdownBaseStyle(userDropdown);
+        applyLanguage(userDropdown);
 
         const logoutBtn = document.getElementById("logoutBtn");
 
@@ -449,7 +452,7 @@
         clearAuth();
 
         if (window.MobileDialog && typeof window.MobileDialog.successToast === "function") {
-            window.MobileDialog.successToast("Logged out successfully");
+            window.MobileDialog.successToast(translate("auth.loggedOut", "Logged out successfully"));
         }
 
         setTimeout(function () {
@@ -551,11 +554,33 @@
 
     function showAuthError(message) {
         if (window.MobileDialog && typeof window.MobileDialog.error === "function") {
-            window.MobileDialog.error("Access denied", message);
+            window.MobileDialog.error(translate("auth.accessDenied", "Access denied"), message);
             return;
         }
 
         alert(message);
+    }
+
+    function translate(key, fallback) {
+        if (window.EMSI18n && typeof window.EMSI18n.t === "function") {
+            return window.EMSI18n.t(key, fallback);
+        }
+
+        return fallback || key;
+    }
+
+    function applyLanguage(root) {
+        if (!window.EMSI18n) {
+            return;
+        }
+
+        if (typeof window.EMSI18n.ensureLanguageSelectors === "function") {
+            window.EMSI18n.ensureLanguageSelectors();
+        }
+
+        if (typeof window.EMSI18n.apply === "function") {
+            window.EMSI18n.apply(root);
+        }
     }
 
     function escapeHtml(value) {
@@ -582,8 +607,10 @@
     window.isLoggedIn = isLoggedIn;
 
     window.logout = logout;
+    window.logoutUser = logout;
     window.clearAuth = clearAuth;
 
     window.displayCurrentUser = displayCurrentUser;
+    window.toggleUserMenu = toggleUserDropdown;
     window.authFetch = authFetch;
 })();

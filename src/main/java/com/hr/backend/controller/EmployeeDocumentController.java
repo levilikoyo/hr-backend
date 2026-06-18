@@ -157,6 +157,19 @@ public ResponseEntity<Map<String, String>> deleteDocument(@PathVariable Long id)
     return ResponseEntity.ok(Map.of("message", "Document deleted successfully"));
 }
 
+@PatchMapping("/{id}/rename")
+public EmployeeDocument renameDocument(
+        @PathVariable Long id,
+        @RequestBody Map<String, String> payload
+) {
+    EmployeeDocument doc = repository.findById(id)
+            .orElseThrow(() -> notFound("Document not found"));
+    String documentName = cleanText(payload == null ? "" : payload.get("documentName"));
+    requireText(documentName, "Document name is required");
+    doc.setDocumentName(documentName);
+    return repository.save(doc);
+}
+
 private void requireText(String value, String message) {
     if (value == null || value.trim().isEmpty()) {
         throw new ResponseStatusException(HttpStatus.BAD_REQUEST, message);

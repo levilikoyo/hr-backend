@@ -40,4 +40,10 @@ List<EmployeeDocument> findByOrganizationAndFolderPath(
         @Param("organization") String organization,
         @Param("folderPath") String folderPath
 );
+
+@Query("SELECT d FROM EmployeeDocument d WHERE d.organization = :organization AND (COALESCE(d.folderPath, '') = :folderPath OR COALESCE(d.folderPath, '') LIKE CONCAT(:folderPath, '/%'))")
+List<EmployeeDocument> findByOrganizationAndFolderPathTree(
+        @Param("organization") String organization,
+        @Param("folderPath") String folderPath
+);
 }

@@ -5,14 +5,17 @@ import com.hr.backend.fin_repository.FundDocumentRepository;
 import com.hr.backend.service.StorageService;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -138,6 +141,21 @@ public class FundDocumentController {
         repository.deleteById(id);
 
         return ResponseEntity.ok("Document deleted successfully");
+    }
+
+    @PatchMapping("/{id}/rename")
+    public ResponseEntity<?> renameDocument(
+            @PathVariable Long id,
+            @RequestBody Map<String, String> payload
+    ) {
+        FundDocumentModel document = repository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Document not found"));
+        String documentName = clean(payload == null ? "" : payload.get("documentName"));
+        if (documentName.isEmpty()) {
+            return ResponseEntity.badRequest().body("Document name is required");
+        }
+        document.setDocumentName(documentName);
+        return ResponseEntity.ok(repository.save(document));
     }
 
     private String clean(String value) {

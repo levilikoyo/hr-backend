@@ -1,8 +1,8 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Connexion - EMS-L Approval</title>
+    <title>Login - EMS-L Approval</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 
     <!-- PWA -->
@@ -126,8 +126,9 @@
 <div class="login-wrapper">
 
     <div class="login-header">
-        <h1>Connexion</h1>
-        <p>Accès mobile approval</p>
+        <div class="login-language" data-language-switcher></div>
+        <h1 data-i18n="login.title">Login</h1>
+        <p data-i18n="login.subtitle">Mobile approval access</p>
     </div>
 
     <div class="login-card">
@@ -135,30 +136,32 @@
         <form id="loginForm">
 
             <div class="form-group">
-                <label for="email">Email</label>
+                <label for="email" data-i18n="common.email">Email</label>
                 <input
                         type="email"
                         id="email"
                         name="email"
                         autocomplete="email"
-                        placeholder="Votre adresse email"
+                        placeholder="Your email address"
+                        data-i18n-placeholder="login.emailPlaceholder"
                         required>
             </div>
 
             <div class="form-group">
-                <label for="pinCode">PIN Code</label>
+                <label for="pinCode" data-i18n="common.pin">PIN Code</label>
                 <input
                         type="password"
                         id="pinCode"
                         name="pinCode"
                         inputmode="numeric"
                         autocomplete="current-password"
-                        placeholder="Votre PIN"
+                        placeholder="Your PIN"
+                        data-i18n-placeholder="login.pinPlaceholder"
                         required>
             </div>
 
-            <button type="submit" class="login-btn" id="loginBtn">
-                Se connecter
+            <button type="submit" class="login-btn" id="loginBtn" data-i18n="login.button">
+                Sign in
             </button>
 
             <div class="login-debug" id="loginDebug"></div>
@@ -167,7 +170,7 @@
 
     </div>
 
-    <div class="login-footer">
+    <div class="login-footer" data-i18n="login.footer">
         EMS-L Finance System · Mobile Approval
     </div>
 
@@ -175,6 +178,7 @@
 
 <script src="js/config.js?v=android-login1"></script>
 <script src="js/mobile-dialog.js?v=android-login1"></script>
+<script src="js/i18n.js?v=android-lang1"></script>
 <script src="js/auth.js?v=android-login1"></script>
 <script src="js/pwa-register.js?v=android-login1"></script>
 
@@ -215,12 +219,12 @@
         const pinCode = document.getElementById("pinCode").value.trim();
 
         if (!email || !pinCode) {
-            showLoginError("Veuillez saisir l'email et le PIN.");
+            showLoginError(window.EMSI18n ? window.EMSI18n.t("login.missingCredentials", "Please enter email and PIN.") : "Please enter email and PIN.");
             return;
         }
 
         loginBtn.disabled = true;
-        loginBtn.textContent = "Connexion...";
+        loginBtn.textContent = window.EMSI18n ? window.EMSI18n.t("login.loading", "Signing in...") : "Signing in...";
 
         loginDebug.classList.remove("show");
         loginDebug.textContent = "";
@@ -242,7 +246,7 @@
             showLoginError(error.message || "Login failed.");
         } finally {
             loginBtn.disabled = false;
-            loginBtn.textContent = "Se connecter";
+            loginBtn.textContent = window.EMSI18n ? window.EMSI18n.t("login.button", "Sign in") : "Sign in";
         }
     });
 

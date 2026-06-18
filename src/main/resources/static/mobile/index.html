@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <title>Mobile Approval</title>
@@ -31,8 +31,8 @@
 
         <div class="top-header-left">
             <div class="app-title-box">
-                <h1>Mobile Approval</h1>
-                <p>Expression de besoin</p>
+                <h1 data-i18n="home.title">Mobile Approval</h1>
+                <p data-i18n="home.subtitle">Needs request</p>
             </div>
         </div>
 
@@ -40,19 +40,20 @@
 
             <div class="user-info-box" onclick="toggleUserMenu()">
                 <div class="user-text">
-                    <strong id="currentUserName">User</strong>
-                    <span id="currentUserRole">Role</span>
+                    <strong id="currentUserName" data-i18n="common.user">User</strong>
+                    <span id="currentUserRole" data-i18n="common.role">Role</span>
                 </div>
 
                 <img src="images/user-avatar.png" alt="User" class="user-avatar">
             </div>
 
             <div class="user-dropdown" id="userDropdown">
-                <strong id="dropdownUserName">User</strong>
+                <strong id="dropdownUserName" data-i18n="common.user">User</strong>
                 <span id="dropdownUserEmail">email</span>
-                <small id="dropdownUserRole">Role</small>
+                <small id="dropdownUserRole" data-i18n="common.role">Role</small>
+                <div data-language-switcher></div>
 
-                <button type="button" onclick="logoutUser()">
+                <button type="button" onclick="logoutUser()" data-i18n="common.logout">
                     Logout
                 </button>
             </div>
@@ -65,27 +66,27 @@
     <div class="dashboard-grid">
 
         <div class="dashboard-card">
-            <div class="dashboard-label">My pending</div>
+            <div class="dashboard-label" data-i18n="home.myPending">My pending</div>
             <div class="dashboard-value" id="myPendingCount">0</div>
         </div>
 
         <div class="dashboard-card">
-            <div class="dashboard-label">Approved</div>
+            <div class="dashboard-label" data-i18n="home.approved">Approved</div>
             <div class="dashboard-value" id="approvedCount">0</div>
         </div>
 
         <div class="dashboard-card">
-            <div class="dashboard-label">Rejected</div>
+            <div class="dashboard-label" data-i18n="home.rejected">Rejected</div>
             <div class="dashboard-value rejected" id="rejectedCount">0</div>
         </div>
 
         <div class="dashboard-card" id="pendingApprovalCard">
-            <div class="dashboard-label">To approve</div>
+            <div class="dashboard-label" data-i18n="home.toApprove">To approve</div>
             <div class="dashboard-value approval" id="pendingApprovalCount">0</div>
         </div>
 
         <div class="dashboard-card">
-            <div class="dashboard-label">Notifications</div>
+            <div class="dashboard-label" data-i18n="common.notifications">Notifications</div>
             <div class="dashboard-value notification" id="notificationUnreadCount">0</div>
         </div>
 
@@ -98,8 +99,8 @@
             <div class="menu-icon">＋</div>
 
             <div class="menu-content">
-                <h2>Nouvelle demande</h2>
-                <p>Créer une expression de besoin</p>
+                <h2 data-i18n="home.newRequest">New request</h2>
+                <p data-i18n="home.newRequestDesc">Create a needs request</p>
             </div>
         </a>
 
@@ -107,8 +108,8 @@
             <div class="menu-icon">✓</div>
 
             <div class="menu-content">
-                <h2>Approbations</h2>
-                <p>Valider ou rejeter les demandes</p>
+                <h2 data-i18n="home.approvals">Approvals</h2>
+                <p data-i18n="home.approvalsDesc">Approve or reject requests</p>
             </div>
 
             <span class="menu-badge" id="approvalMenuBadge">0</span>
@@ -118,8 +119,8 @@
             <div class="menu-icon">📄</div>
 
             <div class="menu-content">
-                <h2>Mes demandes</h2>
-                <p>Suivre les demandes soumises</p>
+                <h2 data-i18n="home.myRequests">My requests</h2>
+                <p data-i18n="home.myRequestsDesc">Track submitted requests</p>
             </div>
 
             <span class="menu-badge" id="myRequestsMenuBadge">0</span>
@@ -129,8 +130,8 @@
             <div class="menu-icon">🔔</div>
 
             <div class="menu-content">
-                <h2>Notifications</h2>
-                <p>Voir les alertes et mises à jour</p>
+                <h2 data-i18n="common.notifications">Notifications</h2>
+                <p data-i18n="home.notificationsDesc">View alerts and updates</p>
             </div>
 
             <span class="menu-badge" id="notificationMenuBadge">0</span>
@@ -142,6 +143,7 @@
 
 <script src="js/config.js?v=android-layout1"></script>
 <script src="js/mobile-dialog.js?v=android-layout1"></script>
+<script src="js/i18n.js?v=android-lang1"></script>
 <script src="js/auth.js?v=android-layout1"></script>
 <script src="js/home.js?v=android-layout1"></script>
 <script src="js/pwa-register.js?v=android-layout1"></script>

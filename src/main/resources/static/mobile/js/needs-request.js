@@ -533,9 +533,9 @@ function addItemRow() {
     item.innerHTML = `
         <div class="item-header" onclick="toggleItemCard(this)">
             <div class="item-header-left">
-                <div class="item-title">Item ${index}</div>
+                <div class="item-title">${tr("needs.item", "Item")} ${index}</div>
                 <div class="item-summary">
-                    New item | Qty: 1 PCS | Total: 0.00
+                    ${tr("needs.newItemSummary", "New item | Qty: 1 PCS | Total: 0.00")}
                 </div>
             </div>
 
@@ -548,29 +548,29 @@ function addItemRow() {
         <div class="item-body">
 
             <div class="form-group">
-                <label>Item name *</label>
-                <input type="text" class="item-name" placeholder="Ex: Carburant" required>
+                <label data-i18n="needs.itemName">${tr("needs.itemName", "Item name *")}</label>
+                <input type="text" class="item-name" placeholder="${tr("needs.itemNamePlaceholder", "Example: Fuel")}" data-i18n-placeholder="needs.itemNamePlaceholder" required>
             </div>
 
             <div class="form-group">
-                <label>Description</label>
-                <textarea class="item-description" placeholder="Détail de l'article..."></textarea>
+                <label data-i18n="needs.description">${tr("needs.description", "Description")}</label>
+                <textarea class="item-description" placeholder="${tr("needs.itemDescriptionPlaceholder", "Item details...")}" data-i18n-placeholder="needs.itemDescriptionPlaceholder"></textarea>
             </div>
 
             <div class="row-2">
                 <div class="form-group">
-                    <label>Category</label>
+                    <label data-i18n="needs.category">${tr("needs.category", "Category")}</label>
                     <select class="item-category">
-                        <option value="">Select</option>
-                        <option value="GOODS">Goods</option>
-                        <option value="SERVICE">Service</option>
-                        <option value="WORKS">Works</option>
-                        <option value="OTHER">Other</option>
+                        <option value="" data-i18n="needs.select">${tr("needs.select", "Select")}</option>
+                        <option value="GOODS" data-i18n="needs.goods">${tr("needs.goods", "Goods")}</option>
+                        <option value="SERVICE" data-i18n="needs.service">${tr("needs.service", "Service")}</option>
+                        <option value="WORKS" data-i18n="needs.works">${tr("needs.works", "Works")}</option>
+                        <option value="OTHER" data-i18n="needs.other">${tr("needs.other", "Other")}</option>
                     </select>
                 </div>
 
                 <div class="form-group">
-                    <label>Unit</label>
+                    <label data-i18n="needs.unit">${tr("needs.unit", "Unit")}</label>
                     <select class="item-unit-measure">
                         <option value="PCS">PCS</option>
                         <option value="LITRE">Litre</option>
@@ -585,18 +585,18 @@ function addItemRow() {
 
             <div class="row-2">
                 <div class="form-group">
-                    <label>Quantity *</label>
+                    <label data-i18n="needs.quantity">${tr("needs.quantity", "Quantity *")}</label>
                     <input type="number" class="item-quantity" min="1" step="1" value="1" required>
                 </div>
 
                 <div class="form-group">
-                    <label>Unit Price</label>
+                    <label data-i18n="needs.unitPrice">${tr("needs.unitPrice", "Unit Price")}</label>
                     <input type="number" class="item-unit-price" min="0" step="0.01" value="0">
                 </div>
             </div>
 
             <div class="item-total-box">
-                <span>Line total</span>
+                <span data-i18n="needs.lineTotal">${tr("needs.lineTotal", "Line total")}</span>
                 <strong class="item-line-total">0.00</strong>
             </div>
 
@@ -604,6 +604,7 @@ function addItemRow() {
     `;
 
     container.appendChild(item);
+    applyLanguage(item);
     bindItemEvents(item);
     updateItemSummary(item);
     updateGrandTotal();
@@ -1046,7 +1047,21 @@ function setSubmitLoading(isLoading) {
     }
 
     submitBtn.disabled = isLoading;
-    submitBtn.textContent = isLoading ? "Submitting..." : "Submit Request";
+    submitBtn.textContent = isLoading ? tr("needs.submitting", "Submitting...") : tr("needs.submit", "Submit Request");
+}
+
+function tr(key, fallback) {
+    if (window.EMSI18n && typeof window.EMSI18n.t === "function") {
+        return window.EMSI18n.t(key, fallback);
+    }
+
+    return fallback || key;
+}
+
+function applyLanguage(root) {
+    if (window.EMSI18n && typeof window.EMSI18n.apply === "function") {
+        window.EMSI18n.apply(root);
+    }
 }
 
 function clearSelect(select, placeholder) {
