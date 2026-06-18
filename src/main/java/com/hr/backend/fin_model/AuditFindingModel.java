@@ -32,6 +32,11 @@ public class AuditFindingModel {
     @Column(name = "risk_level")
     private String riskLevel;
     private String status;
+    private String source;
+    @Column(columnDefinition = "TEXT")
+    private String attachment;
+    @Column(columnDefinition = "TEXT")
+    private String comment;
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
@@ -57,4 +62,10 @@ public class AuditFindingModel {
     public void setRiskLevel(String riskLevel) { this.riskLevel = riskLevel; }
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
+    public String getSource() { return source; }
+    public void setSource(String source) { this.source = source; }
+    public String getAttachment() { return attachment; }
+    public void setAttachment(String attachment) { this.attachment = attachment; }
+    public String getComment() { return comment; }
+    public void setComment(String comment) { this.comment = comment; }
 }
