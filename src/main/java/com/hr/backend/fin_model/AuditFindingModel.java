@@ -37,6 +37,8 @@ public class AuditFindingModel {
     private String attachment;
     @Column(columnDefinition = "TEXT")
     private String comment;
+    @Column(name = "auditor_comment", columnDefinition = "TEXT")
+    private String auditorComment;
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
@@ -68,4 +70,6 @@ public class AuditFindingModel {
     public void setAttachment(String attachment) { this.attachment = attachment; }
     public String getComment() { return comment; }
     public void setComment(String comment) { this.comment = comment; }
+    public String getAuditorComment() { return auditorComment; }
+    public void setAuditorComment(String auditorComment) { this.auditorComment = auditorComment; }
 }
